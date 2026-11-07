@@ -11,7 +11,7 @@ const site=dirname(dirname(fileURLToPath(import.meta.url)));
 async function withBuild(url,check){
  const root=await mkdtemp(join(tmpdir(),'optimax-contract-'));
  try{
-  for(const name of ['build.js','src','content','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
+  for(const name of ['build.js','src','content','public','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
   execFileSync(process.execPath,['build.js'],{cwd:root,env:{...process.env,SITE_URL:url},stdio:'pipe'});
   await check(join(root,'dist'));
  }finally{await rm(root,{recursive:true,force:true})}
@@ -33,7 +33,9 @@ for(const url of ['https://optimax.alolabs.dev/','https://alo-exp.github.io/opti
     assert.equal(actions.lastElementChild,button,'theme control must be rightmost');
     assert.ok(actions.querySelector('.nav-cta'));
     assert.equal(button.tagName,'BUTTON');assert.equal(button.type,'button');
-    assert.equal(button.getAttribute('aria-label'),'Dark theme');assert.equal(button.getAttribute('aria-pressed'),'false');
+    assert.equal(document.documentElement.getAttribute('data-theme'),'dark','static HTML must start dark even without JavaScript');
+    assert.equal(document.querySelector('meta[name="theme-color"]').content,'#082820');
+    assert.equal(button.getAttribute('aria-label'),'Dark theme');assert.equal(button.getAttribute('aria-pressed'),'true');
     assert.ok(button.hasAttribute('hidden'),'hide the control until the theme behavior is bound');
     assert.match(button.textContent,/Theme/);assert.ok(button.querySelector('[aria-hidden="true"]'));
     const theme=document.querySelector('head script[src="'+base+'assets/theme.js"]');
@@ -50,10 +52,21 @@ test('homepage explains useful parallel work, inspectable proof, objections and 
   const document=parseHTML(await readFile(join(output,'index.html'),'utf8')).document;
   assert.equal(document.querySelector('h1').textContent,'Get AI work done faster and cheaper');
   assert.equal(document.querySelector('.hero-deck').textContent,'Maximize parallelization, minimize cost');
-  assert.equal(document.querySelector('.hero-deck').nextElementSibling.textContent,'Optimax breaks work into tasks, maximizes useful parallelization, and routes each assignment by complexity and monitored subagent performance—helping you get work done faster and at lower model cost, with independent review to protect quality.');
+  assert.ok(document.querySelector('.hero-support'),'the wide hero field needs its full supporting explanation');
+  assert.equal(document.querySelector('.hero-support').textContent,'Optimax breaks work into tasks, maximizes useful parallelization, and routes each assignment by complexity and monitored subagent performance—helping you get work done faster and at lower model cost, with independent review to protect quality.');
   const visual=document.querySelector('.routing-visual');
   assert.match(visual.textContent,/independent|Independent/);assert.match(visual.textContent,/waiting/i);
-  assert.match(visual.textContent,/illustrative/i);assert.ok(visual.querySelectorAll('.route-row').length>=3);
+  assert.equal(visual.getAttribute('aria-describedby'),'plan-note');
+  assert.match(document.querySelector('#plan-note').textContent,/only when independent, capacity is verified and resources do not conflict/);
+  assert.match(visual.textContent,/illustrative/i);
+  const assignments=visual.querySelector('ul.parallel-tasks');
+  assert.ok(assignments,'independent work belongs to an unordered parallel group');
+  assert.deepEqual([...assignments.children].map(task=>task.querySelector('strong').textContent),['Investigate own scope','Implement own files','Verify independent work']);
+  assert.equal(assignments.children.length,3);
+  assert.equal(visual.querySelectorAll('ol').length,0,'independent work must not imply sequential steps');
+  const acceptance=visual.querySelector('.acceptance-boundary');
+  assert.ok(acceptance);assert.match(acceptance.textContent,/Integrate after acceptance/);
+  assert.ok(!assignments.contains(acceptance),'acceptance spans the independent group');
   const ordered=['how-it-works','mechanism','proof','benefits','questions','install','next-step'];
   const actual=[...document.querySelectorAll('main [id]')].map(element=>element.id).filter(id=>ordered.includes(id));
   assert.deepEqual(actual,ordered);
@@ -73,6 +86,39 @@ test('homepage explains useful parallel work, inspectable proof, objections and 
   const next=document.querySelector('#next-step');
   assert.match(next.textContent,/Start your first session/);
   assert.ok(next.querySelector('a[href="/help/first-session/"]'));assert.ok(next.querySelector('a[href="/help/session-controls/"]'));
+ });
+});
+test('mineral manifest uses local type assets and rehomes labels below headings',async()=>{
+ await withBuild('https://alo-exp.github.io/optimax/',async output=>{
+  const css=await readFile(join(output,'assets/style.css'),'utf8');
+  for(const weight of [400,700]){
+   const name='mona-sans-latin-'+weight+'-normal.woff2';
+   assert.ok((await readFile(join(output,'assets/fonts',name))).length>1000,'publish the local '+weight+' font');
+   assert.match(css,new RegExp('url\\(\\s*[\"\\\']?\\./fonts/'+name.replaceAll('.','\\.')+'[\"\\\']?\\s*\\)'));
+  }
+  assert.match(css,/font-display:\s*swap/);
+  for(const file of await htmlFiles(output)){
+   const document=parseHTML(await readFile(file,'utf8')).document;
+   for(const heading of document.querySelectorAll('h1,h2,h3'))assert.ok(!heading.previousElementSibling?.classList.contains('eyebrow'),file+' has a label above a heading');
+  }
+  const document=parseHTML(await readFile(join(output,'index.html'),'utf8')).document;
+  assert.equal(document.querySelector('img,picture,canvas'),null,'the manifest is semantic flat geometry');
+  assert.equal(document.querySelectorAll('.hero-field').length,1);
+  assert.equal(document.querySelectorAll('.hero-field h1').length,1);
+ });
+});
+test('navigation and document link icons use hidden SVG without changing labels',async()=>{
+ await withBuild('https://optimax.alolabs.dev/',async output=>{
+  let articleIcons=0;
+  const data=JSON.parse(await readFile(join(site,'content/articles.json'),'utf8'));
+  const expectedReferences=data.articles.flatMap(article=>article.sections).reduce((sum,section)=>sum+(section.links?.length||0),0);
+  for(const file of await htmlFiles(output)){
+   const document=parseHTML(await readFile(file,'utf8')).document;
+   for(const link of document.querySelectorAll('a,button'))assert.doesNotMatch(link.textContent,/[↗→↓⌕⌘✳◐]/,'decorative glyph remains in '+file);
+   for(const icon of document.querySelectorAll('svg.icon'))assert.equal(icon.getAttribute('aria-hidden'),'true');
+   articleIcons+=document.querySelectorAll('.article-section a svg.icon').length;
+  }
+  assert.ok(expectedReferences>0);assert.equal(articleIcons,expectedReferences,'every source reference link keeps a consistent drawn icon');
  });
 });
 test('parallel work guide describes bounded dispatch and makes helper evidence limits explicit',async()=>{

@@ -53,3 +53,26 @@ test('Pages publishes tested static output with scoped permissions and a seriali
   assert.ok(deploy.steps[0].uses.startsWith('actions/deploy-pages@'));
   assert.equal(deploy.steps[0].id, 'deployment');
 });
+
+
+test('Pages gates publication on rendered browser acceptance after the build',()=>{
+ const {build}=parse(readFileSync(path,'utf8')).jobs;
+ const compile=build.steps.findIndex(step=>step.run==='npm run build');
+ const browserInstall=build.steps.findIndex(step=>step.run==='npx playwright install --with-deps chromium');
+ const browserTest=build.steps.findIndex(step=>step.run==='npm run test:browser');
+ const upload=build.steps.findIndex(step=>step.uses?.startsWith('actions/upload-pages-artifact@'));
+ assert.ok(browserInstall>compile,'browser installation follows the build');
+ assert.ok(browserTest>browserInstall&&upload>browserTest,'rendered acceptance must pass before upload');
+ assert.equal(build.steps[browserTest].if,undefined);
+ assert.notEqual(build.steps[browserTest]['continue-on-error'],true);
+});
+
+
+test('browser diagnostics have an identified failure-only consumer and minimal retention',()=>{
+ const steps=parse(readFileSync(path,'utf8')).jobs.build.steps;
+ const diagnostics=steps.find(step=>step.uses?.startsWith('actions/upload-artifact@'));
+ assert.ok(diagnostics,'failed browser screenshots must be available to the repair reviewer');
+ assert.equal(diagnostics.if,"failure() && steps.browser.outcome == 'failure'");
+ assert.deepEqual(diagnostics.with,{name:'browser-failure-diagnostics',path:'site/test-results/**/test-failed-*.png','retention-days':1,'if-no-files-found':'ignore'});
+ assert.equal(steps.find(step=>step.run==='npm run test:browser').id,'browser');
+});

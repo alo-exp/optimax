@@ -12,7 +12,7 @@ import {attachSearch,searchIndex} from '../src/search.js';
 const site=dirname(dirname(fileURLToPath(import.meta.url)));
 async function fixture(){
  const root=await mkdtemp(join(tmpdir(),'optimax-pages-'));
- for(const name of ['build.js','src','content','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
+ for(const name of ['build.js','src','content','public','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
  return root;
 }
 function build(root,url){

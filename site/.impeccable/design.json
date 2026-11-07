@@ -1,0 +1,644 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-07T15:14:54.148Z",
+  "title": "Design System: Optimax",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Deep Juniper",
+        "tonalRamp": [
+          "oklch(15% 0.0183 173.3)",
+          "oklch(25% 0.0285 173.3)",
+          "oklch(35% 0.0359 173.3)",
+          "oklch(45% 0.0398 173.3)",
+          "oklch(60% 0.0383 173.3)",
+          "oklch(72% 0.0310 173.3)",
+          "oklch(84% 0.0194 173.3)",
+          "oklch(95% 0.0063 173.3)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Mineral Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0012 48.7)",
+          "oklch(25% 0.0018 48.7)",
+          "oklch(35% 0.0023 48.7)",
+          "oklch(45% 0.0025 48.7)",
+          "oklch(60% 0.0024 48.7)",
+          "oklch(72% 0.0020 48.7)",
+          "oklch(84% 0.0012 48.7)",
+          "oklch(95% 0.0004 48.7)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Sage",
+        "tonalRamp": [
+          "oklch(15% 0.0105 164.4)",
+          "oklch(25% 0.0164 164.4)",
+          "oklch(35% 0.0207 164.4)",
+          "oklch(45% 0.0229 164.4)",
+          "oklch(60% 0.0221 164.4)",
+          "oklch(72% 0.0179 164.4)",
+          "oklch(84% 0.0112 164.4)",
+          "oklch(95% 0.0036 164.4)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "Structural Rule",
+        "tonalRamp": [
+          "oklch(15% 0.0192 167.7)",
+          "oklch(25% 0.0299 167.7)",
+          "oklch(35% 0.0376 167.7)",
+          "oklch(45% 0.0417 167.7)",
+          "oklch(60% 0.0402 167.7)",
+          "oklch(72% 0.0325 167.7)",
+          "oklch(84% 0.0203 167.7)",
+          "oklch(95% 0.0066 167.7)"
+        ]
+      },
+      "control-border": {
+        "role": "neutral",
+        "displayName": "Control Rule",
+        "tonalRamp": [
+          "oklch(15% 0.0133 167.5)",
+          "oklch(25% 0.0208 167.5)",
+          "oklch(35% 0.0262 167.5)",
+          "oklch(45% 0.0290 167.5)",
+          "oklch(60% 0.0279 167.5)",
+          "oklch(72% 0.0226 167.5)",
+          "oklch(84% 0.0141 167.5)",
+          "oklch(95% 0.0046 167.5)"
+        ]
+      },
+      "elevated": {
+        "role": "neutral",
+        "displayName": "Raised Juniper",
+        "tonalRamp": [
+          "oklch(15% 0.0216 173.2)",
+          "oklch(25% 0.0336 173.2)",
+          "oklch(35% 0.0423 173.2)",
+          "oklch(45% 0.0469 173.2)",
+          "oklch(60% 0.0452 173.2)",
+          "oklch(72% 0.0366 173.2)",
+          "oklch(84% 0.0229 173.2)",
+          "oklch(95% 0.0074 173.2)"
+        ]
+      },
+      "selected": {
+        "role": "neutral",
+        "displayName": "Selected Juniper",
+        "tonalRamp": [
+          "oklch(15% 0.0242 171.1)",
+          "oklch(25% 0.0377 171.1)",
+          "oklch(35% 0.0475 171.1)",
+          "oklch(45% 0.0527 171.1)",
+          "oklch(60% 0.0507 171.1)",
+          "oklch(72% 0.0411 171.1)",
+          "oklch(84% 0.0257 171.1)",
+          "oklch(95% 0.0083 171.1)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Dull Brass",
+        "tonalRamp": [
+          "oklch(15% 0.0492 88.0)",
+          "oklch(25% 0.0766 88.0)",
+          "oklch(35% 0.0965 88.0)",
+          "oklch(45% 0.1070 88.0)",
+          "oklch(60% 0.1030 88.0)",
+          "oklch(72% 0.0835 88.0)",
+          "oklch(84% 0.0522 88.0)",
+          "oklch(95% 0.0169 88.0)"
+        ]
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "Focus Brass",
+        "tonalRamp": [
+          "oklch(15% 0.0440 89.3)",
+          "oklch(25% 0.0685 89.3)",
+          "oklch(35% 0.0863 89.3)",
+          "oklch(45% 0.0957 89.3)",
+          "oklch(60% 0.0921 89.3)",
+          "oklch(72% 0.0746 89.3)",
+          "oklch(84% 0.0467 89.3)",
+          "oklch(95% 0.0152 89.3)"
+        ]
+      },
+      "mineral": {
+        "role": "neutral",
+        "displayName": "Mineral Field",
+        "tonalRamp": [
+          "oklch(15% 0.0012 48.7)",
+          "oklch(25% 0.0018 48.7)",
+          "oklch(35% 0.0023 48.7)",
+          "oklch(45% 0.0025 48.7)",
+          "oklch(60% 0.0024 48.7)",
+          "oklch(72% 0.0020 48.7)",
+          "oklch(84% 0.0012 48.7)",
+          "oklch(95% 0.0004 48.7)"
+        ]
+      },
+      "on-mineral": {
+        "role": "neutral",
+        "displayName": "Juniper Field Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0183 173.3)",
+          "oklch(25% 0.0285 173.3)",
+          "oklch(35% 0.0359 173.3)",
+          "oklch(45% 0.0398 173.3)",
+          "oklch(60% 0.0383 173.3)",
+          "oklch(72% 0.0310 173.3)",
+          "oklch(84% 0.0194 173.3)",
+          "oklch(95% 0.0063 173.3)"
+        ]
+      },
+      "mineral-muted": {
+        "role": "neutral",
+        "displayName": "Mineral Supporting Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0068 196.7)",
+          "oklch(25% 0.0105 196.7)",
+          "oklch(35% 0.0133 196.7)",
+          "oklch(45% 0.0147 196.7)",
+          "oklch(60% 0.0141 196.7)",
+          "oklch(72% 0.0115 196.7)",
+          "oklch(84% 0.0072 196.7)",
+          "oklch(95% 0.0023 196.7)"
+        ]
+      },
+      "brass": {
+        "role": "primary",
+        "displayName": "Dull Brass",
+        "tonalRamp": [
+          "oklch(15% 0.0492 88.0)",
+          "oklch(25% 0.0766 88.0)",
+          "oklch(35% 0.0965 88.0)",
+          "oklch(45% 0.1070 88.0)",
+          "oklch(60% 0.1030 88.0)",
+          "oklch(72% 0.0835 88.0)",
+          "oklch(84% 0.0522 88.0)",
+          "oklch(95% 0.0169 88.0)"
+        ]
+      },
+      "on-brass": {
+        "role": "neutral",
+        "displayName": "Brass Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0183 173.3)",
+          "oklch(25% 0.0285 173.3)",
+          "oklch(35% 0.0359 173.3)",
+          "oklch(45% 0.0398 173.3)",
+          "oklch(60% 0.0383 173.3)",
+          "oklch(72% 0.0310 173.3)",
+          "oklch(84% 0.0194 173.3)",
+          "oklch(95% 0.0063 173.3)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Technical Juniper",
+        "tonalRamp": [
+          "oklch(15% 0.0145 173.6)",
+          "oklch(25% 0.0225 173.6)",
+          "oklch(35% 0.0284 173.6)",
+          "oklch(45% 0.0314 173.6)",
+          "oklch(60% 0.0303 173.6)",
+          "oklch(72% 0.0245 173.6)",
+          "oklch(84% 0.0153 173.6)",
+          "oklch(95% 0.0050 173.6)"
+        ]
+      },
+      "on-panel": {
+        "role": "neutral",
+        "displayName": "Technical Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0012 48.7)",
+          "oklch(25% 0.0018 48.7)",
+          "oklch(35% 0.0023 48.7)",
+          "oklch(45% 0.0025 48.7)",
+          "oklch(60% 0.0024 48.7)",
+          "oklch(72% 0.0020 48.7)",
+          "oklch(84% 0.0012 48.7)",
+          "oklch(95% 0.0004 48.7)"
+        ]
+      },
+      "panel-muted": {
+        "role": "neutral",
+        "displayName": "Technical Supporting Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0105 164.4)",
+          "oklch(25% 0.0164 164.4)",
+          "oklch(35% 0.0207 164.4)",
+          "oklch(45% 0.0229 164.4)",
+          "oklch(60% 0.0221 164.4)",
+          "oklch(72% 0.0179 164.4)",
+          "oklch(84% 0.0112 164.4)",
+          "oklch(95% 0.0036 164.4)"
+        ]
+      },
+      "panel-accent": {
+        "role": "primary",
+        "displayName": "Technical Brass",
+        "tonalRamp": [
+          "oklch(15% 0.0492 88.0)",
+          "oklch(25% 0.0766 88.0)",
+          "oklch(35% 0.0965 88.0)",
+          "oklch(45% 0.1070 88.0)",
+          "oklch(60% 0.1030 88.0)",
+          "oklch(72% 0.0835 88.0)",
+          "oklch(84% 0.0522 88.0)",
+          "oklch(95% 0.0169 88.0)"
+        ]
+      },
+      "panel-border": {
+        "role": "neutral",
+        "displayName": "Technical Rule",
+        "tonalRamp": [
+          "oklch(15% 0.0192 167.7)",
+          "oklch(25% 0.0299 167.7)",
+          "oklch(35% 0.0376 167.7)",
+          "oklch(45% 0.0417 167.7)",
+          "oklch(60% 0.0402 167.7)",
+          "oklch(72% 0.0325 167.7)",
+          "oklch(84% 0.0203 167.7)",
+          "oklch(95% 0.0066 167.7)"
+        ]
+      },
+      "bg-light": {
+        "role": "neutral",
+        "displayName": "Warm Paper",
+        "tonalRamp": [
+          "oklch(15% 0.0049 95.2)",
+          "oklch(25% 0.0077 95.2)",
+          "oklch(35% 0.0096 95.2)",
+          "oklch(45% 0.0107 95.2)",
+          "oklch(60% 0.0103 95.2)",
+          "oklch(72% 0.0083 95.2)",
+          "oklch(84% 0.0052 95.2)",
+          "oklch(95% 0.0017 95.2)"
+        ]
+      },
+      "ink-light": {
+        "role": "neutral",
+        "displayName": "Juniper Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0183 173.3)",
+          "oklch(25% 0.0285 173.3)",
+          "oklch(35% 0.0359 173.3)",
+          "oklch(45% 0.0398 173.3)",
+          "oklch(60% 0.0383 173.3)",
+          "oklch(72% 0.0310 173.3)",
+          "oklch(84% 0.0194 173.3)",
+          "oklch(95% 0.0063 173.3)"
+        ]
+      },
+      "muted-light": {
+        "role": "neutral",
+        "displayName": "Slate Green",
+        "tonalRamp": [
+          "oklch(15% 0.0124 164.8)",
+          "oklch(25% 0.0194 164.8)",
+          "oklch(35% 0.0244 164.8)",
+          "oklch(45% 0.0271 164.8)",
+          "oklch(60% 0.0261 164.8)",
+          "oklch(72% 0.0211 164.8)",
+          "oklch(84% 0.0132 164.8)",
+          "oklch(95% 0.0043 164.8)"
+        ]
+      },
+      "border-light": {
+        "role": "neutral",
+        "displayName": "Light Structural Rule",
+        "tonalRamp": [
+          "oklch(15% 0.0101 147.6)",
+          "oklch(25% 0.0157 147.6)",
+          "oklch(35% 0.0198 147.6)",
+          "oklch(45% 0.0219 147.6)",
+          "oklch(60% 0.0211 147.6)",
+          "oklch(72% 0.0171 147.6)",
+          "oklch(84% 0.0107 147.6)",
+          "oklch(95% 0.0035 147.6)"
+        ]
+      },
+      "control-border-light": {
+        "role": "neutral",
+        "displayName": "Light Control Rule",
+        "tonalRamp": [
+          "oklch(15% 0.0156 155.4)",
+          "oklch(25% 0.0242 155.4)",
+          "oklch(35% 0.0306 155.4)",
+          "oklch(45% 0.0339 155.4)",
+          "oklch(60% 0.0326 155.4)",
+          "oklch(72% 0.0264 155.4)",
+          "oklch(84% 0.0165 155.4)",
+          "oklch(95% 0.0054 155.4)"
+        ]
+      },
+      "elevated-light": {
+        "role": "neutral",
+        "displayName": "White",
+        "tonalRamp": [
+          "oklch(15% 0.0000 0.0)",
+          "oklch(25% 0.0000 0.0)",
+          "oklch(35% 0.0000 0.0)",
+          "oklch(45% 0.0000 0.0)",
+          "oklch(60% 0.0000 0.0)",
+          "oklch(72% 0.0000 0.0)",
+          "oklch(84% 0.0000 0.0)",
+          "oklch(95% 0.0000 0.0)"
+        ]
+      },
+      "selected-light": {
+        "role": "neutral",
+        "displayName": "Pale Sage",
+        "tonalRamp": [
+          "oklch(15% 0.0075 133.8)",
+          "oklch(25% 0.0117 133.8)",
+          "oklch(35% 0.0147 133.8)",
+          "oklch(45% 0.0163 133.8)",
+          "oklch(60% 0.0157 133.8)",
+          "oklch(72% 0.0127 133.8)",
+          "oklch(84% 0.0079 133.8)",
+          "oklch(95% 0.0026 133.8)"
+        ]
+      },
+      "accent-light": {
+        "role": "primary",
+        "displayName": "Olive Accent",
+        "tonalRamp": [
+          "oklch(15% 0.0373 124.0)",
+          "oklch(25% 0.0580 124.0)",
+          "oklch(35% 0.0731 124.0)",
+          "oklch(45% 0.0811 124.0)",
+          "oklch(60% 0.0780 124.0)",
+          "oklch(72% 0.0632 124.0)",
+          "oklch(84% 0.0395 124.0)",
+          "oklch(95% 0.0128 124.0)"
+        ]
+      },
+      "focus-light": {
+        "role": "primary",
+        "displayName": "Focus Green",
+        "tonalRamp": [
+          "oklch(15% 0.0312 164.0)",
+          "oklch(25% 0.0486 164.0)",
+          "oklch(35% 0.0612 164.0)",
+          "oklch(45% 0.0678 164.0)",
+          "oklch(60% 0.0653 164.0)",
+          "oklch(72% 0.0529 164.0)",
+          "oklch(84% 0.0331 164.0)",
+          "oklch(95% 0.0107 164.0)"
+        ]
+      },
+      "mineral-light": {
+        "role": "neutral",
+        "displayName": "Light Mineral Field",
+        "tonalRamp": [
+          "oklch(15% 0.0056 121.7)",
+          "oklch(25% 0.0088 121.7)",
+          "oklch(35% 0.0111 121.7)",
+          "oklch(45% 0.0123 121.7)",
+          "oklch(60% 0.0118 121.7)",
+          "oklch(72% 0.0096 121.7)",
+          "oklch(84% 0.0060 121.7)",
+          "oklch(95% 0.0019 121.7)"
+        ]
+      },
+      "on-mineral-light": {
+        "role": "neutral",
+        "displayName": "Light Mineral Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0183 173.3)",
+          "oklch(25% 0.0285 173.3)",
+          "oklch(35% 0.0359 173.3)",
+          "oklch(45% 0.0398 173.3)",
+          "oklch(60% 0.0383 173.3)",
+          "oklch(72% 0.0310 173.3)",
+          "oklch(84% 0.0194 173.3)",
+          "oklch(95% 0.0063 173.3)"
+        ]
+      },
+      "mineral-muted-light": {
+        "role": "neutral",
+        "displayName": "Light Mineral Supporting Ink",
+        "tonalRamp": [
+          "oklch(15% 0.0124 164.8)",
+          "oklch(25% 0.0194 164.8)",
+          "oklch(35% 0.0244 164.8)",
+          "oklch(45% 0.0271 164.8)",
+          "oklch(60% 0.0261 164.8)",
+          "oklch(72% 0.0211 164.8)",
+          "oklch(84% 0.0132 164.8)",
+          "oklch(95% 0.0043 164.8)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Mineral-field headline; responsive overrides are documented in DESIGN.md."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Primary section headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Subordinate headings."
+      },
+      "body": {
+        "displayName": "Article body",
+        "purpose": "72ch reading measure; 17px at 600px and below."
+      },
+      "navigation": {
+        "displayName": "Navigation",
+        "purpose": "Main navigation; reduces through the viewport breakpoints."
+      },
+      "action": {
+        "displayName": "Action",
+        "purpose": "Primary action text."
+      },
+      "article-title": {
+        "displayName": "Article title",
+        "purpose": "Help article heading; 41px at 600px and below."
+      },
+      "article-deck": {
+        "displayName": "Article deck",
+        "purpose": "Help article introduction; 20px at 600px and below."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Wrapped terminal and article commands; 12px at 600px and below."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "acceptance-emphasis",
+        "value": "acceptance-emphasis 1100ms cubic-bezier(.16,1,.3,1) 400ms 1 both",
+        "purpose": "One-time acceptance-edge emphasis; content is already visible. Keyframes change background-color from var(--border) to var(--brass)."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } .acceptance-boundary { animation: none; } }",
+        "purpose": "Remove the acceptance animation and smooth scrolling."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide-display-min",
+        "value": "1650px"
+      },
+      {
+        "name": "header-compact-max",
+        "value": "1300px"
+      },
+      {
+        "name": "header-wrap-max",
+        "value": "1100px"
+      },
+      {
+        "name": "single-column-max",
+        "value": "900px"
+      },
+      {
+        "name": "compact-max",
+        "value": "600px"
+      },
+      {
+        "name": "narrow-controls-max",
+        "value": "370px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Brass action with an inside focus ring and clipped corners.",
+      "html": "<a class=\"ds-button ds-primary\" href=\"#first-session\">Start your first session <svg class=\"ds-icon\" aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"><path d=\"M4 12h15M13 5l7 7-7 7\"/></svg></a>",
+      "css": ".ds-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }\n.ds-button { display: inline-flex; align-items: center; justify-content: center; gap: 16px; padding: 17px 23px; min-height: 54px; font-size: 17px; font-weight: 700; --cut: 8px; clip-path: polygon(var(--cut) 0,calc(100% - var(--cut)) 0,100% var(--cut),100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,var(--cut) 100%,0 calc(100% - var(--cut)),0 var(--cut)); }\n.ds-primary { background: var(--brass); color: var(--on-brass); }\n.ds-primary:hover { text-decoration: underline; }\n.ds-button:focus-visible { outline-color: var(--on-brass); outline-offset: -7px; }\n.ds-button { font-family: 'Mona Sans',ui-sans-serif,system-ui,sans-serif; text-decoration:none; } .ds-button:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; } .ds-button:focus-visible { outline-color:var(--on-brass); outline-offset:-7px; }"
+    },
+    {
+      "name": "Navigation action",
+      "kind": "button",
+      "refersTo": "nav-cta",
+      "description": "Header action; its height can grow with content.",
+      "html": "<a class=\"ds-nav-cta\" href=\"#install\">Get started</a>",
+      "css": ".ds-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }\n.ds-nav-cta { display: inline-flex; align-items: center; justify-content: center; background: var(--brass); color: var(--on-brass); font-size: 23px; line-height: 1.2; font-weight: 700; min-height: 56px; padding: 12px 23px; white-space: nowrap; --cut: 8px; clip-path: polygon(var(--cut) 0,calc(100% - var(--cut)) 0,100% var(--cut),100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,var(--cut) 100%,0 calc(100% - var(--cut)),0 var(--cut)); }\n.ds-nav-cta:hover { text-decoration: underline; }\n.ds-nav-cta { font-family: 'Mona Sans',ui-sans-serif,system-ui,sans-serif; text-decoration:none; } .ds-nav-cta:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; } .ds-nav-cta:focus-visible { outline-color:var(--on-brass); outline-offset:-7px; }"
+    },
+    {
+      "name": "Theme control",
+      "kind": "button",
+      "refersTo": "theme-toggle",
+      "description": "Rightmost control; controller applies the pressed state.",
+      "html": "<button class=\"ds-theme-toggle\" type=\"button\" aria-label=\"Dark theme\" aria-pressed=\"true\"><svg class=\"ds-icon\" aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 1v2m0 18v2M1 12h2m18 0h2M4.2 4.2l1.5 1.5m12.6 12.6 1.5 1.5M4.2 19.8l1.5-1.5M18.3 5.7l1.5-1.5\"/></svg><span>Theme</span></button>",
+      "css": ".ds-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }\n.ds-theme-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 12px; min-height: 44px; min-width: 44px; flex-shrink: 0; padding: 13px 18px; border: 2px solid var(--control-border); border-radius: 8px; background: transparent; color: var(--ink); font-size: 22px; line-height: 1.2; font-weight: 700; }\n.ds-theme-toggle:hover { background: var(--selected); }\n.ds-theme-toggle { font-family: 'Mona Sans',ui-sans-serif,system-ui,sans-serif; cursor:pointer; } .ds-theme-toggle:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; }"
+    },
+    {
+      "name": "Help search",
+      "kind": "input",
+      "refersTo": "input-search",
+      "description": "Labeled field with its own focus ring and stronger surrounding rule.",
+      "html": "<div class=\"ds-search\"><label for=\"ds-help-search\">Search the help center</label><div class=\"ds-search-box\"><input id=\"ds-help-search\" type=\"search\" placeholder=\"Search articles...\"><button type=\"button\">Clear</button></div></div>",
+      "css": ".ds-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }\n.ds-search { max-width: 760px; margin-top: 42px; }\n.ds-search label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 12px; }\n.ds-search-box { display: flex; align-items: center; gap: 16px; border: 1px solid var(--control-border); background: var(--elevated); padding: 0 18px; }\n.ds-search-box:focus-within { border-color: var(--focus); }\n.ds-search input { background: transparent; color: var(--ink); border: 0; flex: 1; min-width: 0; padding: 18px 0; font-size: 20px; }\n.ds-search input::placeholder { color: var(--muted); opacity: 1; }\n.ds-search input:focus-visible { outline-offset: 2px; }\n.ds-search button { background: transparent; color: var(--ink); border: 0; font-size: 14px; font-weight: 700; min-height: 44px; padding: 8px 0 8px 10px; }\n.ds-search button:hover { text-decoration: underline; }\n.ds-search { font-family: 'Mona Sans',ui-sans-serif,system-ui,sans-serif; color:var(--ink); } .ds-search input,.ds-search button { font-family:inherit; } .ds-search input:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; } .ds-search input:focus-visible { outline-offset:2px; } .ds-search button:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; }"
+    },
+    {
+      "name": "Main navigation",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Sentence-case navigation with underlined accent hover.",
+      "html": "<nav class=\"ds-navigation\" aria-label=\"Example navigation\"><a href=\"#how-it-works\">How it works</a><a href=\"#help\">Help center</a><a href=\"#source\">GitHub <svg class=\"ds-icon\" aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"><path d=\"M4 12h15M13 5l7 7-7 7\"/></svg></a></nav>",
+      "css": ".ds-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }\n.ds-navigation { display: flex; align-items: center; gap: 44px; font-size: 24px; line-height: 1.2; }\n.ds-navigation a { white-space: nowrap; padding-block: 10px; }\n.ds-navigation a:hover { color: var(--accent); text-decoration: underline; }\n.ds-navigation .ds-icon { width: 18px; height: 18px; margin-left: 3px; }\n.ds-navigation { font-family: 'Mona Sans',ui-sans-serif,system-ui,sans-serif; color:var(--ink); } .ds-navigation a { color:inherit; text-decoration:none; } .ds-navigation a:hover { color:var(--accent); text-decoration:underline; } .ds-navigation a:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; }"
+    },
+    {
+      "name": "Installation platform",
+      "kind": "button",
+      "refersTo": "tab-install",
+      "description": "Pressed platform is brass; unpressed platform stays on the technical surface.",
+      "html": "<div class=\"ds-tabs\" role=\"group\" aria-label=\"Example installation platform\"><button type=\"button\" aria-pressed=\"true\">Codex</button><button type=\"button\" aria-pressed=\"false\">Claude</button></div>",
+      "css": ".ds-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }\n.ds-tabs { display: flex; gap: 0; margin: 25px 0 18px; border-bottom: 1px solid var(--panel-border); }\n.ds-tabs button { background: transparent; color: var(--panel-muted); border: 0; border-bottom: 3px solid transparent; min-height: 48px; padding: 10px 30px; font-size: 18px; font-weight: 700; }\n.ds-tabs button[aria-pressed=\"true\"] { background: var(--brass); color: var(--on-brass); border-color: var(--brass); }\n.ds-tabs button:hover { text-decoration: underline; }\n.ds-tabs { font-family: 'Mona Sans',ui-sans-serif,system-ui,sans-serif; background:var(--panel);color:var(--on-panel);--focus:var(--panel-accent); } .ds-tabs button { font-family:inherit;cursor:pointer; } .ds-tabs button:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; }"
+    },
+    {
+      "name": "Assignment label",
+      "kind": "custom",
+      "refersTo": "task-label",
+      "description": "Independent work has its own mineral field and semantic status.",
+      "html": "<div class=\"ds-route-row\"><span class=\"ds-route-number\" aria-hidden=\"true\">01</span><strong>Investigate own scope</strong><small>READY / PARALLEL</small></div>",
+      "css": ".ds-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }\n.ds-route-row { display: grid; grid-template-columns: 60px minmax(0,1fr); grid-template-rows: 1fr auto; column-gap: 18px; align-items: center; background: var(--mineral); color: var(--on-mineral); min-height: 88px; padding: 14px 20px; --cut: 13px; clip-path: polygon(var(--cut) 0,calc(100% - var(--cut)) 0,100% var(--cut),100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,var(--cut) 100%,0 calc(100% - var(--cut)),0 var(--cut)); }\n.ds-route-number { grid-row: 1/3; display: grid; place-items: center; width: 60px; min-height: 48px; background: var(--on-mineral); color: var(--mineral); border-radius: 4px; font-weight: 700; font-size: 27px; line-height: 1; }\n.ds-route-row strong { font-size: clamp(20px,1.8vw,28px); letter-spacing: -.03em; line-height: 1.12; }\n.ds-route-row small { font-size: 10px; letter-spacing: .06em; color: var(--mineral-muted); padding-top: 5px; }\n.ds-route-row { font-family: 'Mona Sans',ui-sans-serif,system-ui,sans-serif; } @media (forced-colors:active) { .ds-route-row { background:Canvas;color:CanvasText;border:1px solid CanvasText; } }"
+    },
+    {
+      "name": "Acceptance boundary",
+      "kind": "custom",
+      "refersTo": "acceptance-boundary",
+      "description": "Spanning acceptance edge with a single optional emphasis.",
+      "html": "<div class=\"ds-acceptance-boundary\"><span class=\"ds-acceptance-check\"><svg class=\"ds-icon\" aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"><path d=\"m5 12 5 5L20 6\"/></svg></span><strong>Integrate after acceptance</strong><small>WAITING / DEPENDENCIES</small></div>",
+      "css": ".ds-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }\n.ds-acceptance-boundary { position: relative; width: 100%; display: flex; align-items: center; gap: 26px; min-height: 76px; padding: 13px 29px; background: var(--brass); color: var(--ink); --cut: 9px; clip-path: polygon(var(--cut) 0,calc(100% - var(--cut)) 0,100% var(--cut),100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,var(--cut) 100%,0 calc(100% - var(--cut)),0 var(--cut)); isolation: isolate; animation: acceptance-emphasis 1100ms cubic-bezier(.16,1,.3,1) 400ms 1 both; }\n.ds-acceptance-boundary::before { content: ''; position: absolute; inset: 2px; background: var(--bg); clip-path: polygon(var(--cut) 0,calc(100% - var(--cut)) 0,100% var(--cut),100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,var(--cut) 100%,0 calc(100% - var(--cut)),0 var(--cut)); z-index: -1; --cut: 8px; }\n.ds-acceptance-check { display: grid; place-items: center; width: 42px; height: 44px; flex: 0 0 auto; background: var(--brass); color: var(--on-brass); border-radius: 3px; }\n.ds-acceptance-check .ds-icon { width: 30px; height: 30px; stroke-width: 2.8; }\n.ds-acceptance-boundary strong { font-size: 31px; line-height: 1.2; letter-spacing: -.025em; }\n.ds-acceptance-boundary small { margin-left: auto; font-size: 11px; letter-spacing: .05em; color: var(--muted); }\n.ds-acceptance-boundary { font-family: 'Mona Sans',ui-sans-serif,system-ui,sans-serif; animation-name:ds-acceptance-emphasis; } @keyframes ds-acceptance-emphasis { from { background-color:var(--border); } to { background-color:var(--brass); } } @media (prefers-reduced-motion:reduce) { .ds-acceptance-boundary { animation:none; } } @media (forced-colors:active) { .ds-acceptance-boundary { clip-path:none;background:Canvas;border:1px solid CanvasText; } .ds-acceptance-check { background:Canvas;color:CanvasText;border:1px solid CanvasText; } }"
+    },
+    {
+      "name": "Technical terminal",
+      "kind": "card",
+      "refersTo": "terminal",
+      "description": "Fixed technical colors, wrapped commands and a copy-control example.",
+      "html": "<div class=\"ds-terminal\"><div class=\"ds-terminal-head\">QUICK START</div><pre><code>codex plugin marketplace add alo-labs/agent-plugins\ncodex plugin add optimax@alo-labs-codex</code></pre><div class=\"ds-terminal-bottom\"><button class=\"ds-copy-install\" type=\"button\">Copy commands <svg class=\"ds-icon\" aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"><path d=\"M4 12h15M13 5l7 7-7 7\"/></svg></button><span role=\"status\"></span></div></div>",
+      "css": ".ds-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }\n.ds-terminal { background: var(--panel); color: var(--on-panel); --ink: var(--on-panel); --muted: var(--panel-muted); --accent: var(--panel-accent); --focus: var(--panel-accent); padding: 26px 30px 20px; --cut: 18px; clip-path: polygon(var(--cut) 0,calc(100% - var(--cut)) 0,100% var(--cut),100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,var(--cut) 100%,0 calc(100% - var(--cut)),0 var(--cut)); }\n.ds-terminal-head { font-size: 12px; letter-spacing: .06em; color: var(--panel-muted); font-weight: 700; }\n.ds-terminal pre { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; font-size: 14px; }\n.ds-terminal-bottom { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 13px; border-top: 1px solid var(--panel-border); }\n.ds-copy-install { min-height: 44px; border: 1px solid var(--panel-border); background: transparent; color: var(--panel-accent); padding: 9px 16px; font-size: 14px; font-weight: 700; }\n.ds-copy-install:hover { background: var(--panel); text-decoration: underline; }\n.ds-terminal-bottom span { color: var(--panel-muted); font-size: 12px; }\n.ds-terminal pre,.ds-terminal code { font-family: ui-monospace,SFMono-Regular,Consolas,monospace; }\n.ds-terminal { font-family: 'Mona Sans',ui-sans-serif,system-ui,sans-serif; } .ds-terminal pre { white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;font-size:14px; } .ds-copy-install { font-family:inherit;cursor:pointer; } .ds-copy-install:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; } .ds-copy-install:disabled { cursor:wait;opacity:.65; }"
+    },
+    {
+      "name": "Help article link",
+      "kind": "custom",
+      "refersTo": "article-link",
+      "description": "Ruled reading-list entry with title, description and inline arrow.",
+      "html": "<a class=\"ds-article-link\" href=\"#parallel-work\"><span><strong>Parallel work</strong><small>Read the policy for readiness, capacity and accepted dependencies.</small></span><span><svg class=\"ds-icon\" aria-hidden=\"true\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"><path d=\"M4 12h15M13 5l7 7-7 7\"/></svg></span></a>",
+      "css": ".ds-icon { display: inline-block; width: 24px; height: 24px; flex: 0 0 auto; vertical-align: middle; }\n.ds-article-link { display: flex; gap: 25px; justify-content: space-between; padding: 21px 0; border-bottom: 1px solid var(--border); }\n.ds-article-link:hover strong { color: var(--accent); text-decoration: underline; }\n.ds-article-link strong { display: block; }\n.ds-article-link small { display: block; }\n.ds-article-link { font-family: 'Mona Sans',ui-sans-serif,system-ui,sans-serif; color:var(--ink);text-decoration:none; } .ds-article-link:focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Component Manifest",
+    "overview": "Optimax uses the material language of component labels and a parts register: robust sans type, clipped fields, aligned rows and visible boundaries. The juniper ground, mineral fields and dull brass actions make ownership and acceptance easy to distinguish. These are durable visual materials; the homepage's particular composition remains in its [surface brief](.impeccable/surfaces/build-js.md).\n\nReading surfaces keep the same palette and type family while giving prose a calm measure. Dark is the default. Light is an authored alternate, with an explicit saved choice retained. The system records the implementation in [src/style.css](src/style.css), [build.js](build.js) and [src/theme.js](src/theme.js); frontmatter contains normative values, and [.impeccable/design.json](.impeccable/design.json) extends them with motion, breakpoints and component samples.",
+    "keyCharacteristics": [
+      "Deep juniper ground, mineral fields and brass actions.",
+      "One self-hosted sans family with regular and bold weights.",
+      "Cut corners identify structural fields and actions.",
+      "Independent assignment labels share a spanning acceptance boundary.",
+      "Article typography remains measured, legible and quiet."
+    ],
+    "rules": [
+      {
+        "name": "The Local Pair Rule",
+        "body": "Choose the text and focus pair belonging to the actual surface; a technical panel keeps its panel tokens inside either page theme.",
+        "section": "colors"
+      },
+      {
+        "name": "The Reading Measure Rule",
+        "body": "Preserve the article's 72ch measure and paragraph rhythm when extending the Help Center.",
+        "section": "typography"
+      },
+      {
+        "name": "The Structural Depth Rule",
+        "body": "Carry hierarchy with tonal surfaces and boundaries, preserving the flat material vocabulary.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** retain dark as the default and honor an explicit saved light or dark choice.",
+      "**Do** keep the theme control last in the right-aligned header action group and retain its visible label.",
+      "**Do** use the matching text and focus pair for each mineral or technical surface.",
+      "**Do** keep clipped-control focus inside its visible edge.",
+      "**Do** preserve a calm 72ch article measure, wrapping commands and reduced-motion support.",
+      "**Do** use inline SVG for structural icons and meaningful text for task states."
+    ],
+    "donts": [
+      "**Don't** restore the superseded purple palette, gradient treatment or serif display emphasis.",
+      "**Don't** turn the one-time acceptance emphasis into a continuous or content-hiding animation.",
+      "**Don't** infer live activity from illustrative task labels.",
+      "**Don't** propagate retained editorial eyebrows as a canonical label or typography role."
+    ]
+  }
+}

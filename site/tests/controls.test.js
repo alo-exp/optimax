@@ -14,7 +14,7 @@ test('generated install panel switches and copies exact marketplace commands', a
  const {tmpdir}=await import('node:os'); const {join,resolve}=await import('node:path');
  const {execFileSync}=await import('node:child_process'); const {parseHTML}=await import('linkedom');
  const dir=await mkdtemp(join(tmpdir(),'optimax-site-test-')); t.after(()=>rm(dir,{recursive:true,force:true}));
- for(const name of ['src','content']) await symlink(resolve(name),join(dir,name),'dir');
+ for(const name of ['src','content','public']) await symlink(resolve(name),join(dir,name),'dir');
  execFileSync(process.execPath,[resolve('build.js')],{cwd:dir});
  const {document,Event}=parseHTML(await readFile(join(dir,'dist/index.html'),'utf8'));
  const group=document.querySelector('[aria-label="Installation platform"]');

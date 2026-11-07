@@ -3,3 +3,8 @@ dist/
 .openai/local/
 .sites/
 *.log
+test-results/
+playwright-report/
+.impeccable/mocks/
+.impeccable/review/
+.impeccable/build/

@@ -3,7 +3,6 @@
 
   var storageKey = 'optimax-theme';
   var storage = null;
-  var media = null;
   var choice = null;
   var button = null;
   var bound = false;
@@ -12,7 +11,7 @@
     return value === 'light' || value === 'dark';
   }
 
-  // Preference APIs may be blocked independently by browser privacy settings.
+  // Storage may be blocked by browser privacy settings.
   try {
     storage = window.localStorage;
   } catch (_) {}
@@ -20,22 +19,11 @@
     var saved = storage && storage.getItem(storageKey);
     if (validTheme(saved)) choice = saved;
   } catch (_) {}
-  try {
-    if (typeof window.matchMedia === 'function') {
-      media = window.matchMedia('(prefers-color-scheme: dark)');
-    }
-  } catch (_) {}
-
-  function systemTheme() {
-    try {
-      return media && media.matches ? 'dark' : 'light';
-    } catch (_) {
-      return 'light';
-    }
-  }
 
   function applyTheme(theme) {
     document.documentElement.dataset.theme = theme;
+    var themeMeta = document.querySelector && document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.setAttribute('content', theme === 'dark' ? '#082820' : '#f3f1e9');
     if (button) {
       button.setAttribute('aria-label', 'Dark theme');
       button.setAttribute('aria-pressed', String(theme === 'dark'));
@@ -44,18 +32,7 @@
   }
 
   // This classic script runs in the head before CSS, so the first paint is themed.
-  applyTheme(choice || systemTheme());
-
-  function onSystemChange() {
-    if (!choice) applyTheme(systemTheme());
-  }
-  try {
-    if (media && typeof media.addEventListener === 'function') {
-      media.addEventListener('change', onSystemChange);
-    } else if (media && typeof media.addListener === 'function') {
-      media.addListener(onSystemChange);
-    }
-  } catch (_) {}
+  applyTheme(choice || 'dark');
 
   window.addEventListener('storage', function (event) {
     var cleared = event.key === null && event.newValue === null &&
@@ -65,7 +42,7 @@
     if (event.storageArea && storage && event.storageArea !== storage) return;
     if (event.newValue !== null && !validTheme(event.newValue)) return;
     choice = event.newValue;
-    applyTheme(choice || systemTheme());
+    applyTheme(choice || 'dark');
   });
 
   function bindToggle() {

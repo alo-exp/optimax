@@ -23,7 +23,7 @@ export function buildContent(data,{basePath='/'}={}) {
       const paragraphs=section.paragraphs||[], bullets=section.bullets||[];
       const links=(section.links||[]).map(link=>({...link,href:articleHref(link.href,basePath)}));
       index.push({page:article.title,url,anchor,title:section.heading,text:[article.description,...(article.keywords||[]),...paragraphs,...bullets,section.code?.text||'',...links.map(l=>l.label)].filter(Boolean).join(' ')});
-      return `<section id="${anchor}" class="article-section"><h2>${escapeHtml(section.heading)}</h2>${paragraphs.map(p=>`<p>${escapeHtml(p)}</p>`).join('')}${bullets.length?'<ul>'+bullets.map(b=>`<li>${escapeHtml(b)}</li>`).join('')+'</ul>':''}${section.code?`<pre><code>${escapeHtml(section.code.text)}</code></pre>`:''}${links.length?'<p>'+links.map(l=>`<a href="${escapeHtml(l.href)}">${escapeHtml(l.label)} →</a>`).join(' · ')+'</p>':''}</section>`;
+      return `<section id="${anchor}" class="article-section"><h2>${escapeHtml(section.heading)}</h2>${paragraphs.map(p=>`<p>${escapeHtml(p)}</p>`).join('')}${bullets.length?'<ul>'+bullets.map(b=>`<li>${escapeHtml(b)}</li>`).join('')+'</ul>':''}${section.code?`<pre><code>${escapeHtml(section.code.text)}</code></pre>`:''}${links.length?'<p>'+links.map(l=>`<a href="${escapeHtml(l.href)}">${escapeHtml(l.label)} <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square" stroke-linejoin="miter"><path d="M4 12h15M13 5l7 7-7 7"/></svg></a>`).join(' · ')+'</p>':''}</section>`;
     }).join('');
     pages.push({url,article,html:sections});
   }
