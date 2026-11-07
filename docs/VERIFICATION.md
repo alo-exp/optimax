@@ -1,11 +1,11 @@
 # Optimax 0.1.0 verification
 
-Checked 2026-11-07. Plugin release v0.1.0 has a verified shared controller and distributed artifacts. The GitHub Pages website candidate has 17 passing Node tests and a verified static build. Deployment and host limits are distinguished below; no universal native integration or measured cost savings are claimed.
+Checked 2026-11-07. Plugin release v0.1.0 has a verified shared controller and distributed artifacts. The GitHub Pages website has 17 passing Node tests, a successful Actions deployment and verified live content. Host limits remain distinguished below; no universal native integration or measured cost savings are claimed.
 
 | Area | Observed evidence | Status |
 | --- | --- | --- |
 | Shared Python runtime and release builder | 125 tests passed; historical policy IDs and event lineage preserved | Passed |
-| Website behavior | 17 Node tests including generated DOM, keyboard/clipboard, project-path and root-domain output graphs, search fetch/navigation, invalid configuration preservation and deployment YAML semantics; 16 articles and 36 indexed sections | Passed locally |
+| Website behavior | 17 Node tests including generated DOM, keyboard/clipboard, project-path and root-domain output graphs, search fetch/navigation, invalid configuration preservation and deployment YAML semantics; 16 articles and 36 indexed sections | Passed locally and in Actions |
 | Portable plugin manifest | Published Agent Plugins JSON schema validation passed | Passed |
 | Standalone skill | Official skill validator passed on fresh extraction | Passed |
 | Release contents | 14 standalone and 17 plugin files match canonical source; no personal ledger, tests, caches or session reports | Passed |
@@ -15,12 +15,12 @@ Checked 2026-11-07. Plugin release v0.1.0 has a verified shared controller and d
 | Claude package | JSON manifests, layout, component paths, namespace and shared Claude ladder/controller cases checked independently | Static checks passed |
 | Claude live execution / Ultracode | Not invoked before the authorized quota-reset window | Deferred to Tuesday 10 November 2026, 14:00 Australia/Sydney |
 | Website rendering and live interaction | Built-in browser unavailable: Mac locked and browser use disabled | Unverified |
-| Public website access | GitHub Pages enabled at https://alo-exp.github.io/optimax/; first Pages deployment pending. Earlier Sites preview passed HTTP access checks | Pages publication in progress |
+| Public website access | GitHub Pages deployment succeeded at https://alo-exp.github.io/optimax/; all 27 generated pages/assets returned HTTP 200 and matched the local build byte for byte. A nested unknown URL returned the custom HTTP 404 with prefixed assets/home link | Passed |
 | Custom domain | optimax.alolabs.dev awaits a separate GitHub Pages cutover; eventual CNAME is alo-exp.github.io. Earlier Sites validation records are obsolete for this target; no DNS changes made | Pending; not live yet |
 | Tuesday automation | Active one-occurrence heartbeat saved for Tuesday 10 November 2026 at 14:00 on the verified Australia/Sydney host timezone (03:00 UTC) | Scheduled; not executed yet |
 | Fresh Codex session | A second real native Terra Low session discovered the plugin and returned disabled status under its distinct actual thread ID; fixture ledger hash unchanged | Passed; not a compaction test |
 
-Publication evidence: signed plugin commit [`54540db`](https://github.com/alo-exp/optimax/commit/54540db3ea74374677438995d9fce83b58e1441d), signed tag and [v0.1.0 preview release](https://github.com/alo-exp/optimax/releases/tag/v0.1.0); signed marketplace commit [`bd142cc`](https://github.com/alo-labs/agent-plugins/commit/bd142ccb3ecb5c0bb0572aedc5be76666a97c842). Both catalogs pin the tested source SHA. GitHub-reported asset digests match the table below. The live website was built from Sites source commit `cfde56ea43d98fa3e4b99245051f802881d74d66` and published as version 1. Browser rendering remains unverified; HTTP and DOM checks do not substitute for it.
+Publication evidence: signed plugin commit [`54540db`](https://github.com/alo-exp/optimax/commit/54540db3ea74374677438995d9fce83b58e1441d), signed tag and [v0.1.0 preview release](https://github.com/alo-exp/optimax/releases/tag/v0.1.0); signed marketplace commit [`bd142cc`](https://github.com/alo-labs/agent-plugins/commit/bd142ccb3ecb5c0bb0572aedc5be76666a97c842). Both catalogs pin the tested plugin SHA, and release digests match the table below. The website was migrated from the earlier Sites preview to GitHub Pages from signed commit [`de88199`](https://github.com/alo-exp/optimax/commit/de88199e617c0d3fb4a4fa97f41f7b98a95b08ba); [Actions run 42373055544](https://github.com/alo-exp/optimax/actions/runs/42373055544) passed build and deployment. Its upstream actions emitted Node 20 deprecation and Ubuntu image-migration notices while completing successfully. Browser rendering remains unverified; HTTP and DOM checks do not substitute for it.
 
 ## Reproduce source checks
 
@@ -51,3 +51,11 @@ Observed red→green regressions covered the renamed archive contract, included 
 The private runtime ledger remains per project/user under model-perf/ and is excluded from the public repository and archives. A public rename did not rewrite optimal-ultra-ladder-v1/v2/v3 policy identities, epochs or existing event history. Tests that simulate quality scores or native context do not establish real helper execution or real Ultra/Ultracode access.
 
 See the [native Codex acceptance record](CODEX-ACCEPTANCE.md) and [deferred Claude runbook](CLAUDE-ACCEPTANCE.md). The Claude automation is scheduled but has not executed. Update qualification claims only from observed host evidence.
+
+## GitHub Pages migration evidence
+
+- `node --test tests/pages-paths.test.js` from `site/`: six initial tests failed before production changes on missing deployment-prefix/configuration behavior, then passed after implementation. The primary agent independently reran those regressions against archived `f6d2701` and confirmed six expected failures.
+- `node --test --test-name-pattern='complete generated graph' tests/pages-paths.test.js`: a subsequent robots-boundary assertion failed for both prefixed variants before the Allow path repair, then passed. Seven deployment tests now cover the default project URL, the configure-pages URL without a trailing slash, root-domain mode, every generated local target/anchor, invalid configuration before cleanup, and built-client fetch/result/Enter/error behavior.
+- `node --test tests/pages-workflow.test.js`: failed with the expected missing-workflow assertion before the workflow was created, then passed. Independent review checked the official pinned action contracts. Additional characterization assertions were added from a passing baseline for existing correct credential, action-identity and success-gating behavior; no artificial red phase is claimed for those assertions.
+- `npm test` and `npm run build`: 17 tests passed and the static build succeeded. Generated-artifact review found 27 intended public files, no symlinks and no source, credential, configuration or learning directories.
+- GitHub Actions completed the same tests, build, upload and deployment successfully. HTTPS checks verified all 27 generated files byte for byte at the project URL, plus the custom nested-route 404. Browser access remains disabled and the Mac locked. Custom-domain DNS was not changed.
