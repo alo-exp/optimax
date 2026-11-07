@@ -24,7 +24,7 @@ test('generated install panel switches and copies exact marketplace commands', a
  assert.deepEqual(panels.map(p=>p.textContent),expected);
  assert.match(document.querySelector('#install').textContent,/terminal commands/i);
  assert.match(document.querySelector('#install').textContent,/commands in Claude Code/i);
- assert.ok(document.querySelector('#install a[href^="/help/"]'));
+ assert.equal(document.querySelector('#install a').getAttribute('href'),document.querySelector('meta[name="site-base"]').getAttribute('content')+'help/');
  let copied; const button=document.querySelector('#copy-install');
  installControls({tabs,panels,button,status:document.querySelector('#copy-status'),clipboard:{writeText:async text=>{copied=text}}});
  assert.deepEqual(tabs.map(tab=>tab.getAttribute('aria-pressed')),['true','false']);

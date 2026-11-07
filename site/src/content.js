@@ -1,6 +1,15 @@
 export const escapeHtml = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const slugify = value => value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-export function buildContent(data) {
+import {sitePath,validateBasePath} from './deployment.js';
+function articleHref(href,basePath) {
+  try {
+    if(href.startsWith('/'))return sitePath(href,basePath);
+    if(/^https:\/\//.test(href))return href;
+  } catch {}
+  throw new Error('Invalid link');
+}
+export function buildContent(data,{basePath='/'}={}) {
+  validateBasePath(basePath);
   const pages=[], index=[], slugs=new Set();
   if(!Array.isArray(data.articles)) throw new Error('Articles must be an array');
   for(const article of data.articles) {
@@ -11,8 +20,8 @@ export function buildContent(data) {
       const anchor=slugify(section.heading);
       if(!anchor||anchors.has(anchor)) throw new Error('Invalid or duplicate anchor');
       anchors.add(anchor);
-      const paragraphs=section.paragraphs||[], bullets=section.bullets||[], links=section.links||[];
-      for(const link of links) if(!/^(https:\/\/|\/(?!\/))/.test(link.href)) throw new Error('Invalid link');
+      const paragraphs=section.paragraphs||[], bullets=section.bullets||[];
+      const links=(section.links||[]).map(link=>({...link,href:articleHref(link.href,basePath)}));
       index.push({page:article.title,url,anchor,title:section.heading,text:[article.description,...(article.keywords||[]),...paragraphs,...bullets,section.code?.text||'',...links.map(l=>l.label)].filter(Boolean).join(' ')});
       return `<section id="${anchor}" class="article-section"><h2>${escapeHtml(section.heading)}</h2>${paragraphs.map(p=>`<p>${escapeHtml(p)}</p>`).join('')}${bullets.length?'<ul>'+bullets.map(b=>`<li>${escapeHtml(b)}</li>`).join('')+'</ul>':''}${section.code?`<pre><code>${escapeHtml(section.code.text)}</code></pre>`:''}${links.length?'<p>'+links.map(l=>`<a href="${escapeHtml(l.href)}">${escapeHtml(l.label)} →</a>`).join(' · ')+'</p>':''}</section>`;
     }).join('');

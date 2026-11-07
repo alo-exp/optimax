@@ -1,3 +1,4 @@
+import {sitePath,validateBasePath} from './deployment.js';
 const safePath = row => /^\/help\/[a-z0-9-]+\/$/.test(row.url) && /^[a-z0-9-]+$/.test(row.anchor);
 export function searchIndex(index, query) {
   const q = query.trim().toLowerCase();
@@ -9,7 +10,8 @@ export function searchIndex(index, query) {
     return {row, score:terms.reduce((score,term)=>score + (title.includes(term)?4:0) + (page.includes(term)?2:0) + (text.includes(term)?1:0),0)};
   }).filter(Boolean).sort((a,b)=>b.score-a.score).slice(0,8).map(x=>x.row);
 }
-export function attachSearch({input,results,status,clear,document,index}) {
+export function attachSearch({input,results,status,clear,document,index,basePath='/'}) {
+  validateBasePath(basePath);
   let matches=[], selected=-1;
   const reset=()=>{matches=[];selected=-1;results.replaceChildren();status.textContent='';input.setAttribute('aria-expanded','false');input.setAttribute('aria-activedescendant','')};
   const render=()=>{
@@ -20,7 +22,7 @@ export function attachSearch({input,results,status,clear,document,index}) {
     matches.forEach((row,i)=>{
       const item=document.createElement('li'), link=document.createElement('a'), label=document.createElement('span');
       item.setAttribute('role','option');item.setAttribute('id',`search-result-${i}`);
-      link.setAttribute('href',row.url+'#'+row.anchor);link.textContent=row.title;
+      link.setAttribute('href',sitePath(row.url,basePath)+'#'+row.anchor);link.textContent=row.title;
       label.textContent=row.page;item.append(link,label);results.append(item);
     });
   };
@@ -33,7 +35,7 @@ export function attachSearch({input,results,status,clear,document,index}) {
       input.setAttribute('aria-activedescendant',`search-result-${selected}`);
       Array.from(results.children).forEach((item,i)=>item.setAttribute('aria-selected',String(i===selected)));
     } else if(event.key==='Enter' && selected>=0){
-      event.preventDefault(); const row=matches[selected]; document.location=row.url+'#'+row.anchor;
+      event.preventDefault(); const row=matches[selected]; document.location=sitePath(row.url,basePath)+'#'+row.anchor;
     }
   });
   clear.addEventListener('click',()=>{input.value='';reset();input.focus()});

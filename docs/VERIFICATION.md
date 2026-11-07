@@ -1,11 +1,11 @@
 # Optimax 0.1.0 verification
 
-Checked 2026-11-07. Plugin release v0.1.0 has a verified shared controller and distributed artifacts. The website's subsequent main-branch update has nine passing Node tests and a verified public deployment. Host and custom-domain limits remain explicit below; no universal native integration or measured cost savings are claimed.
+Checked 2026-11-07. Plugin release v0.1.0 has a verified shared controller and distributed artifacts. The GitHub Pages website candidate has 17 passing Node tests and a verified static build. Deployment and host limits are distinguished below; no universal native integration or measured cost savings are claimed.
 
 | Area | Observed evidence | Status |
 | --- | --- | --- |
 | Shared Python runtime and release builder | 125 tests passed; historical policy IDs and event lineage preserved | Passed |
-| Website behavior | Nine Node tests including real generated DOM, keyboard and exact multiline clipboard coverage; 16 articles and 36 indexed sections | Passed on website follow-up |
+| Website behavior | 17 Node tests including generated DOM, keyboard/clipboard, project-path and root-domain output graphs, search fetch/navigation, invalid configuration preservation and deployment YAML semantics; 16 articles and 36 indexed sections | Passed locally |
 | Portable plugin manifest | Published Agent Plugins JSON schema validation passed | Passed |
 | Standalone skill | Official skill validator passed on fresh extraction | Passed |
 | Release contents | 14 standalone and 17 plugin files match canonical source; no personal ledger, tests, caches or session reports | Passed |
@@ -15,8 +15,8 @@ Checked 2026-11-07. Plugin release v0.1.0 has a verified shared controller and d
 | Claude package | JSON manifests, layout, component paths, namespace and shared Claude ladder/controller cases checked independently | Static checks passed |
 | Claude live execution / Ultracode | Not invoked before the authorized quota-reset window | Deferred to Tuesday 10 November 2026, 14:00 Australia/Sydney |
 | Website rendering and live interaction | Built-in browser unavailable: Mac locked and browser use disabled | Unverified |
-| Public website access | Public deployment succeeded at https://optimax-alo-labs.tonedion1.chatgpt.site; all 26 built public routes/assets returned HTTP 200, including the 36-entry search index | Passed |
-| Custom domain | optimax.alolabs.dev is attached to the host and awaits one CNAME plus two TXT records; Cloudflare's saved login is expired and the browser is unavailable | Pending DNS/SSL; not live yet |
+| Public website access | GitHub Pages enabled at https://alo-exp.github.io/optimax/; first Pages deployment pending. Earlier Sites preview passed HTTP access checks | Pages publication in progress |
+| Custom domain | optimax.alolabs.dev awaits a separate GitHub Pages cutover; eventual CNAME is alo-exp.github.io. Earlier Sites validation records are obsolete for this target; no DNS changes made | Pending; not live yet |
 | Tuesday automation | Active one-occurrence heartbeat saved for Tuesday 10 November 2026 at 14:00 on the verified Australia/Sydney host timezone (03:00 UTC) | Scheduled; not executed yet |
 | Fresh Codex session | A second real native Terra Low session discovered the plugin and returned disabled status under its distinct actual thread ID; fixture ledger hash unchanged | Passed; not a compaction test |
 

@@ -1,10 +1,10 @@
 # Optimax
 
-Optimax is a portable skill and thin plugin for choosing delegated Executor and Advisor models using independently assessed results. It keeps your selected orchestrator in charge and stores learning per user and project. Created by Shafqat Ullah at Ālo Labs. Source: [alo-exp/optimax](https://github.com/alo-exp/optimax); [public website](https://optimax-alo-labs.tonedion1.chatgpt.site). The custom hostname `optimax.alolabs.dev` is attached and awaits DNS validation.
+Optimax is a portable skill and thin plugin for choosing delegated Executor and Advisor models using independently assessed results. It keeps your selected orchestrator in charge and stores learning per user and project. Created by Shafqat Ullah at Ālo Labs. Source: [alo-exp/optimax](https://github.com/alo-exp/optimax); [website on GitHub Pages](https://alo-exp.github.io/optimax/). The custom hostname `optimax.alolabs.dev` awaits a separate DNS cutover.
 
 ## Install
 
-The intended distribution is the unified Ālo Labs [agent-plugins catalog](https://github.com/alo-labs/agent-plugins), with host-specific catalog entries. Publication is pending; these commands require the catalog entry to be published and supported by your client. The plugin contains the canonical skill at `skills/optimax/`; avoid loading a second standalone copy alongside it.
+Optimax v0.1.0 is published in the unified Ālo Labs [agent-plugins catalog](https://github.com/alo-labs/agent-plugins), with host-specific catalog entries. These commands require marketplace support in your client. The plugin contains the canonical skill at `skills/optimax/`; avoid loading a second standalone copy alongside it.
 
 For Codex, register the catalog, install, and list installed plugins:
 
