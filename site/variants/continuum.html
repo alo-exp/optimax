@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="site-base" content="{{BASE}}">
+<meta name="description" content="Optimax is an open-source plugin for Claude and Codex. Run useful work in parallel, choose helper models by task complexity and reviewed results, and keep your chosen model in charge.">
+<meta name="theme-color" content="#0D0B14">
+<link rel="canonical" href="{{BASE}}versions/continuum/">
+<title>Optimax — Get AI work done faster and cheaper</title>
+<meta property="og:title" content="Optimax — Get AI work done faster and cheaper">
+<meta property="og:description" content="Optimax is an open-source plugin for Claude and Codex. Run useful work in parallel, choose helper models by task complexity and reviewed results, and keep your chosen model in charge.">
+<meta property="og:url" content="{{BASE}}versions/continuum/">
+<link rel="icon" type="image/svg+xml" href="{{BASE}}favicon.svg">
+<script src="{{BASE}}versions/theme.js"></script>
+<link rel="stylesheet" href="./style.css">
+<script type="module" src="{{BASE}}versions/client.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<svg class="symbols" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><symbol id="arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol><symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol></svg>
+<header class="header wrap">
+<a class="brand" href="{{BASE}}" aria-label="Optimax home"><svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><path d="M3 10h12c9 0 8 16 17 16h5M3 19h10c9 0 8 16 17 16h7M3 1h14c9 0 8 16 17 16h3"/></svg><span>Optimax</span></a>
+<nav aria-label="Main navigation"><a class="preview-return" href="{{BASE}}">Circuit</a><a href="#how-it-works">How it works</a><a href="{{BASE}}help/">Help center</a><a href="https://github.com/alo-exp/optimax">GitHub<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a></nav>
+<div class="header-actions"><a class="nav-cta" href="#install">Install Optimax<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a><button id="theme-toggle" class="theme-toggle" type="button" aria-label="Dark theme" aria-pressed="true" hidden><svg class="icon" aria-hidden="true"><use href="#sun"/></svg><span>Theme</span></button></div>
+</header>
+<main id="main">
+<section class="hero wrap" aria-labelledby="hero-title">
+<svg class="hero-signature" viewBox="0 0 320 60" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+<path class="signature-cut" d="M0 22H88Q105 22 110 8H270V12H114Q109 26 92 26H0ZM16 40H112Q129 40 134 26H286V31H139Q134 45 117 45H16ZM32 58H136Q153 58 158 44H302V60H32Z"/>
+<path class="signature-top" fill-rule="evenodd" d="M0 22H88Q105 22 110 8H270L286 0H126Q118 14 102 14H16ZM16 40H112Q129 40 134 26H286L302 18H150Q142 32 126 32H32ZM32 58H136Q153 58 158 44H302L318 36H174Q166 50 150 50H48Z"/>
+<path class="signature-register" d="M200 8L216 0M224 26L240 18M248 44L264 36M310 0V32L320 37"/>
+</svg>
+<div class="hero-field">
+<h1 id="hero-title">Get AI work done faster and cheaper</h1>
+<p class="hero-deck">Maximize parallelization, minimize cost</p>
+<p class="hero-audience">For teams and individuals building with Claude or Codex</p>
+<p class="hero-support">Optimax is an open-source plugin that helps your AI agent delegate well. Run independent tasks together, choose helper models by task complexity and reviewed results, and check each result before accepting it.</p>
+<p class="hero-choice">Your chosen session model stays in charge.</p>
+<div class="hero-actions"><a class="button" href="#install">Install Optimax<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a><a class="text-link" href="#mechanism">See how it works<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+</div>
+<section class="parallel-plan" aria-labelledby="parallel-title">
+<div class="plan-heading"><h2 id="parallel-title">One plan. Several useful ways forward.</h2><p>Illustrative plan, not live activity.</p></div>
+<div class="routing-visual" aria-describedby="plan-note" aria-label="Illustrative plan: three independent assignments can run together; integration waits for accepted results and satisfied dependencies.">
+<svg class="channel-assembly" viewBox="0 0 1200 490" preserveAspectRatio="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+<g class="channel channel-one">
+<path class="channel-depth" d="M0 200H330C480 200 480 90 650 90H1030V112H650C480 112 480 222 330 222H0Z"/>
+<path class="channel-surface" fill-rule="evenodd" d="M0 200H330C480 200 480 90 650 90H1030L1090 0H710C540 0 540 110 390 110H60ZM780 24H1010L986 60H756Z"/>
+<path class="channel-cap" d="M0 200L60 110V132L0 222ZM1030 90L1090 0V22L1030 112Z"/>
+<path class="aperture-wall" d="M780 24H1010L1003 34H773ZM756 60H986L978 72H748Z"/>
+<path class="channel-contour" d="M0 200H330C480 200 480 90 650 90H1030M60 110H390C540 110 540 0 710 0H1090M756 60H986L1010 24"/>
+<path class="channel-cut" d="M690 0L630 90M720 90V112M330 200V222"/>
+</g>
+<g class="channel channel-two">
+<path class="channel-depth" d="M70 330H440C580 330 575 220 760 220H1030V248H760C575 248 580 358 440 358H70Z"/>
+<path class="channel-surface" fill-rule="evenodd" d="M70 330H440C580 330 575 220 760 220H1030L1090 130H820C635 130 640 240 500 240H130ZM870 153H1025L1000 190H845Z"/>
+<path class="channel-cap" d="M70 330L130 240V268L70 358ZM1030 220L1090 130V158L1030 248Z"/>
+<path class="aperture-wall" d="M870 153H1025L1018 164H863ZM845 190H1000L992 203H837Z"/>
+<path class="channel-contour" d="M70 330H440C580 330 575 220 760 220H1030M130 240H500C640 240 635 130 820 130H1090M845 190H1000L1025 153"/>
+<path class="channel-cut" d="M808 130L748 220M805 220V248M440 330V358"/>
+</g>
+<g class="channel channel-three">
+<path class="channel-depth" d="M140 460H550C690 460 675 350 850 350H1030V364H850C675 364 690 474 550 474H140Z"/>
+<path class="channel-surface" fill-rule="evenodd" d="M140 460H550C690 460 675 350 850 350H1030L1090 260H910C735 260 750 370 610 370H200ZM934 283H1036L1010 322H908Z"/>
+<path class="channel-cap" d="M140 460L200 370V384L140 474ZM1030 350L1090 260V274L1030 364Z"/>
+<path class="aperture-wall" d="M934 283H1036L1029 294H927ZM908 322H1010L1003 333H901Z"/>
+<path class="channel-contour" d="M140 460H550C690 460 675 350 850 350H1030M200 370H610C750 370 735 260 910 260H1090M908 322H1010L1036 283"/>
+<path class="channel-cut" d="M903 260L843 350M902 350V364M550 460V474"/>
+</g>
+<path class="acceptance-underside" d="M1050 0L1199 55V478L1185 488L1036 440V10Z"/>
+<path class="acceptance-cut" d="M1050 0L1199 55V478L1050 430Z"/>
+<path class="acceptance-edge" d="M1050 0V430L1199 478M1050 0L1199 55M1061 22V420"/>
+</svg>
+<div class="register-head"><span class="metadata">INDEPENDENT ASSIGNMENTS</span></div>
+<ul class="parallel-tasks">
+<li><span class="junction" aria-hidden="true"></span><strong>Investigate the reported defect</strong><small>READY / SEPARATE SCOPE</small></li>
+<li><span class="junction" aria-hidden="true"></span><strong>Build an unrelated feature</strong><small>READY / SEPARATE FILES</small></li>
+<li><span class="junction" aria-hidden="true"></span><strong>Review a completed change</strong><small>READY / INDEPENDENT REVIEW</small></li>
+</ul>
+<div class="acceptance-boundary"><span class="junction" aria-hidden="true"></span><strong>Integrate accepted results</strong><small>WAITING / REVIEW &amp; DEPENDENCIES</small></div>
+</div>
+</section>
+</section>
+<section class="section wrap intro" id="how-it-works">
+<div class="section-heading"><h2>Waiting takes time. Rework adds more.</h2><p class="metadata">WHY THE PLAN MATTERS</p></div>
+<div class="intro-copy reading"><p class="large-copy">When independent assignments wait their turn, the whole job takes longer. When every assignment goes to the same model, model effort can be out of proportion to the task. And when nobody checks how the pieces fit, you inherit the integration work.</p><p>Optimax gives your agent a policy for all three decisions: what can run together, which helper should do each piece, and what must be checked before the result is accepted.</p><p>It is most useful for substantial work with independent pieces. Work that truly depends on an earlier result still waits for that result to pass review.</p><a class="text-link" href="{{BASE}}help/parallel-work/">Read the parallel work policy<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a></div>
+<div class="plan-context"><p id="plan-note">Tasks run together when their dependencies are accepted, capacity is verified and their work does not conflict. This is an example, not a record of live execution.</p><div class="plan-meta"><span>CLEAR TASKS / NAMED OWNERS</span><span>ILLUSTRATIVE PLAN</span><span>FOR CLAUDE AND CODEX</span><span>MIT OPEN SOURCE / ĀLO LABS</span></div><div class="ticker"><span>PUT USEFUL WORK IN MOTION. KEEP ACCEPTANCE CLEAR.</span><span>SCOPE / MATCH / RUN TOGETHER / REVIEW</span></div></div>
+</section>
+<section class="section mechanism" id="mechanism"><div class="wrap"><div class="section-top"><div class="section-heading"><h2>A clear assignment. A suitable model. A checked result.</h2><p class="metadata">HOW OPTIMAX WORKS</p></div><p class="section-deck">The plan connects delegation to the outcome you asked for. Independent work can move together; shared files and dependent steps keep their order.</p></div><ol class="mechanism-steps"><li id="scope-the-work"><span class="step-pin" aria-hidden="true">01</span><article><h3>Define what a good result looks like</h3><p>Give each helper a clear outcome, acceptance criteria and its own scope. Identify the inputs it needs and the files or resources it owns, so parallel work has a safe boundary.</p></article></li><li id="route-and-run"><span class="step-pin" aria-hidden="true">02</span><article><h3>Match the helper and run ready work</h3><p>Choose eligible models and effort levels using task complexity and independently reviewed performance. Run useful, compatible assignments within verified capacity. Start the next eligible task as soon as its accepted inputs and resources are available.</p></article></li><li id="review-and-accept"><span class="step-pin" aria-hidden="true">03</span><article><h3>Review the work, then learn from it</h3><p>Your chosen session model independently checks each result and its evidence. Accepted work unlocks the next step. Attributable assessments inform future model choices; work that needs repair goes back for another pass.</p></article></li></ol></div></section>
+<section class="section wrap proof" id="proof"><div class="section-heading"><h2>See what has actually been checked.</h2><p class="metadata">EVIDENCE YOU CAN INSPECT</p></div><div class="reading"><p class="large-copy">The code, rules and verification records are public. You can inspect how Optimax makes decisions before enabling it.</p><p>The <a href="https://github.com/alo-exp/optimax/blob/main/skills/optimax/SKILL.md">Optimax skill</a> defines model selection, session controls and independent review. The <a href="https://github.com/alo-exp/optimax/blob/main/skills/optimax/references/parallel-execution.md">parallel execution policy</a> sets the rules for dependencies, available capacity and shared resources.</p><p><strong>Codex: live installation and session controls checked.</strong> Optimax v0.1.0 passed installation, installed-skill discovery and on/off/status checks on Codex CLI 0.166.0-alpha.6. Read the <a href="https://github.com/alo-exp/optimax/blob/main/docs/CODEX-ACCEPTANCE.md">Codex acceptance evidence</a> for the tested scope.</p><p><strong>Claude: static validation passed; live acceptance pending.</strong> The package has passed static checks. Live installation and operation have not yet been accepted. See the <a href="https://github.com/alo-exp/optimax/blob/main/docs/CLAUDE-ACCEPTANCE.md">Claude acceptance status</a>.</p><p>These checks do not measure time or cost savings. Results depend on your task, available models and host capabilities.</p><a class="text-link" href="https://github.com/alo-exp/optimax/blob/main/docs/VERIFICATION.md">Read the verification report<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a></div></section>
+<section class="section wrap benefits" id="benefits"><div class="section-top"><div class="section-heading"><h2>Plan for time, model cost and quality together.</h2><p class="metadata">WHAT THE POLICY HELPS YOU DO</p></div></div><div class="benefit-rows"><article><span class="junction" aria-hidden="true"></span><h3>Keep useful work moving</h3><p>Independent tasks can run together, and eligible follow-up work can start while unrelated tasks continue. You spend less of the plan waiting for work that does not block the next step.</p></article><article><span class="junction" aria-hidden="true"></span><h3>Use model effort with a reason</h3><p>Task complexity and reviewed results guide model selection. You can direct effort where the assignment calls for it, rather than treating every piece of work as equally demanding.</p></article><article><span class="junction" aria-hidden="true"></span><h3>Make “done” mean checked</h3><p>Each assignment has an owner and acceptance criteria. Independent review checks the result and evidence before dependent work moves on, so a helper's completion message is the start of acceptance, not the whole process.</p></article></div></section>
+<section class="section wrap faq" id="questions"><div class="section-heading"><h2>Know how it fits your workflow.</h2><p class="metadata">BEFORE YOU INSTALL</p></div><div class="questions-list"><details><summary>Will Optimax change the model I chose?</summary><p>Your chosen session model stays in charge of the plan, review and acceptance. Optimax can recommend a model and effort for that role, but it does not apply the recommendation or change native settings for you.</p></details>
+<details><summary>Does it always pick the cheapest helper?</summary><p>No. Task complexity, eligible settings and independently reviewed performance guide the choice. Price alone does not establish suitability. Faster work and lower model cost are goals, not guaranteed savings.</p></details>
+<details><summary>How many tasks can run at once?</summary><p>As many useful, independent assignments as verified capacity supports. Dependencies must be accepted and shared resources must be compatible. Reviewers, advisers and rework also use capacity. If native occupancy is unknown, Optimax cannot treat those slots as available.</p></details>
+<details><summary>What happens when a result needs more work?</summary><p>It goes back for bounded repair and another independent review. Dependent tasks wait for an accepted result. A good model score does not turn an incomplete job into an accepted result.</p></details>
+<details><summary>Can it manage every helper inside Claude or Codex?</summary><p>Only where the host exposes the necessary controls and effective model settings. Hidden worker settings cannot support verified model comparisons or learned scores. Native orchestration is only partly optimizable when those facts are unavailable. <a href="{{BASE}}help/native-orchestration/">Read the native mode limits</a>.</p></details>
+<details><summary>Can I turn it off?</summary><p>Yes. Use <code>$optimax off</code> in Codex or <code>/optimax:optimax off</code> in Claude to stop policy-driven delegation, consultation and learning. Useful work already in flight can finish safely. Your performance history and native settings are preserved. <a href="{{BASE}}help/session-controls/">See on, off and status controls</a>.</p></details>
+<details><summary>Do I need it for every small task?</summary><p>Optimax is most useful when work has several meaningful pieces to delegate. A small, tightly connected task may have little useful parallel work. The policy calls for meaningful assignments, not extra helpers for their own sake.</p></details><div class="differentiation"><h3>Look at the whole job</h3><p>Running more helpers addresses only part of the task. Optimax brings parallel work, model selection and independent acceptance into one policy, so decisions about time and model effort stay tied to the result you asked for.</p></div><a class="text-link" href="{{BASE}}help/">Explore the help center<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a></div></section>
+<section class="section install-section" id="install"><div class="wrap install-layout"><div class="install-intro"><h2>Add Optimax to your agent.</h2><p class="metadata">FREE PLUGIN / MIT LICENSE</p><p>The plugin is free and MIT licensed. Your account's host and model usage charges still apply.</p><p>You get the delegation policy, session controls and a project record of independently reviewed helper results. Install it through your host's plugin marketplace, then enable it in the session where you want to use it.</p><a class="text-link" href="{{BASE}}help/">Check installation and host support<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a></div><div class="install-commands"><p class="install-reassurance">Installing the plugin does not turn the policy on. You can <a href="https://github.com/alo-exp/optimax">inspect the source</a> first and turn it off with the session controls whenever you choose.</p><div class="terminal"><div class="terminal-head"><span>INSTALL OPTIMAX</span><span class="command-junction" aria-hidden="true"></span></div><div class="tabs" role="group" aria-label="Installation platform"><button type="button" data-install-tab aria-pressed="true">Codex</button><button type="button" data-install-tab aria-pressed="false">Claude</button></div><p class="terminal-label">Codex: run in your terminal. Claude: run inside Claude Code.</p><pre><code data-install-panel>codex plugin marketplace add alo-labs/agent-plugins
+codex plugin add optimax@alo-labs-codex</code><code data-install-panel hidden>/plugin marketplace add alo-labs/agent-plugins
+/plugin install optimax@alo-labs</code></pre><div class="terminal-bottom"><button type="button" id="copy-install">Copy commands<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></button><span id="copy-status" role="status"></span></div><p class="terminal-note">Marketplace support is required. Codex live checks cover the client listed above; Claude live acceptance is pending. <a href="{{BASE}}help/">Read the installation guide</a>.</p></div></div></div></section>
+<section class="section wrap closing" id="next-step"><h2>Start with one clear task.</h2><p class="metadata">AFTER INSTALLATION</p><p>Enable Optimax with <code>$optimax on</code> in Codex or <code>/optimax:optimax on</code> in Claude. Describe the result you need and how you will judge it. Your agent can then define the assignments, find useful parallel work and review the results.</p><p>Check the session with <code>$optimax status</code> or <code>/optimax:optimax status</code> to see the current mode and reported limits.</p><div class="actions"><a class="button" href="{{BASE}}help/first-session/">Start your first session<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a><a class="text-link" href="{{BASE}}help/session-controls/">See on, off and status controls<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a></div></section>
+</main>
+<footer class="footer wrap"><div class="footer-top"><div><a class="brand" href="{{BASE}}">Optimax</a><p>Better delegation for AI work.</p></div><div class="footer-links"><span class="metadata">EXPLORE</span><a href="{{BASE}}help/">Help center</a><a href="https://github.com/alo-exp/optimax">GitHub<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a></div><div class="footer-links"><span class="metadata">A PROJECT BY</span><a href="https://alolabs.dev">Ālo Labs<svg class="icon" aria-hidden="true"><use href="#arrow"/></svg></a></div></div><div class="footer-bottom"><span>OPTIMAX / CLEAR TASKS. REVIEWED RESULTS.</span><span>ĀLO LABS © 2026</span></div></footer>
+</body>
+</html>

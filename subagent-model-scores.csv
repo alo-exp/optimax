@@ -56,3 +56,9 @@ timestamp,model_slug,reasoning_effort,score,task_complexity
 2026-11-07T19:11:11Z,gpt-6.1-sol,max,3,medium
 2026-11-07T19:11:11Z,gpt-6.1-sol,low,5,low
 2026-11-07T19:11:11Z,gpt-6.1-sol,max,5,medium
+2026-11-07T20:55:27Z,gpt-6.1-sol,max,3,high
+2026-11-07T20:55:27Z,gpt-6.1-sol,max,5,high
+2026-11-07T21:19:47Z,gpt-6.1-sol,max,4,high
+2026-11-07T21:19:48Z,gpt-6.1-sol,max,5,low
+2026-11-07T21:19:49Z,gpt-6.1-sol,max,4,medium
+2026-11-07T21:19:50Z,gpt-6.1-sol,max,5,high

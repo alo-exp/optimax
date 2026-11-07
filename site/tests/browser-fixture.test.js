@@ -11,7 +11,7 @@ test('isolated real-build fixtures retain the public font supply and license',as
  const site=fileURLToPath(new URL('../',import.meta.url)),workspace=await mkdtemp(join(tmpdir(),'optimax-fixture-test-'));
  try{
   await prepareBuildFixture(site,workspace);
-  for(const family of ['mona-sans','sora','bricolage-grotesque','dm-sans','archivo-narrow'])for(const name of [`${family}-latin-400-normal.woff2`,`${family}-latin-700-normal.woff2`,family==='mona-sans'?'OFL.txt':`${family}-OFL.txt`]){
+  for(const family of ['mona-sans','sora','bricolage-grotesque','dm-sans','archivo-narrow','figtree'])for(const name of [`${family}-latin-400-normal.woff2`,`${family}-latin-700-normal.woff2`,family==='mona-sans'?'OFL.txt':`${family}-OFL.txt`]){
    const relative=join('public','fonts',name),asset=join(workspace,relative);
    assert.ok(existsSync(asset),`isolated build must retain public asset ${relative}`);
    assert.deepEqual(await readFile(asset),await readFile(join(site,relative)));

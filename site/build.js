@@ -31,7 +31,7 @@ for(const name of ['style.css','theme.js','client.js','search.js','controls.js',
 await cp('public/fonts',join(out,'assets/fonts'),{recursive:true});
 await copyFile('public/favicon.svg',join(out,'favicon.svg'));
 // Preview pages are separate build inputs; the production layout above stays unchanged.
-for(const name of ['circuit','prism','stage','press']){
+for(const name of ['circuit','prism','stage','press','continuum']){
  await write(`versions/${name}/index.html`,(await readFile(`variants/${name}.html`,'utf8')).replaceAll('{{BASE}}',deployment.basePath));
  await write(`versions/${name}/style.css`,(await readFile(`variants/${name}.css`,'utf8')).replaceAll('{{BASE}}',deployment.basePath));
 }
