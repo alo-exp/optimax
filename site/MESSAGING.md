@@ -6,7 +6,7 @@ The home page applies the supplied CMF v3.0 product-page guidance as an opening 
 | --- | --- |
 | Buyer identity | Teams building with Claude or Codex in the opening eyebrow. |
 | Problem and stakes | Independent tasks waiting in line; unclear ownership complicating integration. |
-| Desired future | Ready work moving together under a visible plan and responsible Orchestrator. |
+| Desired future | “Get AI work done faster and cheaper” and “Maximize parallelization, minimize cost” frame the desired time and cost outcome; the supporting paragraph connects task breakdown, useful parallelization, complexity-based routing, monitored performance and independent review. |
 | Guide and mechanism | Optimax definition followed by Scope the work → Route and run together → Review, accept and learn. |
 | Proof | Direct links to the skill, parallel execution policy, host acceptance evidence and verification report, immediately after the mechanism. |
 | Benefits and difference | Useful parallel work, explicit ownership and reviewed quality together; no price-only selection. |
@@ -20,7 +20,7 @@ The home page applies the supplied CMF v3.0 product-page guidance as an opening 
 - The illustrated work plan is explicitly illustrative, with independent tasks and an integration task waiting for acceptance.
 - The readiness helper validates a supplied greedy snapshot; it neither observes native occupancy nor proves actual dispatch or a globally optimal schedule.
 - Codex claims remain scoped to documented observed live installation, discovery and session controls. Claude currently has static validation with live acceptance pending.
-- The public copy makes no measured savings, outcome guarantee, fabricated testimonial, artificial urgency or conversion claim. It does not publish the supplied guide or its local location.
+- Faster completion and lower model cost are intended outcomes, not measured savings or guaranteed minima; complexity and monitored subagent performance inform routing, while independent review protects the quality target. The public copy makes no measured savings, outcome guarantee, fabricated testimonial, artificial urgency or conversion claim. It does not publish the supplied guide or its local location.
 - Installation snippets and existing control IDs stay compatible with the existing tab and clipboard behavior. Personal credit is removed from generated page chrome only.
 - The early classic theme script, rightmost progressive toggle and copied asset are a shared contract across home, help, articles and error pages; host theme behavior and visual tokens live in their dedicated source files.
 

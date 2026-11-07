@@ -48,8 +48,9 @@ for(const url of ['https://optimax.alolabs.dev/','https://alo-exp.github.io/opti
 test('homepage explains useful parallel work, inspectable proof, objections and the first session in order',async()=>{
  await withBuild('https://optimax.alolabs.dev/',async output=>{
   const document=parseHTML(await readFile(join(output,'index.html'),'utf8')).document;
-  assert.equal(document.querySelector('h1').textContent,'Put the right models to work, together.');
-  assert.match(document.querySelector('.hero-deck').textContent,/quality-based model routing with safe parallel work/);
+  assert.equal(document.querySelector('h1').textContent,'Get AI work done faster and cheaper');
+  assert.equal(document.querySelector('.hero-deck').textContent,'Maximize parallelization, minimize cost');
+  assert.equal(document.querySelector('.hero-deck').nextElementSibling.textContent,'Optimax breaks work into tasks, maximizes useful parallelization, and routes each assignment by complexity and monitored subagent performance—helping you get work done faster and at lower model cost, with independent review to protect quality.');
   const visual=document.querySelector('.routing-visual');
   assert.match(visual.textContent,/independent|Independent/);assert.match(visual.textContent,/waiting/i);
   assert.match(visual.textContent,/illustrative/i);assert.ok(visual.querySelectorAll('.route-row').length>=3);
