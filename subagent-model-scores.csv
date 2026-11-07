@@ -43,3 +43,11 @@ timestamp,model_slug,reasoning_effort,score,task_complexity
 2026-11-07T16:12:35Z,gpt-6.1-sol,max,5,high
 2026-11-07T16:17:54Z,gpt-6.1-sol,max,5,medium
 2026-11-07T16:17:54Z,gpt-6.1-sol,max,5,high
+2026-11-07T17:23:32Z,gpt-6.1-sol,max,4,medium
+2026-11-07T17:33:26Z,gpt-6.1-sol,max,3,medium
+2026-11-07T17:33:26Z,gpt-6.1-sol,max,3,medium
+2026-11-07T17:33:26Z,gpt-6.1-sol,max,5,high
+2026-11-07T17:42:09Z,gpt-6.1-sol,max,5,medium
+2026-11-07T17:42:09Z,gpt-6.1-sol,max,5,medium
+2026-11-07T17:42:09Z,gpt-6.1-sol,max,4,medium
+2026-11-07T17:42:09Z,gpt-6.1-sol,max,5,medium
