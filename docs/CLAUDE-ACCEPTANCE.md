@@ -2,7 +2,7 @@
 
 Live Claude execution is authorized only from **Tuesday 10 November 2026, 14:00 Australia/Sydney** (03:00 UTC). Do not run Claude model work before this window. Static package inspection and shared controller tests are permitted now.
 
-A scheduling request was rejected by the current session's approval policy. **No automatic run is queued.** This runbook is preparation, not evidence that testing occurred or that a scheduler was installed.
+Scheduling status checked 2026-11-07: an active, one-occurrence native automation is saved for **Tuesday 10 November 2026 at 14:00 Australia/Sydney**. The host timezone was verified and the saved recurrence is limited to one run. It has not executed yet; this schedule and the static package checks do not establish live Claude acceptance. The local host and credentials must be available when the automation runs.
 
 ## Before model work
 

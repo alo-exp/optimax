@@ -21,7 +21,7 @@ In Claude Code, use:
 /plugin install optimax@alo-labs
 ```
 
-The Claude commands have been checked against documentation; live Claude acceptance is deferred. Codex plugin discovery and invocation remain unverified: the current host denied the configuration write required to register the catalog.
+The Claude commands have been checked against documentation; live Claude acceptance is deferred. The published Codex plugin passed native installation, installed-skill discovery and session control checks on CLI 0.166.0-alpha.6; see the [native acceptance record](docs/CODEX-ACCEPTANCE.md).
 
 For a standalone Codex skill, obtain a source checkout and the release's `optimax-skill.zip`, then run from the checkout root:
 
@@ -33,7 +33,7 @@ The destination defaults to `~/.codex/skills/optimax` and must not exist; use `-
 
 ## Control a session
 
-In Claude Code use `/optimax:optimax on`, `/optimax:optimax off`, or `/optimax:optimax status` to control or inspect the session. In Codex, invoke `$optimax` and supply the same options. These instructions are interpreted by the host; Codex plugin discovery and invocation still require live acceptance, and Claude live acceptance is deferred. Installation alone does not enable the policy.
+In Claude Code use `/optimax:optimax on`, `/optimax:optimax off`, or `/optimax:optimax status` to control or inspect the session. In Codex, invoke `$optimax` and supply the same options. Native Codex installation, discovery and session controls passed on the tested client; Claude live acceptance is deferred. Installation alone does not enable the policy.
 
 The controller uses `PROJECTROOT/model-perf/<actual-user-id>-model-perf.csv`, where the project root is the canonical primary checkout and the user ID is a stable, verified identity. The rename does not reset or migrate learning: the historical `optimal-ultra-ladder-v1`, `v2`, and `v3` identifiers, lineage, events, and epochs remain intact. Keep project ledgers private.
 
@@ -43,7 +43,7 @@ Optimax provides instructions and a deterministic controller; it cannot guarante
 
 Run `python3 -m unittest discover -s tests` for the local suite. Build allowlisted, deterministic skill and plugin archives with `python3 build_release.py --output dist`. The archives exclude project ledgers, caches, tests, and session reports. Live host discovery, control behavior, and published catalog resolution are separate acceptance gates.
 
-The current [verification report](docs/VERIFICATION.md) separates passing core/artifact checks from blocked native installation, browser and public-access gates. Claude model execution is deferred until Tuesday 10 November 2026 at 14:00 Australia/Sydney; the [acceptance runbook](docs/CLAUDE-ACCEPTANCE.md) is prepared, but the restricted session could not queue an automation.
+The current [verification report](docs/VERIFICATION.md) separates passing core, artifact, native Codex and public deployment checks from outstanding rendered-browser, custom-domain and native Ultra/compaction coverage. Claude execution is deferred until Tuesday 10 November 2026 at 14:00 Australia/Sydney; a one-occurrence automation is saved to run the [acceptance runbook](docs/CLAUDE-ACCEPTANCE.md). It has not executed yet.
 
 The website source is in [site/](site/) and its design system is documented in [site/DESIGN-SYSTEM.md](site/DESIGN-SYSTEM.md). From `site/`, run `npm ci`, `npm test`, and `npm run build` to install the locked dependencies, test, and build the site.
 

@@ -10,14 +10,15 @@ Checked 2026-11-07. Plugin release v0.1.0 has a verified shared controller and d
 | Standalone skill | Official skill validator passed on fresh extraction | Passed |
 | Release contents | 14 standalone and 17 plugin files match canonical source; no personal ledger, tests, caches or session reports | Passed |
 | Installed controller | Fresh install, no-overwrite, disabled status, explicit/idempotent on, off, recovery, malformed native context and disabled preparation checks | Passed in disposable fixtures |
-| Codex direct helper path | Actual Advisor/Executor collaboration calls used the controller before and after rename; an actual Codex helper independently checked the extracted artifacts | Passed for explicitly loaded skill; not registered-plugin discovery |
-| Codex native plugin registry and CLI frontend | Registration cannot write the host marketplace cache and the in-process app-server cannot initialize; both remain denied after the Full Access setting change | Blocked; not claimed verified |
+| Codex direct helper path | Real prepared Advisor/Executor calls used the controller before and after rename; native runtime banners independently establish exact model/effort | Passed for observed direct executions |
+| Codex native plugin registry and CLI frontend | Global v0.1.0 installed/enabled from the pinned unified catalog; actual CLI 0.166.0-alpha.6 discovered its installed skill and passed on/off, idempotence and same-ID process recovery | Passed on tested client; unrelated settings preserved |
 | Claude package | JSON manifests, layout, component paths, namespace and shared Claude ladder/controller cases checked independently | Static checks passed |
 | Claude live execution / Ultracode | Not invoked before the authorized quota-reset window | Deferred to Tuesday 10 November 2026, 14:00 Australia/Sydney |
 | Website rendering and live interaction | Built-in browser unavailable: Mac locked and browser use disabled | Unverified |
 | Public website access | Public deployment succeeded at https://optimax-alo-labs.tonedion1.chatgpt.site; all 26 built public routes/assets returned HTTP 200, including the 36-entry search index | Passed |
 | Custom domain | optimax.alolabs.dev is attached to the host and awaits one CNAME plus two TXT records; Cloudflare's saved login is expired and the browser is unavailable | Pending DNS/SSL; not live yet |
-| Tuesday automation | Scheduling tool rejected creation because approval policy is never | Not scheduled; runbook prepared |
+| Tuesday automation | Active one-occurrence heartbeat saved for Tuesday 10 November 2026 at 14:00 on the verified Australia/Sydney host timezone (03:00 UTC) | Scheduled; not executed yet |
+| Fresh Codex session | A second real native Terra Low session discovered the plugin and returned disabled status under its distinct actual thread ID; fixture ledger hash unchanged | Passed; not a compaction test |
 
 Publication evidence: signed plugin commit [`54540db`](https://github.com/alo-exp/optimax/commit/54540db3ea74374677438995d9fce83b58e1441d), signed tag and [v0.1.0 preview release](https://github.com/alo-exp/optimax/releases/tag/v0.1.0); signed marketplace commit [`bd142cc`](https://github.com/alo-labs/agent-plugins/commit/bd142ccb3ecb5c0bb0572aedc5be76666a97c842). Both catalogs pin the tested source SHA. GitHub-reported asset digests match the table below. The live website was built from Sites source commit `cfde56ea43d98fa3e4b99245051f802881d74d66` and published as version 1. Browser rendering remains unverified; HTTP and DOM checks do not substitute for it.
 
@@ -49,4 +50,4 @@ Observed red→green regressions covered the renamed archive contract, included 
 
 The private runtime ledger remains per project/user under model-perf/ and is excluded from the public repository and archives. A public rename did not rewrite optimal-ultra-ladder-v1/v2/v3 policy identities, epochs or existing event history. Tests that simulate quality scores or native context do not establish real helper execution or real Ultra/Ultracode access.
 
-See [the deferred Claude runbook](CLAUDE-ACCEPTANCE.md). No scheduler was installed by that document. Update qualification claims only from observed host evidence.
+See the [native Codex acceptance record](CODEX-ACCEPTANCE.md) and [deferred Claude runbook](CLAUDE-ACCEPTANCE.md). The Claude automation is scheduled but has not executed. Update qualification claims only from observed host evidence.

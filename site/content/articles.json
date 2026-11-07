@@ -81,7 +81,7 @@
           "heading": "Verify before relying on it",
           "paragraphs": [
             "After installation, start a session and invoke $optimax on in Codex or /optimax:optimax on in Claude; use the corresponding status command to check the reported mode. Discovery and behavior depend on the release and host capabilities.",
-            "The shared controller and packaged skill checks passed. Native Codex plugin registration and its CLI frontend could not be qualified in the restricted build environment. Claude has static validation only; live qualification is deferred until 10 November 2026 at 14:00 Australia/Sydney. If an invocation is unavailable, check the marketplace, plugin name, host version and discovery state. Installation does not guarantee access to every model."
+            "The published Codex plugin passed live installation, discovery, session controls and a fresh-session status check on the tested client. Native Ultra and compaction behavior remain outside that evidence. Claude has static validation only; a one-off live acceptance run is scheduled for 10 November 2026 at 14:00 Australia/Sydney. If an invocation is unavailable, check the marketplace, plugin name, host version and discovery state. Installation does not guarantee access to every model."
           ]
         }
       ]
