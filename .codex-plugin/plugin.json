@@ -1,0 +1,7 @@
+{
+  "name": "optimax",
+  "version": "0.1.0",
+  "description": "Ālo Labs optimizes delegated model selection with independently assessed results.",
+  "author": {"name": "Shafqat Ullah"},
+  "skills": "./skills/"
+}

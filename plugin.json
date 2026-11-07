@@ -1,0 +1,11 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "optimax",
+  "version": "0.1.0",
+  "description": "Ālo Labs optimizes delegated model selection with independently assessed results.",
+  "author": {"name": "Shafqat Ullah", "url": "https://alolabs.dev"},
+  "homepage": "https://optimax.alolabs.dev",
+  "repository": "https://github.com/alo-exp/optimax",
+  "license": "MIT",
+  "keywords": ["agents", "model-selection", "orchestration"]
+}

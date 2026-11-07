@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.zip
+*.skill
+
+model-perf/
+dist/
+node_modules/
+EXECUTOR-LADDER-PROPOSAL.md
+VALIDATION.md
+# INSTALL.md is public; legacy private session reports below remain excluded.
+PLUGIN-RECOMMENDATION.md
+NATIVE-SYNERGY-WORK-BREAKDOWN.md
+NATIVE-MODE-AUDIT.md
+WORK-BREAKDOWN.md

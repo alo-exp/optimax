@@ -1,0 +1,47 @@
+# Native orchestration and the policy controller
+
+Optimax controls the assignments it prepares and verifies. Native orchestration supplies execution mechanics; it does not supply this policy's persistent scores, mandatory Advisor consultation, or ladders. Keep the user's chosen Orchestrator and existing native settings. Enabling or disabling this skill never enables or disables a host feature.
+
+## Supported boundary
+
+For every controlled stage, obtain a controller preparation contract before dispatch, set that stage's exact model and effort through the actual supported helper interface, and retain an effective runtime receipt afterward. Match the receipt to the prepared run and independently review the output before assessing it. Requested settings, a successful tool call, a model alias, or a native-mode label alone do not establish the actual execution settings.
+
+The modes are `direct`, `codex-ultra`, and `claude-ultracode`. These labels attribute a prepared stage; they do not activate a native feature. Record separately whether the native feature is active, who owns execution of the stage, and which dispatch route is used. Direct fallback is not full native integration. Inspect the current tool schema and capability listing. Never invent Workflow fields, assume an undocumented universal hook, edit host-wide settings, or promise interception of every internal worker. If a native runtime's internal workers cannot be selected and verified, report them as outside policy control and exclude them from score learning.
+
+The bundled `scripts/native_dispatch.py` prepares schema-checked launch arguments without invoking a tool:
+
+```sh
+python3 /path/to/optimax/scripts/native_dispatch.py /path/to/dispatch-request.json
+```
+
+Its request contains `reservation` (the controller's returned contract), `brief` (the self-contained assignment), `route`, and verified `capabilities`. Supported routes are `codex-spawn` and `claude-agent`. The flat `claude-workflow` route is unsupported: [WorkflowInput](https://code.claude.com/docs/en/agent-sdk/typescript#workflow) specifies script/name/scriptPath/args rather than flat model/effort/prompt arguments. Capability input supplies `schema_verified: true`, the actual `tool` name, `allowed_arguments`, `required_arguments`, `argument_map`, `supported_models`, and `supported_efforts`. Add `static_arguments` for actual required fields beyond the mapped model/effort/prompt, such as Codex `task_name`; these fields must be allowed, cannot override mapped arguments, and must cover the schema's remaining required keys. Claude mappings can include verified `model_aliases`; Codex requires exact model IDs and uses `model`, `reasoning_effort`, `message`, and `fork_turns: "none"`. Require `effective_settings_verified: true`, `effective_model_id`, and `effective_effort` matching the reservation after checking precedence. These are caller assertions, not provider authentication. Do not declare schema verification without inspecting that actual interface.
+
+The returned object names the `route`, `tool`, checked `arguments`, and `provenance` linking run/epoch/role/requested settings. Call that actual tool with the checked arguments through the host, then obtain its real receipt. `validate_receipt(reservation, receipt)` checks matching run/epoch/requested settings plus effective model/effort and distinct execution ID. This is a consistency check, not provider authentication. A missing supported effort argument is a blocker requiring direct-helper fallback.
+
+## Controller bridge and staged execution
+
+The host/controller runs Python and filesystem operations outside a restricted workflow runtime. A Workflow JavaScript environment may not import Python, Node filesystem APIs, or this package. Prepare individually controlled stages only when the runtime provides real return, root acceptance, and resume boundaries. An opaque native subtree is one WBS stage; native internal steps remain free to run, and root acceptance unlocks downstream work. Never duplicate that subtree through direct helpers. The controller prepares one run at a time. Independent preparations can share a reviewed snapshot when no intervening assessment changes the relevant track; retain each returned run ID and epoch rather than pretending the package has a batch API.
+
+Dispatch independent controlled stages in parallel only after preparation and within independently verified capacity. Unknown native occupancy is unknown, not zero; avoid competing direct fan-out unless disjoint capacity is independently verified. Keep each stage's model/effort explicit and match output plus effective receipt to its own run. Collect outputs and receipts, then send them back to one Orchestrator/controller for independent review and serialized assessment. A transition caused by those assessments applies to subsequent preparation. Already prepared/in-flight runs retain their original epochs; late results cannot advance a new epoch.
+
+Before the root finalizes any plan/design or material replan, including Low-task planning, run the selected Advisor as a separate controlled stage and independently inspect its recommendation. Low-task planning uses the Medium advice baseline; routine Low execution has no Advisor stage. Other consultations are as needed for Medium-or-higher contexts. Bind advice level and floor to each prepared run; Super High does not add an Executor tier or separate Advisor score track. Executor planning evidence and the lead Orchestrator's own reasoning cannot replace consultation. A leaf may reason locally about implementing its bounded brief without recursively invoking an Advisor. If an eligible Advisor cannot run, continue independent authorized discovery and leave the dependent decision unfinalized unless the user grants an exception.
+
+When a native stage supplies task complexity or `needed: true`, its Advisor preparation must also supply a purpose so the controller can apply the consultation gate. `needed` always requires a boolean. An advice-level-only stage is a trusted-host path: the host must establish consultation need before preparation; an accepted reservation alone does not prove that the gate was evaluated against task context.
+
+For iterative/native workflows, prepare new runs when stage inputs or settings require a new execution. A replay using a cached execution result is evidence reuse, not a new eligible result. Do not generate a new execution ID for a cached result to make it count again. Failed settings validation requires a compatible direct helper or an explicit capability blocker, never an invented receipt.
+
+## Claude Ultracode
+
+Ultracode is Claude Code's native dynamic-workflow mechanism; Ultra is a subscription name and ultrathink is a one-turn reasoning request. They are separate concepts. The reference checked 2026-11-07 describes `/effort ultracode` as enabling session orchestration without changing effort, while CLI `--effort ultracode` enables it with `xhigh`; an environment effort override can affect effective settings. These dated observations explain compatibility; they are not instructions to alter the user's session. See the [official model configuration reference](https://code.claude.com/docs/en/model-config#adjust-effort-level).
+
+Actual per-stage model and effort support and receipt visibility must be established from the live client's schema and metadata. Use the [official workflow reference](https://code.claude.com/docs/en/workflows) and [Agent SDK cookbook](https://platform.claude.com/cookbook/claude-agent-sdk-08-dynamic-workflows) to inspect the host you are using. If that interface cannot set and verify the policy's required effort for a stage, use a supported direct helper. Do not infer that an explicit model also supplies the required effort.
+
+Workflow replay and completed-result reuse do not establish a new execution or uninterrupted work after exit. Resume according to the native runtime's rules, retain original attribution for reused results, and prepare changed/failed stages as new controlled runs when they execute again. Native hidden workers remain excluded even when surrounding workflow stages are controlled.
+
+## Codex native orchestration
+
+A Codex surface's Ultra or other native orchestration label is not proof of a standard controllable interface. ChatGPT Ultra proactive delegation differs from local Codex, where delegation follows explicit requests or project/skill instructions. The [Codex multi-agent documentation](https://developers.openai.com/codex/multi-agent/) describes custom agent TOML, explicit spawn overrides, and inherited skills. Discover the tools actually exposed. When supported, launch a fresh helper with explicit exact `model` and `reasoning_effort`; use a self-contained brief where inherited forks reject overrides. If the native scheduler does not expose per-worker controls or effective receipts, use the supported direct helper path for controlled Executor/Advisor stages and report the native coverage boundary.
+
+## Live acceptance
+
+Static adapter tests, validated contracts, recorded ledger events, and hypothetical workflows establish only those tested boundaries. Live acceptance requires a real accessible helper API, observed selected model/effective effort, distinct execution receipt, actual output review, persisted assessment, and a later preparation showing the restored state. Report exactly which host and mode were exercised. No live Claude Ultracode integration is proven merely by this document or by a synthetic receipt.

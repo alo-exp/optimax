@@ -1,0 +1,508 @@
+{
+  "articles": [
+    {
+      "slug": "what-is-optimax",
+      "title": "What Optimax does",
+      "category": "Getting Started",
+      "description": "Understand the roles, scope, and boundaries of Optimax.",
+      "keywords": [
+        "overview",
+        "orchestrator",
+        "advisor",
+        "executor"
+      ],
+      "sections": [
+        {
+          "heading": "A routing policy for delegated work",
+          "paragraphs": [
+            "Optimax helps an Orchestrator select and assess models for delegated work. It keeps your chosen session model in charge while using separate Executor and Advisor ladders for different jobs.",
+            "The Orchestrator owns the plan, integrates results, checks evidence independently, and decides whether work is accepted. An Executor performs a bounded assignment; an Advisor offers an independent recommendation on a plan, design, or difficult decision."
+          ]
+        },
+        {
+          "heading": "What to expect",
+          "paragraphs": [
+            "Optimax uses available host capabilities and recorded assessments to select eligible model and effort combinations. Access, aliases, and per-helper controls vary by host, so a selection is only as reliable as the capabilities the host can verify.",
+            "It does not grant permission to publish, install software, spend money, change your Orchestrator, or modify native settings. A high score is not proof that the overall task is complete."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "install-optimax",
+      "title": "Install Optimax",
+      "category": "Getting Started",
+      "description": "Find the Optimax plugin and prepare your host for its first session.",
+      "keywords": [
+        "install",
+        "catalog",
+        "Codex",
+        "Claude"
+      ],
+      "sections": [
+        {
+          "heading": "Before you install",
+          "paragraphs": [
+            "These steps apply once the Optimax release is published in the alo-labs/agent-plugins catalog. Catalog publication is pending; installation may fail until the release is available.",
+            "Installation makes Optimax available but does not enable its session policy. The canonical skill directory in the source repository is skills/optimax."
+          ],
+          "links": [
+            {
+              "label": "Optimax repository",
+              "href": "https://github.com/alo-exp/optimax"
+            },
+            {
+              "label": "Plugin catalog",
+              "href": "https://github.com/alo-labs/agent-plugins"
+            }
+          ]
+        },
+        {
+          "heading": "Install in Codex",
+          "paragraphs": [
+            "In a terminal, add the marketplace, install Optimax from the Codex catalog, and list installed plugins to check discovery. Run these commands in order:"
+          ],
+          "code": {
+            "language": "shell",
+            "text": "codex plugin marketplace add alo-labs/agent-plugins\ncodex plugin add optimax@alo-labs-codex\ncodex plugin list --json"
+          }
+        },
+        {
+          "heading": "Install in Claude",
+          "paragraphs": [
+            "In Claude, add the marketplace and install Optimax using the plugin commands below. Refresh or restart discovery if it does not appear."
+          ],
+          "code": {
+            "language": "text",
+            "text": "/plugin marketplace add alo-labs/agent-plugins\n/plugin install optimax@alo-labs"
+          }
+        },
+        {
+          "heading": "Verify before relying on it",
+          "paragraphs": [
+            "After installation, start a session and invoke $optimax on in Codex or /optimax:optimax on in Claude; use the corresponding status command to check the reported mode. Discovery and behavior depend on the release and host capabilities.",
+            "Codex catalog registration and live qualification are pending. Claude has static validation only; live qualification is to follow 10 November 2026 at 14:00 Sydney time. If an invocation is unavailable, check the marketplace, plugin name, host version, and discovery state. Installation does not guarantee access to every model."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "first-session",
+      "title": "Start your first session",
+      "category": "Getting Started",
+      "description": "Enable Optimax, check its recommendation, and establish project context.",
+      "keywords": [
+        "first session",
+        "enable",
+        "recommendation",
+        "identity"
+      ],
+      "sections": [
+        {
+          "heading": "Enable the policy",
+          "paragraphs": [
+            "Invoke $optimax in Codex or /optimax:optimax in Claude. A bare invocation enables Optimax in the current trusted session; append on to explicitly enable it. An explicit invocation in a later session enables that session as well.",
+            "On each explicit enable, Optimax recommends an Orchestrator model and effort. It does not change your current selection. If native orchestration is active or its state is unknown, it preserves verified current settings and presents the ordinary recommendation as a baseline. The following examples are entered in their respective hosts."
+          ],
+          "code": {
+            "language": "text",
+            "text": "Codex:  $optimax on\nClaude: /optimax:optimax on"
+          }
+        },
+        {
+          "heading": "Provide enough context",
+          "paragraphs": [
+            "Work from the intended project root and use a stable actual user identity. The project ledger is model-perf/<actual-user-id>-model-perf.csv; replace the placeholder with your own stable identifier, not a shared example value.",
+            "Optimax should recover existing work and applicable evidence, discover supported model and effort pairs, and report limits it cannot verify. If identity or storage is unavailable, it must not invent performance history."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "session-controls",
+      "title": "Turn Optimax on or off",
+      "category": "Controls",
+      "description": "Use explicit session controls and understand what they change.",
+      "keywords": [
+        "on",
+        "off",
+        "status",
+        "disable"
+      ],
+      "sections": [
+        {
+          "heading": "Use the session commands",
+          "paragraphs": [
+            "Use $optimax on, $optimax off, or $optimax status in Codex. In Claude, use /optimax:optimax on, /optimax:optimax off, or /optimax:optimax status. A bare invocation also enables the policy and gives the Orchestrator recommendation.",
+            "Status reports the mode and known limitations. Status and off do not trigger an enabling recommendation. Simply making the skill available or implicitly loading it must not override a persisted off state. Enter the appropriate command in its host:"
+          ],
+          "code": {
+            "language": "text",
+            "text": "Codex:  $optimax on\n        $optimax off\n        $optimax status\n\nClaude: /optimax:optimax on\n        /optimax:optimax off\n        /optimax:optimax status"
+          }
+        },
+        {
+          "heading": "What off means",
+          "paragraphs": [
+            "While off, Optimax stops policy-driven dispatch, required Advisor consultation, and score learning for the session. Useful work already in flight can finish safely, and existing evidence remains available.",
+            "Work completed while off must not be silently added as learned scores. Turning Optimax off does not uninstall the plugin, toggle the host's native orchestration, change the chosen Orchestrator, or delete the ledger."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "roles-and-responsibilities",
+      "title": "Orchestrator, Executor, and Advisor",
+      "category": "Model Routing",
+      "description": "See how the three roles cooperate and who owns the final decision.",
+      "keywords": [
+        "roles",
+        "review",
+        "acceptance"
+      ],
+      "sections": [
+        {
+          "heading": "Separate execution from advice",
+          "paragraphs": [
+            "The Orchestrator keeps ownership of the user's outcome and delegates a bounded task to an Executor. An Advisor separately examines a planning, design, or difficult-problem brief and recommends a course of action; its advisory run does not implement its own recommendation.",
+            "Each brief should identify the outcome, scope, constraints, relevant evidence, and expected checks. An Executor's output can inform a decision but does not replace the required separate Advisor consultation."
+          ]
+        },
+        {
+          "heading": "Independent acceptance",
+          "paragraphs": [
+            "The Orchestrator reviews the actual output and evidence, tests assumptions, resolves disagreements, and accepts or requests rework. A helper's self-report is not independent verification.",
+            "Advisors and Executors have separate performance histories even when they use the same model and effort. Advice remains provisional when its outcome cannot be verified."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "executor-ladders",
+      "title": "How Executor ladders work",
+      "category": "Model Routing",
+      "description": "Compare the Executor tiers, their starting points, and their exact progressions.",
+      "keywords": [
+        "executor",
+        "low",
+        "medium",
+        "high",
+        "ladder"
+      ],
+      "sections": [
+        {
+          "heading": "Classify the assignment",
+          "paragraphs": [
+            "Classify each bounded Executor assignment by its own complexity. Low is localized with explicit behavior and few dependencies; medium involves connected decisions or investigation; high involves substantial uncertainty, interacting invariants, or consequential failure modes.",
+            "The tier sets a starting rung and a floor. Performance can move a selection up or down within the eligible suffix, but it cannot lower it below that tier's floor."
+          ]
+        },
+        {
+          "heading": "Claude progression",
+          "paragraphs": [
+            "Low: Haiku High → Haiku XHigh → Haiku Max → Sonnet High → Opus Medium → Opus High.",
+            "Medium: Haiku Max → Sonnet High → Opus Medium → Opus High. High: Sonnet High → Opus Medium → Opus High."
+          ]
+        },
+        {
+          "heading": "Codex progression",
+          "paragraphs": [
+            "Low: Terra Low → Terra Medium → Terra High → Sol Medium → Sol High → Sol XHigh → Sol Max.",
+            "Medium: Terra Medium → Terra High → Sol Medium → Sol High → Sol XHigh → Sol Max. High: Terra High → Sol Medium → Sol High → Sol XHigh → Sol Max.",
+            "A separate business document exception currently applies to final PDF, Word, PowerPoint, Google Docs, and Slides generation: its floor is Claude Opus Medium or Codex Sol XHigh. Research and drafting that feed an artifact use ordinary tiers. Availability must be checked on the host."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "advisor-ladder",
+      "title": "How Advisor selection works",
+      "category": "Model Routing",
+      "description": "Understand Advisor context floors and why they are not Executor tiers.",
+      "keywords": [
+        "advisor",
+        "medium",
+        "high",
+        "super high",
+        "floor"
+      ],
+      "sections": [
+        {
+          "heading": "One track per host",
+          "paragraphs": [
+            "The Advisor has one performance track per host, with no complexity tier. The consultation context establishes a minimum rung: Medium is rung 0, High is rung 1, and Super High is rung 2.",
+            "For Claude the ladder is Opus Medium → Opus High → Opus XHigh. For Codex it is Sol XHigh → Sol Max → Astra Max. The selected Advisor can move with independent assessments, subject to the current consultation floor."
+          ]
+        },
+        {
+          "heading": "When context changes",
+          "paragraphs": [
+            "A higher context raises a selection that is below its floor. Lowering context alone does not demote an already selected Advisor. A context change that leaves the rung unchanged also preserves the current epoch and window.",
+            "Model availability and per-helper controls must be verified. If no eligible Advisor can be invoked, Optimax reports the blocker and leaves the dependent plan or design unfinalized unless you explicitly grant an exception."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "planning-and-advice",
+      "title": "When Optimax consults an Advisor",
+      "category": "Model Routing",
+      "description": "Learn when separate advice is required and how the Orchestrator uses it.",
+      "keywords": [
+        "planning",
+        "design",
+        "consultation",
+        "replan"
+      ],
+      "sections": [
+        {
+          "heading": "Plans and designs",
+          "paragraphs": [
+            "The root Orchestrator consults a separately invoked eligible Advisor before finalizing every plan or design, including a Low task plan, material replanning, and substantive design changes. Low-task planning uses the Medium advice baseline.",
+            "A bounded leaf can reason locally about its implementation without recursively spawning another Advisor. Reuse advice when its premises still apply; changed premises call for fresh consultation."
+          ]
+        },
+        {
+          "heading": "Outside planning",
+          "paragraphs": [
+            "For medium-or-higher issues, consultation is used as needed when uncertainty remains, evidence conflicts, repairs repeatedly fail, or a consequential decision cannot be assessed confidently. Routine Low execution does not require it.",
+            "A useful advice brief contains the objective, constraints, raw evidence, alternatives or open questions, and the requested recommendation with assumptions, tradeoffs, failure modes, and checks. The Orchestrator evaluates the advice and owns the decision."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "native-orchestration",
+      "title": "Use Optimax with native orchestration",
+      "category": "Native Modes",
+      "description": "Understand how Optimax works alongside host-managed orchestration.",
+      "keywords": [
+        "native",
+        "orchestration",
+        "settings",
+        "hidden workers"
+      ],
+      "sections": [
+        {
+          "heading": "Keep host settings intact",
+          "paragraphs": [
+            "Optimax is a policy for the work it can observe and control. It preserves the selected Orchestrator, its model and effort, and native orchestration settings. Enabling or disabling Optimax is separate from changing a host's native mode.",
+            "Discover the host's current state and supported per-helper controls before choosing a model. When native state or current settings cannot be verified, preserve settings and report the uncertainty."
+          ]
+        },
+        {
+          "heading": "Visible and opaque work",
+          "paragraphs": [
+            "Use one execution owner for each bounded stage. Do not duplicate a native subtree with competing direct assignments. Controllable stages can be prepared and assessed when their effective model and effort are verified.",
+            "Opaque native workers cannot be individually scored as though their identities and outputs were known. In that case optimization is partial, and the Orchestrator still checks the resulting work and acceptance evidence."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "native-capabilities",
+      "title": "Check host capabilities and capacity",
+      "category": "Native Modes",
+      "description": "Interpret model aliases, launch receipts, and available helper capacity.",
+      "keywords": [
+        "capabilities",
+        "aliases",
+        "receipts",
+        "capacity"
+      ],
+      "sections": [
+        {
+          "heading": "Check effective settings",
+          "paragraphs": [
+            "A model family name or requested alias is not proof of the model and effort actually used. Check the host's supported combinations and launch receipt or other reliable evidence of effective settings. Resolve available versions within the prescribed family rather than silently substituting a different family.",
+            "If a rung is unsupported, Optimax can skip upward to an available rung as a capability fallback. That is not a performance promotion. Changes in exact version or capability fallback start a fresh performance epoch."
+          ]
+        },
+        {
+          "heading": "Capacity is not guaranteed",
+          "paragraphs": [
+            "Use independently verified available slots for useful ready work, accounting for advice, review, rework, and exclusive resources. If available capacity is unknown, report the uncertainty instead of claiming a maximum or fabricating a launch.",
+            "A readiness calculation is a plan, not evidence that the host dispatched tasks. Unsupported flat Workflow paths are not a substitute for a verified native integration."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "performance-learning",
+      "title": "How performance learning works",
+      "category": "Performance",
+      "description": "Understand scoring, five-run windows, and movement between rungs.",
+      "keywords": [
+        "scores",
+        "assessment",
+        "promotion",
+        "demotion",
+        "five"
+      ],
+      "sections": [
+        {
+          "heading": "Score verified outcomes",
+          "paragraphs": [
+            "Each eligible run is independently assessed on a 0–5 scale against its assignment and evidence. The newest five eligible assessments in the same track and epoch form the decision window, ordered by UTC assessment time with append order breaking ties.",
+            "Executor tracks are separated by host, role, tier, exact model, effort, and epoch. Advisor tracks use the same separation without an Executor tier. Old-epoch results and unrelated runs do not count toward a current window."
+          ]
+        },
+        {
+          "heading": "Move only when evidence permits",
+          "paragraphs": [
+            "After at least five eligible assessments, an average of 4.5 or lower moves up one available rung. Five scores of 5 move down one available rung, subject to the Executor tier floor or current Advisor context floor. Otherwise the selection stays.",
+            "A rung change, exact version change, capability fallback, or changed role-policy lineage starts a fresh epoch. A return to an earlier rung also starts fresh. At the ceiling, improve the task decomposition, inputs, or verification instead of lowering the quality bar."
+          ]
+        },
+        {
+          "heading": "A score is not acceptance",
+          "paragraphs": [
+            "A defect in an individual result still requires bounded rework regardless of the average. The Orchestrator checks actual artifacts and evidence and distinguishes a test written from a test observed passing, deployment, and live acceptance."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "performance-ledger",
+      "title": "Your project performance ledger",
+      "category": "Performance",
+      "description": "Locate and preserve the per-user record used for learning.",
+      "keywords": [
+        "ledger",
+        "CSV",
+        "identity",
+        "history",
+        "privacy"
+      ],
+      "sections": [
+        {
+          "heading": "Where the record lives",
+          "paragraphs": [
+            "Optimax uses PROJECTROOT/model-perf/<actual-user-id>-model-perf.csv. PROJECTROOT is the canonical primary project root and the placeholder represents your actual stable user identity. Separate users should not be assigned a shared example identifier.",
+            "The ledger records attributable launch and assessment metadata needed to recover tracks, selections, and epochs. A historical five-column CSV or session memory alone cannot establish complete continuity."
+          ]
+        },
+        {
+          "heading": "Preserve history",
+          "paragraphs": [
+            "Keep the ledger when updating, disabling, or reinstalling Optimax. Do not silently reinterpret historical rung indices or invent an old average when attribution is missing; preserve the record and begin a fresh window as needed.",
+            "Treat the ledger as project data: review what is stored and who can access it under your project's normal controls. The controller uses supplied evidence; it does not authenticate identities or independently verify provider claims."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "control-orchestrator",
+      "title": "Understand Orchestrator recommendations",
+      "category": "Controls",
+      "description": "See how recommendations relate to your selected model and native settings.",
+      "keywords": [
+        "recommendation",
+        "orchestrator",
+        "model",
+        "effort"
+      ],
+      "sections": [
+        {
+          "heading": "Recommendations on enable",
+          "paragraphs": [
+            "An explicit bare invocation or on produces a recommendation even if Optimax was already enabled. For a Low task the ordinary recommendation is Claude Haiku XHigh or Codex Terra Medium; for other tasks it is Claude Sonnet High or Codex Terra High. If the level is unknown, the recommendation uses and discloses a conservative non-Low assumption.",
+            "If the current selection already matches, Optimax can say the recommendation is met. It never switches the model or effort on your behalf."
+          ]
+        },
+        {
+          "heading": "When native state is uncertain",
+          "paragraphs": [
+            "The host must discover native state and the current model and effort before making a safe recommendation. With native orchestration active or unknown, preserve verified current settings and show the ordinary recommendation as a baseline.",
+            "If those facts cannot be established, Optimax should say that a safe switch cannot be recommended and preserve the settings. Status and off do not issue the enable recommendation."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "missing-models",
+      "title": "Troubleshoot missing or unsupported models",
+      "category": "Troubleshooting",
+      "description": "Resolve discovery and capability gaps without fabricating a selection.",
+      "keywords": [
+        "missing model",
+        "unsupported",
+        "alias",
+        "fallback"
+      ],
+      "sections": [
+        {
+          "heading": "Check what the host exposes",
+          "paragraphs": [
+            "Confirm the installed plugin and host discovery, then check whether the desired model family and effort can actually be selected for a helper. A provider's model name, alias, or a requested setting alone does not establish the effective launch.",
+            "Use an available supported rung above the intended one when the policy permits, and record the capability fallback separately from a performance change. Do not silently substitute another family."
+          ]
+        },
+        {
+          "heading": "When there is no eligible path",
+          "paragraphs": [
+            "Report the exact missing capability or access and continue independent authorized work. If a required Advisor is unavailable, the dependent plan or design stays unfinalized unless you explicitly permit an exception.",
+            "Do not treat an unsupported flat Workflow path as a working native integration, or score hidden workers without attributable evidence."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "learning-not-changing",
+      "title": "Troubleshoot a score that did not change routing",
+      "category": "Troubleshooting",
+      "description": "Check eligibility, epochs, floors, and off-session behavior.",
+      "keywords": [
+        "score",
+        "no change",
+        "epoch",
+        "off",
+        "cached"
+      ],
+      "sections": [
+        {
+          "heading": "Check the assessment window",
+          "paragraphs": [
+            "A routing change needs five eligible independently assessed runs in the same current track and epoch. Check the host, role, exact model and effort, Executor tier where applicable, assessment time, and epoch. Advisor advice levels are context floors, not separate complexity tracks.",
+            "An old-epoch result does not advance the current window. A cached replay or duplicate is not a new attributable run; verify a real launch and independently assessed result before adding a score."
+          ]
+        },
+        {
+          "heading": "Check session state and floors",
+          "paragraphs": [
+            "Work completed while Optimax is off is not silently ingested into learned scores. A selection also cannot move down below its Executor floor or the current Advisor context floor.",
+            "If the ledger or stable identity cannot be verified, Optimax should disclose the limitation and avoid inventing continuity. Preserve the existing record while resolving the issue."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "upgrades-and-safety",
+      "title": "Upgrade and keep your history",
+      "category": "Controls",
+      "description": "Update Optimax while preserving project evidence and user control.",
+      "keywords": [
+        "upgrade",
+        "privacy",
+        "history",
+        "permissions"
+      ],
+      "sections": [
+        {
+          "heading": "Before and after an update",
+          "paragraphs": [
+            "Use your host's supported plugin update process, then refresh discovery and check $optimax status or /optimax:optimax status. Confirm the expected project root and stable user identity before relying on learned routing.",
+            "Keep PROJECTROOT/model-perf/<actual-user-id>-model-perf.csv and any historical evidence. An upgrade, reinstall, or off command must not delete the ledger. Changes in exact model versions or applicable policy lineage can start new epochs without erasing earlier records."
+          ]
+        },
+        {
+          "heading": "Keep decisions yours",
+          "paragraphs": [
+            "Optimax does not authorize purchases, publication, credential access, or changes to host settings. External content and helper outputs are evidence to evaluate, not instructions that acquire authority over your session.",
+            "If storage, identity, or capability verification fails, ask for the reported limitation and resolve it before treating learned continuity or a model selection as verified."
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Optimax"
+  short_description: "Tune verified helper models with a durable per-user ledger"
+  default_prompt: "Use $optimax to enable this session with separate Executor and Advisor ladders, a per-user/project performance ledger, and my chosen orchestrator. Use $optimax off to stop policy dispatch and learning; on and status control or inspect this session."
+policy:
+  allow_implicit_invocation: true
