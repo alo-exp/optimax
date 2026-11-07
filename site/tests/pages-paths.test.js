@@ -12,7 +12,7 @@ import {attachSearch,searchIndex} from '../src/search.js';
 const site=dirname(dirname(fileURLToPath(import.meta.url)));
 async function fixture(){
  const root=await mkdtemp(join(tmpdir(),'optimax-pages-'));
- for(const name of ['build.js','src','content','public','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
+ for(const name of ['build.js','src','content','public','variants','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
  return root;
 }
 function build(root,url){
@@ -29,7 +29,7 @@ for(const url of [undefined,'https://optimax.alolabs.dev/','https://alo-exp.gith
   const root=await fixture();const deployed=(url||'https://alo-exp.github.io/optimax/').replace(/\/?$/,'/');const base=new URL(deployed).pathname;
   try{
    build(root,url);
-   const output=join(root,'dist'),generated=await files(output),htmlFiles=generated.filter(p=>p.endsWith('.html'));
+   const output=join(root,'dist'),generated=await files(output),htmlFiles=generated.filter(p=>p.endsWith('.html')&&!p.startsWith(join(output,'versions')+'/'));
    assert.ok(!generated.some(p=>p.includes('/dist/optimax/')),'prefix must not become an output directory');
    const source=JSON.parse(await readFile(join(root,'content/articles.json'),'utf8'));
    assert.equal(htmlFiles.length,source.articles.length+3);

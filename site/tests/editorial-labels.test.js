@@ -11,7 +11,7 @@ const site=dirname(dirname(fileURLToPath(import.meta.url)));
 test('editorial metadata keeps its wording without decorative numbering and preserves meaningful IDs',async()=>{
  const root=await mkdtemp(join(tmpdir(),'optimax-labels-'));
  try{
-  for(const name of ['build.js','src','content','public','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
+  for(const name of ['build.js','src','content','public','variants','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
   execFileSync(process.execPath,['build.js'],{cwd:root,env:{...process.env,SITE_URL:'https://optimax.alolabs.dev/'},stdio:'pipe'});
   const home=parseHTML(await readFile(join(root,'dist/index.html'),'utf8')).document;
   const help=parseHTML(await readFile(join(root,'dist/help/index.html'),'utf8')).document;

@@ -38,4 +38,10 @@ await write('sitemap.xml',`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="
 for(const name of ['style.css','theme.js','client.js','search.js','controls.js','deployment.js']) await copyFile('src/'+name,join(out,'assets',name));
 await cp('public/fonts',join(out,'assets/fonts'),{recursive:true});
 await copyFile('public/favicon.svg',join(out,'favicon.svg'));
+// Preview pages are separate build inputs; the production layout above stays unchanged.
+for(const name of ['circuit','prism']){
+ await write(`versions/${name}/index.html`,(await readFile(`variants/${name}.html`,'utf8')).replaceAll('{{BASE}}',deployment.basePath));
+ await write(`versions/${name}/style.css`,(await readFile(`variants/${name}.css`,'utf8')).replaceAll('{{BASE}}',deployment.basePath));
+}
+for(const name of ['theme.js','client.js'])await copyFile(join('variants',name),join(out,'versions',name));
 console.log(`Built ${pages.length} articles and ${index.length} search entries in ${out}/`);

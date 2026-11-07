@@ -11,7 +11,7 @@ const site=dirname(dirname(fileURLToPath(import.meta.url)));
 async function withBuild(url,check){
  const root=await mkdtemp(join(tmpdir(),'optimax-contract-'));
  try{
-  for(const name of ['build.js','src','content','public','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
+  for(const name of ['build.js','src','content','public','variants','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
   execFileSync(process.execPath,['build.js'],{cwd:root,env:{...process.env,SITE_URL:url},stdio:'pipe'});
   await check(join(root,'dist'));
  }finally{await rm(root,{recursive:true,force:true})}
@@ -25,7 +25,7 @@ for(const url of ['https://optimax.alolabs.dev/','https://alo-exp.github.io/opti
   await withBuild(url,async output=>{
    const base=new URL(url).pathname;
    assert.ok((await htmlFiles(output)).length>3);
-   for(const file of await htmlFiles(output)){
+   for(const file of (await htmlFiles(output)).filter(file=>!file.startsWith(join(output,'versions')+'/'))){
     const html=await readFile(file,'utf8'),document=parseHTML(html).document;
     assert.doesNotMatch(document.body.textContent,/Created by Shafqat Ullah/i,file);
     const actions=document.querySelector('.header-actions'),button=actions?.querySelector('#theme-toggle');
@@ -97,7 +97,7 @@ test('mineral manifest uses local type assets and rehomes labels below headings'
    assert.match(css,new RegExp('url\\(\\s*[\"\\\']?\\./fonts/'+name.replaceAll('.','\\.')+'[\"\\\']?\\s*\\)'));
   }
   assert.match(css,/font-display:\s*swap/);
-  for(const file of await htmlFiles(output)){
+  for(const file of (await htmlFiles(output)).filter(file=>!file.startsWith(join(output,'versions')+'/'))){
    const document=parseHTML(await readFile(file,'utf8')).document;
    for(const heading of document.querySelectorAll('h1,h2,h3'))assert.ok(!heading.previousElementSibling?.classList.contains('eyebrow'),file+' has a label above a heading');
   }
@@ -112,7 +112,7 @@ test('navigation and document link icons use hidden SVG without changing labels'
   let articleIcons=0;
   const data=JSON.parse(await readFile(join(site,'content/articles.json'),'utf8'));
   const expectedReferences=data.articles.flatMap(article=>article.sections).reduce((sum,section)=>sum+(section.links?.length||0),0);
-  for(const file of await htmlFiles(output)){
+  for(const file of (await htmlFiles(output)).filter(file=>!file.startsWith(join(output,'versions')+'/'))){
    const document=parseHTML(await readFile(file,'utf8')).document;
    for(const link of document.querySelectorAll('a,button'))assert.doesNotMatch(link.textContent,/[↗→↓⌕⌘✳◐]/,'decorative glyph remains in '+file);
    for(const icon of document.querySelectorAll('svg.icon'))assert.equal(icon.getAttribute('aria-hidden'),'true');
