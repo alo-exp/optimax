@@ -1,11 +1,11 @@
 # Optimax 0.1.0 verification
 
-Website update checked 2026-11-08 Australia/Sydney. The purple light/dark and CMF messaging candidate passed the expanded Node suite and static build; publication acceptance is pending below. Original plugin v0.1.0 evidence is retained for the unchanged runtime. No universal native integration or measured cost savings are claimed.
+Website update checked 2026-11-08 Australia/Sydney. The purple light/dark and CMF messaging update passed 61 Node tests, static build, GitHub Pages deployment and live file verification. Original plugin v0.1.0 evidence is retained for the unchanged runtime. Browser-rendered acceptance remains explicitly unverified; no universal native integration or measured cost savings are claimed.
 
 | Area | Observed evidence | Status |
 | --- | --- | --- |
 | Shared Python runtime and release builder | 125 tests passed; historical policy IDs and event lineage preserved | Passed |
-| Website behavior | Expanded Node suite covering theme preference/error/cross-tab state, actual palette contrast and gradients, generated theme controls, CMF/parallel positioning, existing keyboard/clipboard/search/path and workflow contracts; 17 articles and 40 indexed sections | Passed locally; updated Actions deployment pending |
+| Website behavior | 61 Node tests covering theme preference/error/cross-tab state, actual palette contrast and gradients, generated theme controls, CMF/parallel positioning, existing keyboard/clipboard/search/path and workflow contracts; 17 articles and 40 indexed sections | Passed locally and in Actions; zero failures/skips |
 | Portable plugin manifest | Published Agent Plugins JSON schema validation passed | Passed |
 | Standalone skill | Official skill validator passed on fresh extraction | Passed |
 | Release contents | 14 standalone and 17 plugin files match canonical source; no personal ledger, tests, caches or session reports | Passed |
@@ -15,7 +15,7 @@ Website update checked 2026-11-08 Australia/Sydney. The purple light/dark and CM
 | Claude package | JSON manifests, layout, component paths, namespace and shared Claude ladder/controller cases checked independently | Static checks passed |
 | Claude live execution / Ultracode | Not invoked before the authorized quota-reset window | Deferred to Tuesday 10 November 2026, 14:00 Australia/Sydney |
 | Website rendering and live interaction | Built-in browser unavailable: Mac locked and browser use disabled | Unverified |
-| Public website access | GitHub Pages at https://alo-exp.github.io/optimax/ previously passed 27-file live verification. New purple/theme/CMF candidate has 29 intended public files and awaits deployment acceptance | Updated publication in progress |
+| Public website access | Purple/theme/CMF site deployed at https://alo-exp.github.io/optimax/; all 29 generated pages/assets returned HTTP 200 and matched the accepted build byte for byte. A nested unknown URL returned the custom HTTP 404 with current theme assets/control | Passed |
 | Custom domain | optimax.alolabs.dev awaits a separate GitHub Pages cutover; eventual CNAME is alo-exp.github.io. Earlier Sites validation records are obsolete for this target; no DNS changes made | Pending; not live yet |
 | Tuesday automation | Active one-occurrence heartbeat saved for Tuesday 10 November 2026 at 14:00 on the verified Australia/Sydney host timezone (03:00 UTC) | Scheduled; not executed yet |
 | Fresh Codex session | A second real native Terra Low session discovered the plugin and returned disabled status under its distinct actual thread ID; fixture ledger hash unchanged | Passed; not a compaction test |
@@ -71,3 +71,4 @@ Observed TDD and regression evidence (commands from `site/`):
 - `node --test tests/site-contract.test.js`: four expected assertion failures before shared markup/copy changes, then four passes. Existing install commands and navigation contracts were preserved. All 20 generated HTML pages omit the personal footer credit and include the early classic theme script and accessible shared control.
 - `rtk test npm test` and `npm run build`: full local suite and build passed after the combined source was stable. Artifact review found 29 allowlisted public files, no symlinks, no personal credit, and 17 articles / 40 search sections.
 - Independent content/source review found no material gaps and checked 282 local URL occurrences. Actual browser rendering, pointer/keyboard interaction and visual responsive acceptance remain unverified because built-in browser use is disabled and the Mac locked. Source-level CSS contracts and DOM tests are not presented as a rendered audit.
+- Publication: signed source commit [`d579153`](https://github.com/alo-exp/optimax/commit/d5791538f672a3e9858a349ff52eef268b4b2826) and [Actions run 42375920332](https://github.com/alo-exp/optimax/actions/runs/42375920332). CI reported 61 tests, 61 passes, zero failures and zero skips; build and deployment succeeded. Live checks verified all 29 files byte for byte, the new heading, removed credit, early theme script, parallel positioning and custom HTTP 404. No DNS changes were needed or made.
