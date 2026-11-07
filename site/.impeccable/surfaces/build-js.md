@@ -5,9 +5,9 @@ primary_target: "build.js"
 related_targets: ["src/style.css"]
 ---
 
-# Homepage direction contract
+# Historical manifest direction contract
 
-Mode: Persuade. The Help Center is a related Read surface whose body and navigation remain familiar and legible. Visual choice is delegated by the user's explicit full-freedom redesign brief; content is preserved.
+Historical scope: this records the earlier homepage direction and the existing Help Center's related Read surface. The user has since selected Circuit for the production homepage; `homepage-production-circuit.md` governs `src/homepage.html` and `src/homepage.css`. The retained Help Center and `src/style.css` preserve their established document layout. The original direction below is historical evidence, not authority to restyle the selected Circuit homepage.
 
 ## Direction contract
 

@@ -6,8 +6,8 @@ import {parseHTML} from 'linkedom';
 const optionalFile=name=>{const url=new URL('../variants/'+name,import.meta.url);return existsSync(url)?readFileSync(url,'utf8'):'';};
 const html=optionalFile('circuit.html'),css=optionalFile('circuit.css');
 const document=parseHTML(html||'<html><head></head><body></body></html>').document;
-const build=readFileSync(new URL('../build.js',import.meta.url),'utf8');
-const source=build.match(/const home=`([\s\S]*?)`;\n/)[1].replace(/\$\{icon\('[^']+'\)\}/g,'');
+// Historical preview copy remains tied to the homepage at project commit 36f5533.
+const source=readFileSync(new URL('./fixtures/homepage-before-circuit.html',import.meta.url),'utf8');
 const original=parseHTML('<html><body><main>'+source+'</main></body></html>').document;
 const text=value=>value.replace(/\s+/g,' ').trim();
 

@@ -22,8 +22,8 @@ test('generated install panel switches and copies exact marketplace commands', a
  const tabs=[...group.querySelectorAll('button')],panels=[...document.querySelectorAll('[data-install-panel]')];
  const expected=['codex plugin marketplace add alo-labs/agent-plugins\ncodex plugin add optimax@alo-labs-codex','/plugin marketplace add alo-labs/agent-plugins\n/plugin install optimax@alo-labs'];
  assert.deepEqual(panels.map(p=>p.textContent),expected);
- assert.match(document.querySelector('#install').textContent,/terminal commands/i);
- assert.match(document.querySelector('#install').textContent,/commands in Claude Code/i);
+ assert.match(document.querySelector('#install').textContent,/Codex: run in your terminal/i);
+ assert.match(document.querySelector('#install').textContent,/Claude: run inside Claude Code/i);
  assert.equal(document.querySelector('#install a').getAttribute('href'),document.querySelector('meta[name="site-base"]').getAttribute('content')+'help/');
  let copied; const button=document.querySelector('#copy-install');
  installControls({tabs,panels,button,status:document.querySelector('#copy-status'),clipboard:{writeText:async text=>{copied=text}}});

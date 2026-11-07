@@ -1,0 +1,120 @@
+{
+  "title": "Optimax — Get AI work done faster and cheaper",
+  "description": "Optimax is an open-source plugin for Claude and Codex. Run useful work in parallel, choose helper models by task complexity and reviewed results, and keep your chosen model in charge.",
+  "headings": {
+    "#parallel-title": "One plan. Several useful ways forward.",
+    "#how-it-works h2": "Waiting takes time. Rework adds more.",
+    "#mechanism h2": "A clear assignment. A suitable model. A checked result.",
+    "#proof h2": "See what has actually been checked.",
+    "#benefits h2": "Plan for time, model cost and quality together.",
+    "#questions h2": "Know how it fits your workflow.",
+    "#install h2": "Add Optimax to your agent.",
+    "#next-step h2": "Start with one clear task."
+  },
+  "paragraphs": {
+    ".hero-audience": [
+      "For teams and individuals building with Claude or Codex"
+    ],
+    ".hero-support": [
+      "Optimax is an open-source plugin that helps your AI agent delegate well. Run independent tasks together, choose helper models by task complexity and reviewed results, and check each result before accepting it."
+    ],
+    ".hero-choice": [
+      "Your chosen session model stays in charge."
+    ],
+    ".intro-copy p": [
+      "When independent assignments wait their turn, the whole job takes longer. When every assignment goes to the same model, model effort can be out of proportion to the task. And when nobody checks how the pieces fit, you inherit the integration work.",
+      "Optimax gives your agent a policy for all three decisions: what can run together, which helper should do each piece, and what must be checked before the result is accepted.",
+      "It is most useful for substantial work with independent pieces. Work that truly depends on an earlier result still waits for that result to pass review."
+    ],
+    "#plan-note": [
+      "Tasks run together when their dependencies are accepted, capacity is verified and their work does not conflict. This is an example, not a record of live execution."
+    ],
+    "#mechanism .section-deck": [
+      "The plan connects delegation to the outcome you asked for. Independent work can move together; shared files and dependent steps keep their order."
+    ],
+    "#mechanism article p": [
+      "Give each helper a clear outcome, acceptance criteria and its own scope. Identify the inputs it needs and the files or resources it owns, so parallel work has a safe boundary.",
+      "Choose eligible models and effort levels using task complexity and independently reviewed performance. Run useful, compatible assignments within verified capacity. Start the next eligible task as soon as its accepted inputs and resources are available.",
+      "Your chosen session model independently checks each result and its evidence. Accepted work unlocks the next step. Attributable assessments inform future model choices; work that needs repair goes back for another pass."
+    ],
+    "#proof .reading p": [
+      "The code, rules and verification records are public. You can inspect how Optimax makes decisions before enabling it.",
+      "The Optimax skill defines model selection, session controls and independent review. The parallel execution policy sets the rules for dependencies, available capacity and shared resources.",
+      "Codex: live installation and session controls checked. Optimax v0.1.0 passed installation, installed-skill discovery and on/off/status checks on Codex CLI 0.166.0-alpha.6. Read the Codex acceptance evidence for the tested scope.",
+      "Claude: static validation passed; live acceptance pending. The package has passed static checks. Live installation and operation have not yet been accepted. See the Claude acceptance status.",
+      "These checks do not measure time or cost savings. Results depend on your task, available models and host capabilities."
+    ],
+    "#benefits article p": [
+      "Independent tasks can run together, and eligible follow-up work can start while unrelated tasks continue. You spend less of the plan waiting for work that does not block the next step.",
+      "Task complexity and reviewed results guide model selection. You can direct effort where the assignment calls for it, rather than treating every piece of work as equally demanding.",
+      "Each assignment has an owner and acceptance criteria. Independent review checks the result and evidence before dependent work moves on, so a helper's completion message is the start of acceptance, not the whole process."
+    ],
+    ".differentiation p": [
+      "Running more helpers addresses only part of the task. Optimax brings parallel work, model selection and independent acceptance into one policy, so decisions about time and model effort stay tied to the result you asked for."
+    ],
+    ".install-intro > p:not(.metadata)": [
+      "The plugin is free and MIT licensed. Your account's host and model usage charges still apply.",
+      "You get the delegation policy, session controls and a project record of independently reviewed helper results. Install it through your host's plugin marketplace, then enable it in the session where you want to use it."
+    ],
+    ".install-reassurance": [
+      "Installing the plugin does not turn the policy on. You can inspect the source first and turn it off with the session controls whenever you choose."
+    ],
+    ".terminal-label": [
+      "Codex: run in your terminal. Claude: run inside Claude Code."
+    ],
+    ".terminal-note": [
+      "Marketplace support is required. Codex live checks cover the client listed above; Claude live acceptance is pending. Read the installation guide."
+    ],
+    "#next-step > p:not(.metadata)": [
+      "Enable Optimax with $optimax on in Codex or /optimax:optimax on in Claude. Describe the result you need and how you will judge it. Your agent can then define the assignments, find useful parallel work and review the results.",
+      "Check the session with $optimax status or /optimax:optimax status to see the current mode and reported limits."
+    ]
+  },
+  "questions": [
+    "Will Optimax change the model I chose?",
+    "Does it always pick the cheapest helper?",
+    "How many tasks can run at once?",
+    "What happens when a result needs more work?",
+    "Can it manage every helper inside Claude or Codex?",
+    "Can I turn it off?",
+    "Do I need it for every small task?"
+  ],
+  "answers": [
+    "Your chosen session model stays in charge of the plan, review and acceptance. Optimax can recommend a model and effort for that role, but it does not apply the recommendation or change native settings for you.",
+    "No. Task complexity, eligible settings and independently reviewed performance guide the choice. Price alone does not establish suitability. Faster work and lower model cost are goals, not guaranteed savings.",
+    "As many useful, independent assignments as verified capacity supports. Dependencies must be accepted and shared resources must be compatible. Reviewers, advisers and rework also use capacity. If native occupancy is unknown, Optimax cannot treat those slots as available.",
+    "It goes back for bounded repair and another independent review. Dependent tasks wait for an accepted result. A good model score does not turn an incomplete job into an accepted result.",
+    "Only where the host exposes the necessary controls and effective model settings. Hidden worker settings cannot support verified model comparisons or learned scores. Native orchestration is only partly optimizable when those facts are unavailable. Read the native mode limits.",
+    "Yes. Use $optimax off in Codex or /optimax:optimax off in Claude to stop policy-driven delegation, consultation and learning. Useful work already in flight can finish safely. Your performance history and native settings are preserved. See on, off and status controls.",
+    "Optimax is most useful when work has several meaningful pieces to delegate. A small, tightly connected task may have little useful parallel work. The policy calls for meaningful assignments, not extra helpers for their own sake."
+  ],
+  "tasks": [
+    "Investigate the reported defect",
+    "Build an unrelated feature",
+    "Review a completed change"
+  ],
+  "states": [
+    "READY / SEPARATE SCOPE",
+    "READY / SEPARATE FILES",
+    "READY / INDEPENDENT REVIEW"
+  ],
+  "mechanism": [
+    "Define what a good result looks like",
+    "Match the helper and run ready work",
+    "Review the work, then learn from it"
+  ],
+  "benefits": [
+    "Keep useful work moving",
+    "Use model effort with a reason",
+    "Make “done” mean checked"
+  ],
+  "metadata": {
+    "#how-it-works": "WHY THE PLAN MATTERS",
+    "#mechanism": "HOW OPTIMAX WORKS",
+    "#proof": "EVIDENCE YOU CAN INSPECT",
+    "#benefits": "WHAT THE POLICY HELPS YOU DO",
+    "#questions": "BEFORE YOU INSTALL",
+    "#install": "FREE PLUGIN / MIT LICENSE",
+    "#next-step": "AFTER INSTALLATION"
+  }
+}

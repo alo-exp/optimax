@@ -15,17 +15,17 @@ test('editorial metadata keeps its wording without decorative numbering and pres
   execFileSync(process.execPath,['build.js'],{cwd:root,env:{...process.env,SITE_URL:'https://optimax.alolabs.dev/'},stdio:'pipe'});
   const home=parseHTML(await readFile(join(root,'dist/index.html'),'utf8')).document;
   const help=parseHTML(await readFile(join(root,'dist/help/index.html'),'utf8')).document;
-  assert.deepEqual([...home.querySelectorAll('#mechanism .steps article > span')].map(e=>e.textContent),['01','02','03'],'process order remains meaningful');
-  assert.deepEqual([...home.querySelectorAll('.parallel-tasks .route-number')].map(e=>e.textContent),['01','02','03'],'parts register IDs remain intact');
+  assert.deepEqual([...home.querySelectorAll('#mechanism .step-pin')].map(e=>e.textContent),['01','02','03'],'process order remains meaningful');
+  assert.equal(home.querySelectorAll('.parallel-tasks li > .junction').length,3,'each independent assignment retains a distinct connection');
   const labels=[
-   ['how-it-works','THE WORK YOU WANT TO MOVE'],
+   ['how-it-works','WHY THE PLAN MATTERS'],
    ['mechanism','HOW OPTIMAX WORKS'],
-   ['proof','INSPECT THE EVIDENCE'],
-   ['benefits','WHAT THE POLICY GIVES YOU'],
-   ['questions','BEFORE YOU BEGIN'],
-   ['install','GET STARTED']
+   ['proof','EVIDENCE YOU CAN INSPECT'],
+   ['benefits','WHAT THE POLICY HELPS YOU DO'],
+   ['questions','BEFORE YOU INSTALL'],
+   ['install','FREE PLUGIN / MIT LICENSE']
   ];
-  for(const [id,expected] of labels)assert.equal(home.querySelector('#'+id+' .eyebrow').textContent,expected,id+' metadata must retain wording without a decorative number');
+  for(const [id,expected] of labels)assert.equal(home.querySelector('#'+id+' .metadata').textContent,expected,id+' caption must retain wording without a decorative number');
   const topics=[...help.querySelectorAll('.help-group .eyebrow')].map(e=>e.textContent);
   assert.equal(topics.length,7,'all help topic groups remain present');
   assert.deepEqual(topics,Array(7).fill('TOPIC'),'topic metadata must retain wording without decorative numbers');

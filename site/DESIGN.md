@@ -1,279 +1,140 @@
 ---
 name: Optimax
-description: A component manifest for clear ownership and accepted work.
+description: User-selected Circuit homepage with preserved Help document surfaces.
 colors:
-  bg: "#082820"
-  ink: "#eceae9"
-  muted: "#b7c9c0"
-  border: "#547467"
-  control-border: "#93aaa0"
-  elevated: "#10372d"
-  selected: "#204b3e"
-  accent: "#dbba68"
-  focus: "#f3d78e"
-  mineral: "#eceae9"
-  on-mineral: "#082820"
-  mineral-muted: "#535f5f"
-  brass: "#dbba68"
-  on-brass: "#082820"
-  panel: "#061d17"
-  on-panel: "#eceae9"
-  panel-muted: "#b7c9c0"
-  panel-accent: "#dbba68"
-  panel-border: "#547467"
-  bg-light: "#f3f1e9"
-  ink-light: "#082820"
-  muted-light: "#4b5e55"
-  border-light: "#a9b6aa"
-  control-border-light: "#6a8071"
-  elevated-light: "#ffffff"
-  selected-light: "#e0e7dc"
-  accent-light: "#4a5b24"
-  focus-light: "#245a44"
-  mineral-light: "#e5e8df"
-  on-mineral-light: "#082820"
-  mineral-muted-light: "#4b5e55"
+  bg: "#081525"
+  ink: "#F3F7FF"
+  muted: "#B9C8DB"
+  accent: "#4D87FF"
+  on-accent: "#081525"
+  focus: "#81AAFF"
+  surface: "#0D2037"
+  line: "#395470"
+  command-bg: "#081525"
+  command-ink: "#F3F7FF"
+  command-muted: "#B9C8DB"
+  command-accent: "#81AAFF"
+  bg-light: "#F3F7FF"
+  ink-light: "#081525"
+  muted-light: "#425B73"
+  accent-light: "#1959C6"
+  on-accent-light: "#F3F7FF"
+  focus-light: "#1959C6"
+  surface-light: "#E6EEF9"
+  line-light: "#8A9FB8"
 typography:
   display:
-    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(44px,5.34vw,82px)"
+    fontFamily: "Sora, sans-serif"
+    fontSize: "clamp(3rem, 7.1vw, 6rem)"
     fontWeight: 700
-    lineHeight: 1.07
-    letterSpacing: "-0.035em"
+    lineHeight: 1.055
+    letterSpacing: "-0.04em"
   headline:
-    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(36px,3.78vw,58px)"
+    fontFamily: "Sora, sans-serif"
+    fontSize: "clamp(2rem, 3.7vw, 3.5rem)"
     fontWeight: 700
-    lineHeight: 1.1
-    letterSpacing: "-0.03em"
-  title:
-    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "27px"
-    fontWeight: 700
-    lineHeight: 1.2
-    letterSpacing: "-0.03em"
+    lineHeight: 1.17
+    letterSpacing: "-0.035em"
   body:
-    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "18px"
-    fontWeight: 400
-    lineHeight: 1.8
-  navigation:
-    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "24px"
-    fontWeight: 400
-    lineHeight: 1.2
-  action:
-    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
+    fontFamily: "Sora, sans-serif"
     fontSize: "17px"
-    fontWeight: 700
-  article-title:
-    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(39px,4.3vw,64px)"
-    fontWeight: 700
-    lineHeight: 1.08
-    letterSpacing: "-0.03em"
-  article-deck:
-    fontFamily: "Mona Sans, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "22px"
     fontWeight: 400
-    lineHeight: 1.55
+    lineHeight: 1.75
+  action:
+    fontFamily: "Sora, sans-serif"
+    fontSize: "14px"
+    fontWeight: 700
+  metadata:
+    fontFamily: "Sora, sans-serif"
+    fontSize: "13px"
+    fontWeight: 700
+    lineHeight: 1.6
   code:
     fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace"
     fontSize: "14px"
     fontWeight: 400
-    lineHeight: 1.8
+    lineHeight: 2
 rounded:
-  task-number: "4px"
-  acceptance-check: "3px"
+  action: "6px"
   theme-control: "8px"
+  terminal: "12px"
+  junction: "50%"
 spacing:
   xs: "8px"
   sm: "12px"
   md: "16px"
-  control: "18px"
-  field: "20px"
   lg: "24px"
-  row-gap: "25px"
-  xl: "30px"
-  reading-section: "40px"
-  section-wide: "108px"
-  section-medium: "75px"
-  section-compact: "60px"
+  hero: "72px"
+  section: "112px"
+  section-compact: "70px"
 components:
   button-primary:
-    backgroundColor: "{colors.brass}"
-    textColor: "{colors.on-brass}"
+    backgroundColor: "{colors.accent}"
+    textColor: "{colors.on-accent}"
     typography: "{typography.action}"
-    padding: "17px 23px"
+    rounded: "6px"
+    padding: "12px 24px"
     height: "54px"
   nav-cta:
-    backgroundColor: "{colors.brass}"
-    textColor: "{colors.on-brass}"
-    padding: "12px 23px"
-    height: "56px"
+    textColor: "{colors.ink}"
+    height: "44px"
   theme-toggle:
     textColor: "{colors.ink}"
-    rounded: "{rounded.theme-control}"
-    padding: "13px 18px"
+    rounded: "8px"
     height: "44px"
-  theme-toggle-hover:
-    backgroundColor: "{colors.selected}"
-  input-search:
-    backgroundColor: "{colors.elevated}"
+  parallel-assignment:
     textColor: "{colors.ink}"
-    padding: "18px 0"
-  navigation:
-    textColor: "{colors.ink}"
-    typography: "{typography.navigation}"
-  tab-install:
-    textColor: "{colors.panel-muted}"
-    padding: "10px 30px"
-    height: "48px"
-  tab-install-selected:
-    backgroundColor: "{colors.brass}"
-    textColor: "{colors.on-brass}"
-  task-label:
-    backgroundColor: "{colors.mineral}"
-    textColor: "{colors.on-mineral}"
-    padding: "14px 20px"
-    height: "88px"
+    padding: "0 20px 46px"
   acceptance-boundary:
-    backgroundColor: "{colors.brass}"
     textColor: "{colors.ink}"
-    padding: "13px 29px"
-    height: "76px"
+    padding: "46px 0 0"
   terminal:
-    backgroundColor: "{colors.panel}"
-    textColor: "{colors.on-panel}"
-    padding: "26px 30px 20px"
-  article-link:
-    textColor: "{colors.ink}"
-    padding: "21px 0"
+    backgroundColor: "{colors.command-bg}"
+    textColor: "{colors.command-ink}"
+    rounded: "12px"
+    padding: "30px"
 ---
 
-# Design System: Optimax
+# Optimax design system
 
-## Overview
+The user selected Circuit for the production homepage. Inherit its navy/cobalt grounds, self-hosted Sora type, broad flush-left offer, open space and connected independent assignments. Supporting copy is adapted for the production funnel. This adopts the existing direction.
 
-**Creative North Star: "The Component Manifest"**
+The frontmatter describes `/` only. [src/homepage.html](src/homepage.html), [src/homepage.css](src/homepage.css) and the [production contract](.impeccable/surfaces/homepage-production-circuit.md) are authoritative. [.impeccable/design.json](.impeccable/design.json) records components and explicit surface scopes.
 
-Optimax uses the material language of component labels and a parts register: robust sans type, clipped fields, aligned rows and visible boundaries. The juniper ground, mineral fields and dull brass actions make ownership and acceptance easy to distinguish. These are durable visual materials; the homepage's particular composition remains in its [surface brief](.impeccable/surfaces/build-js.md).
+## Preserved surfaces
 
-Reading surfaces keep the same palette and type family while giving prose a calm measure. Dark is the default. Light is an authored alternate, with an explicit saved choice retained. The system records the implementation in [src/style.css](src/style.css), [build.js](build.js) and [src/theme.js](src/theme.js); frontmatter contains normative values, and [.impeccable/design.json](.impeccable/design.json) extends them with motion, breakpoints and component samples.
+Help, articles and the error page retain Mona Sans, the existing juniper/mineral/brass document palette, [src/style.css](src/style.css) and [src/theme.js](src/theme.js). Article prose retains its 72ch reading measure and existing responsive behavior. Homepage adoption does not retheme these surfaces.
 
-**Key Characteristics:**
+The four `/versions/` previews remain frozen historical comparisons with their original copy, styles, fonts, noindex and self-canonical declarations. Their links remain in the comparison area; production has no comparison navigation.
 
-- Deep juniper ground, mineral fields and brass actions.
-- One self-hosted sans family with regular and bold weights.
-- Cut corners identify structural fields and actions.
-- Independent assignment labels share a spanning acceptance boundary.
-- Article typography remains measured, legible and quiet.
+## Homepage color and type
 
-## Colors
+Dark uses navy #081525, light ink #F3F7FF, cobalt #4D87FF, muted blue #B9C8DB, raised #0D2037 and structural #395470 rules. Light uses #F3F7FF grounds, navy ink, #1959C6 actions, #425B73 muted text, #E6EEF9 surfaces and #8A9FB8 rules. The command panel retains its navy/light pair. Match text and focus to the actual surface.
 
-Brass marks actions and acceptance; juniper and mineral carry the structure. The frontmatter keys match CSS custom-property names. A `-light` suffix records the override applied by `html[data-theme="light"]`; keys without that suffix record the dark root. The sidecar's eight-step tonal strips are synthesized preview metadata, not additional implementation tokens.
+Sora 400/700 are local WOFF2 files with font-display swap and a retained OFL license. Code uses the system monospace stack. Display and section clamps are in the frontmatter. Functional text is at least 12px, task states and section captions use 13px, and substantive paragraphs are at least 15px. Commands inherit their preformatted 14px desktop or 12px compact size. Keep full wording and intrinsic content growth.
 
-### Primary
+## Layout and connections
 
-- **Dull Brass** (`brass`, `accent`): primary actions, selected installation platform and acceptance edge. `on-brass` supplies its text.
-- **Olive Accent** (`accent-light`): links and interactive emphasis on light reading surfaces. Brass actions keep their fixed brass pair in both themes.
-- **Focus Brass / Focus Green** (`focus`, `focus-light`): general keyboard focus on each theme's reading ground. Mineral and technical surfaces locally select their own focus ink.
+The homepage container is at most 1280px. It uses viewport-minus-112px space by default, minus 72px below 1100px, minus 40px below 700px and minus 32px below 359px. Hero top space is 72px, reducing to 64px below 1100px and 48px below 700px. Sections use 112px padding, reducing to 70px on compact screens.
 
-### Neutral
+Three semantic independent assignments have circular junctions, separate reading lanes and connecting rules. A separate acceptance boundary follows the group. The reviewed change already exists; the diagram never presents review of its own unfinished input as parallel work. Below 700px, assignments become a single column with an isolated left connector lane. Long labels wrap within their own rows. The caption and note explicitly identify an illustration rather than live activity.
 
-- **Deep Juniper / Warm Paper** (`bg`, `bg-light`): the reading ground.
-- **Mineral Ink / Juniper Ink** (`ink`, `ink-light`): principal text.
-- **Sage / Slate Green** (`muted`, `muted-light`): supporting prose and metadata.
-- **Structural Rule** (`border`, `border-light`) and **Control Rule** (`control-border`, `control-border-light`): separate general dividers from stronger interactive boundaries.
-- **Raised Juniper / White** (`elevated`, `elevated-light`): search-field surface; **Selected Juniper / Pale Sage** (`selected`, `selected-light`) marks hover or selection.
-- **Mineral Field** (`mineral`, `mineral-light`), with `on-mineral` and `mineral-muted` pairs: light manifest and installation fields.
-- **Technical Juniper** (`panel`) with `on-panel`, `panel-muted`, `panel-accent` and `panel-border`: terminal, code, footer and dark sections. These tokens remain fixed in light mode.
+Intro, proof, FAQ and installation use measured split layouts and become one column below 700px. Mechanism steps become a vertical sequence. Footer content reflows in source order. Copy may grow sections; preserve breathing room, full wording, connector clearance and fragment destinations.
 
-**The Local Pair Rule.** Choose the text and focus pair belonging to the actual surface; a technical panel keeps its panel tokens inside either page theme.
+## Controls and production funnel
 
-## Typography
+Install Optimax targets #install; the secondary hero link targets #mechanism. Keep a fully visible installation action in the first viewport at 320, 390, 768 and 1440px in both themes. The theme control remains last in the right-aligned header actions, has a 44px target and starts hidden until bound. Its accessible name stays Dark theme; pressed state reflects the choice.
 
-**Display Font:** Mona Sans, followed by the sans fallback stack in the frontmatter.
+Root reuses the existing palette-aware implementation as assets/homepage-theme.js. Help retains assets/theme.js. Both share the saved preference key, default dark without a valid choice and honor saved light. Root theme metadata follows its palette after CSS readiness and toggles. Production client and installation controls remain shared.
 
-**Body Font:** The same family. Regular (400) and bold (700) are self-hosted WOFF2 assets with `font-display: swap` and `font-synthesis: none`.
+Codex/Claude tabs retain pressed states, exact marketplace command bytes, wrapping code, copy action and visible status. Source inspection, usage charges, host limits and off controls accompany the offer. Seven native FAQ disclosures retain full answers; differentiation follows them and precedes installation. The root is indexable with absolute canonical and matching title, description and Open Graph metadata for SITE_URL. Assets and Help links respect the deployment prefix.
 
-**Code Font:** The platform monospace stack recorded in `typography.code`.
+## Accessibility and motion
 
-The family is direct and compact, with tight bold headings and open paragraph spacing. Tabular numerals align task numbers and technical values. There is no second display face.
+Links, buttons and summaries use a contrasting 3px focus outline with 6px outside offset. Rounded controls leave the outline visible and do not inherit the Help system\'s clipped focus treatment. Text and states clear junctions and connector artwork, stay in their reading lanes and do not overlap adjacent sections.
 
-### Hierarchy
+The acceptance trace has one 1.6-second emphasis with cubic-bezier(.16,1,.3,1). Reduced motion removes animations, transitions and smooth scrolling. Semantic HTML, inline SVG and CSS geometry implement the selected direction; no shipping raster is needed.
 
-- **Display:** the mineral-field headline; the base clamp is in `typography.display`. The actual wide-screen override is 88px at a minimum width of 1650px. At 1100px and below it uses `clamp(53px,7.2vw,76px)`; at 600px and below, `clamp(39px,9.6vw,57px)` with a 1.04 line height; at 370px and below, 36px.
-- **Headline / Title:** section headings and subordinate headings use the recorded headline and title roles. Compact section headings use 36px with a 1.13 line height.
-- **Body:** article text uses the body role, a 72ch maximum article measure and a 1.8 line height. It becomes 17px at 600px and below. General marketing paragraphs use a 1.65 line height, with sizes set by their context.
-- **Article title / deck:** a distinct document hierarchy; at 600px and below, the title is 41px and the deck is 20px.
-- **Navigation / Action:** clear sentence-case controls, with responsive reductions described in Layout.
-- **Code:** wraps with `pre-wrap` and `overflow-wrap: anywhere`; terminal and article code reduce to 12px on compact screens.
+## Extension rules
 
-**The Reading Measure Rule.** Preserve the article's 72ch measure and paragraph rhythm when extending the Help Center.
-
-## Layout
-
-The main container has a 1600px maximum. Its width is the viewport minus 68px by default, minus 40px at 900px and below, and minus 32px at 600px and below. The header has its own 1668px maximum and right-aligned action group; the theme button is the last control in that group.
-
-The parts register uses three equal assignment columns with a 16px gap above one full-width acceptance boundary. At 900px and below, the assignments become separate full-width rows. At 600px and below, each label keeps its number beside the task title and secondary status below. The acceptance title remains visible while secondary dependency microcopy is hidden at 900px and below.
-
-Marketing sections use the section spacing steps in the frontmatter. Split sections become one column at 900px and below. The header wraps at 1100px; at 900px its navigation occupies a full row. At 600px, the Help library groups stack, footer content reflows and article padding reduces. The 370px adjustment keeps the theme control's text while removing its icon. The sidecar records six viewport breakpoints, reduced motion and forced-color component adaptations.
-
-## Elevation & Depth
-
-The system is flat: the stylesheet defines no box or text shadows. Surface changes, real rules and inset clipped boundaries provide depth. The parts register and acceptance boundary use a two-layer silhouette with a 2px inset. Interaction uses underline, border, surface or focus changes; there is no general hover lift.
-
-**The Structural Depth Rule.** Carry hierarchy with tonal surfaces and boundaries, preserving the flat material vocabulary.
-
-## Shapes
-
-The principal field uses an eight-point polygon with clipped corners. Its default cut is 30px and becomes 18px on compact screens. Component-specific cuts are 8px for brass actions, 13px for assignment labels, 20px for the register and 9px for the acceptance edge; their inset layers use their own matching cuts. The terminal uses an 18px cut.
-
-Small radii have specific jobs: task-number tiles, acceptance-check tiles and the theme button use the frontmatter's three rounded tokens. Search fields, article lists and installation tabs use straight rule-based boundaries. A cut corner is structural, not an all-purpose decoration.
-
-## Components
-
-### Actions and theme control
-
-Primary actions use brass with juniper text, a clipped silhouette and an underline on hover. Frontmatter component heights describe the observed **minimum heights**, not fixed heights; retain intrinsic content growth. The navigation CTA is the compact sibling. Clipped actions use a 3px local ink focus outline placed 7px inside the edge so the clip does not erase it.
-
-The theme button has a visible Theme label, a stable accessible Dark theme name and an `aria-pressed` state. It has at least a 44px target in both dimensions, never shrinks, sits rightmost and is hidden until its controller binds successfully. The head script applies a valid explicit saved choice before CSS; otherwise it chooses dark. Theme changes do not animate.
-
-### Search and article links
-
-Search is a labeled native field on the elevated surface, with a stronger control boundary and a focus-within border change. The input keeps its own 3px keyboard focus ring, offset by 2px. Results use ruled rows; the selected result gains the selected surface and a 2px outline. Article links keep a bold title and muted description; hover underlines and accents the title.
-
-### Installation tabs and terminal
-
-Installation platform buttons use `aria-pressed`. The selected platform has a brass fill and 3px bottom rule; hover underlines. The terminal keeps the fixed technical palette, wraps commands and provides a labeled copy button with a visible status region. Controls inside the clipped terminal use the panel's brass focus pair.
-
-### Assignment label and acceptance boundary
-
-Each assignment has its own mineral label, contrasting number tile, task title and secondary status. The acceptance component spans the register beneath them; its inset ground and brass check tile separate acceptance from independent work. These are semantic task labels, not decorative page kickers.
-
-The only keyframe animation emphasizes that acceptance edge once: 1100ms with `cubic-bezier(.16,1,.3,1)`, after 400ms, one iteration, with both fill modes. Content is visible before it starts. Reduced motion removes that animation and smooth scrolling. Forced colors restores system surfaces, borders and text, and removes clipping from the register and acceptance boundary.
-
-### General focus
-
-Links, buttons, inputs and summaries receive a 3px focus outline offset by 5px, with the local exceptions above. Preserve the native details disclosure and its visible focus. Disabled buttons use wait cursor and 0.65 opacity.
-
-## Do's and Don'ts
-
-### Do:
-
-- **Do** retain dark as the default and honor an explicit saved light or dark choice.
-- **Do** keep the theme control last in the right-aligned header action group and retain its visible label.
-- **Do** use the matching text and focus pair for each mineral or technical surface.
-- **Do** keep clipped-control focus inside its visible edge.
-- **Do** preserve a calm 72ch article measure, wrapping commands and reduced-motion support.
-- **Do** use inline SVG for structural icons and meaningful text for task states.
-
-### Don't:
-
-- **Don't** restore the superseded purple palette, gradient treatment or serif display emphasis.
-- **Don't** turn the one-time acceptance emphasis into a continuous or content-hiding animation.
-- **Don't** infer live activity from illustrative task labels.
-- **Don't** propagate retained editorial eyebrows as a canonical label or typography role.
-
-Not canonized: retained editorial eyebrows are present in source but are excluded from this system's reusable tokens and component examples under the documenter craft floor. This documentation does not certify the missing quality-bar board or complete the pending Impeccable engine phase; neither workflow state is a design token.
+Keep Circuit colors and geometry, captions below headings, exact approved hero/subtitle, honest evidence qualifiers and independent scopes. Do not introduce ornamental section counters, fake live dashboards, quantified savings, new font families or a new visual concept. Help remains governed by its existing document stylesheet and hierarchy.

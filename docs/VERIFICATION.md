@@ -1,11 +1,11 @@
 # Optimax 0.1.0 verification
 
-Website update checked 2026-11-08 Australia/Sydney. The purple light/dark and CMF messaging update passed 61 Node tests, static build, GitHub Pages deployment and live file verification. Original plugin v0.1.0 evidence is retained for the unchanged runtime. Browser-rendered acceptance remains explicitly unverified; no universal native integration or measured cost savings are claimed.
+Website qualification updated 2026-11-08 Australia/Sydney. The selected Circuit production homepage and CMF copy passed 123 Node tests, the static build and 138 isolated Chromium cases across root-domain and GitHub project-prefix builds. Original plugin v0.1.0 evidence is retained for the unchanged runtime. Local rendered acceptance, CI publication and post-deployment HTTP verification are distinct gates; no universal native integration or measured savings are claimed.
 
 | Area | Observed evidence | Status |
 | --- | --- | --- |
 | Shared Python runtime and release builder | 125 tests passed; historical policy IDs and event lineage preserved | Passed |
-| Website behavior | 61 Node tests covering theme preference/error/cross-tab state, actual palette contrast and gradients, generated theme controls, CMF/parallel positioning, existing keyboard/clipboard/search/path and workflow contracts; 17 articles and 40 indexed sections | Passed locally and in Actions; zero failures/skips |
+| Website behavior | 123 Node cases covering production Circuit/CMF copy, both deployment paths, theme/error/cross-tab behavior, keyboard/clipboard/search, historical previews and preserved Help; 17 articles and 40 indexed sections | Passed locally; publication CI reruns the checks |
 | Portable plugin manifest | Published Agent Plugins JSON schema validation passed | Passed |
 | Standalone skill | Official skill validator passed on fresh extraction | Passed |
 | Release contents | 14 standalone and 17 plugin files match canonical source; no personal ledger, tests, caches or session reports | Passed |
@@ -14,13 +14,13 @@ Website update checked 2026-11-08 Australia/Sydney. The purple light/dark and CM
 | Codex native plugin registry and CLI frontend | Global v0.1.0 installed/enabled from the pinned unified catalog; actual CLI 0.166.0-alpha.6 discovered its installed skill and passed on/off, idempotence and same-ID process recovery | Passed on tested client; unrelated settings preserved |
 | Claude package | JSON manifests, layout, component paths, namespace and shared Claude ladder/controller cases checked independently | Static checks passed |
 | Claude live execution / Ultracode | Not invoked before the authorized quota-reset window | Deferred to Tuesday 10 November 2026, 14:00 Australia/Sydney |
-| Website rendering and live interaction | Built-in browser unavailable: Mac locked and browser use disabled | Unverified |
-| Public website access | Purple/theme/CMF site deployed at https://alo-exp.github.io/optimax/; all 29 generated pages/assets returned HTTP 200 and matched the accepted build byte for byte. A nested unknown URL returned the custom HTTP 404 with current theme assets/control | Passed |
+| Website rendering and interaction | 138 local isolated Chromium cases at both deployment bases, including Sora/Help Mona fonts, saved themes, clipboard, FAQs, text/connector clearance, full first-viewport install actions and focus contrast | Passed locally; built-in browser remains disabled and Mac locked |
+| Public website access | Last recorded completed publication before Circuit promotion: commit 36f5533, Actions run 42397684799, all 55 generated files returned HTTP 200 and matched the qualified build byte for byte | Historical publication passed; check the current workflow and post-deployment result for newer revisions |
 | Custom domain | optimax.alolabs.dev awaits a separate GitHub Pages cutover; eventual CNAME is alo-exp.github.io. Earlier Sites validation records are obsolete for this target; no DNS changes made | Pending; not live yet |
 | Tuesday automation | Active one-occurrence heartbeat saved for Tuesday 10 November 2026 at 14:00 on the verified Australia/Sydney host timezone (03:00 UTC) | Scheduled; not executed yet |
 | Fresh Codex session | A second real native Terra Low session discovered the plugin and returned disabled status under its distinct actual thread ID; fixture ledger hash unchanged | Passed; not a compaction test |
 
-Publication evidence: signed plugin commit [`54540db`](https://github.com/alo-exp/optimax/commit/54540db3ea74374677438995d9fce83b58e1441d), signed tag and [v0.1.0 preview release](https://github.com/alo-exp/optimax/releases/tag/v0.1.0); signed marketplace commit [`bd142cc`](https://github.com/alo-labs/agent-plugins/commit/bd142ccb3ecb5c0bb0572aedc5be76666a97c842). Both catalogs pin the tested plugin SHA, and release digests match the table below. The website was migrated from the earlier Sites preview to GitHub Pages from signed commit [`de88199`](https://github.com/alo-exp/optimax/commit/de88199e617c0d3fb4a4fa97f41f7b98a95b08ba); [Actions run 42373055544](https://github.com/alo-exp/optimax/actions/runs/42373055544) passed build and deployment. Its upstream actions emitted Node 20 deprecation and Ubuntu image-migration notices while completing successfully. Browser rendering remains unverified; HTTP and DOM checks do not substitute for it.
+Publication evidence: signed plugin commit [`54540db`](https://github.com/alo-exp/optimax/commit/54540db3ea74374677438995d9fce83b58e1441d), signed tag and [v0.1.0 preview release](https://github.com/alo-exp/optimax/releases/tag/v0.1.0); signed marketplace commit [`bd142cc`](https://github.com/alo-labs/agent-plugins/commit/bd142ccb3ecb5c0bb0572aedc5be76666a97c842). Both catalogs pin the tested plugin SHA, and release digests match the table below. The website was migrated from the earlier Sites preview to GitHub Pages from signed commit [`de88199`](https://github.com/alo-exp/optimax/commit/de88199e617c0d3fb4a4fa97f41f7b98a95b08ba); [Actions run 42373055544](https://github.com/alo-exp/optimax/actions/runs/42373055544) passed build and deployment. Its upstream actions emitted Node 20 deprecation and Ubuntu image-migration notices while completing successfully. Browser rendering was unverified at that migration; the current Circuit qualification below adds rendered acceptance. [Current website workflow runs](https://github.com/alo-exp/optimax/actions/workflows/pages.yml) identify the tested revision and deployment status.
 
 ## Reproduce source checks
 
@@ -52,7 +52,7 @@ The private runtime ledger remains per project/user under model-perf/ and is exc
 
 See the [native Codex acceptance record](CODEX-ACCEPTANCE.md) and [deferred Claude runbook](CLAUDE-ACCEPTANCE.md). The Claude automation is scheduled but has not executed. Update qualification claims only from observed host evidence.
 
-## GitHub Pages migration evidence
+## Historical GitHub Pages migration evidence
 
 - `node --test tests/pages-paths.test.js` from `site/`: six initial tests failed before production changes on missing deployment-prefix/configuration behavior, then passed after implementation. The primary agent independently reran those regressions against archived `f6d2701` and confirmed six expected failures.
 - `node --test --test-name-pattern='complete generated graph' tests/pages-paths.test.js`: a subsequent robots-boundary assertion failed for both prefixed variants before the Allow path repair, then passed. Seven deployment tests now cover the default project URL, the configure-pages URL without a trailing slash, root-domain mode, every generated local target/anchor, invalid configuration before cleanup, and built-client fetch/result/Enter/error behavior.
@@ -60,7 +60,7 @@ See the [native Codex acceptance record](CODEX-ACCEPTANCE.md) and [deferred Clau
 - `npm test` and `npm run build`: 17 tests passed and the static build succeeded. Generated-artifact review found 27 intended public files, no symlinks and no source, credential, configuration or learning directories.
 - GitHub Actions completed the same tests, build, upload and deployment successfully. HTTPS checks verified all 27 generated files byte for byte at the project URL, plus the custom nested-route 404. Browser access remains disabled and the Mac locked. Custom-domain DNS was not changed.
 
-## Purple themes and CMF messaging update
+## Historical purple themes and CMF messaging update
 
 The supplied Content Messaging Framework v3.0 informed the product-page definition, compact audience/problem/future sequence, mechanism, inspectable proof, benefits, objections before installation, and first-session guidance. [MESSAGING.md](../site/MESSAGING.md) records the adaptation and evidence boundaries. No conversion statistics, testimonials, scarcity or outcomes were invented. Useful parallelization is presented alongside model routing, with verified-capacity, dependency and ownership limits.
 
@@ -72,3 +72,19 @@ Observed TDD and regression evidence (commands from `site/`):
 - `rtk test npm test` and `npm run build`: full local suite and build passed after the combined source was stable. Artifact review found 29 allowlisted public files, no symlinks, no personal credit, and 17 articles / 40 search sections.
 - Independent content/source review found no material gaps and checked 282 local URL occurrences. Actual browser rendering, pointer/keyboard interaction and visual responsive acceptance remain unverified because built-in browser use is disabled and the Mac locked. Source-level CSS contracts and DOM tests are not presented as a rendered audit.
 - Publication: signed source commit [`d579153`](https://github.com/alo-exp/optimax/commit/d5791538f672a3e9858a349ff52eef268b4b2826) and [Actions run 42375920332](https://github.com/alo-exp/optimax/actions/runs/42375920332). CI reported 61 tests, 61 passes, zero failures and zero skips; build and deployment succeeded. Live checks verified all 29 files byte for byte, the new heading, removed credit, early theme script, parallel positioning and custom HTTP 404. No DNS changes were needed or made.
+
+
+## Circuit production homepage and complete CMF copy
+
+The user selected the existing Circuit direction. A `gpt-6.1-sol` subagent at Max rewrote the supporting homepage narrative using the supplied CMF v3.0 guide. [MESSAGING.md](../site/MESSAGING.md) maps all 14 core components and eight companion sections, including justified compression and exclusions. The approved hero and subtitle remain exact. Seven FAQs, a direct definition, scoped evidence, free-plugin versus model-usage charges, off controls and a first-session next step replace the former supporting copy.
+
+Observed qualification from `site/`:
+
+- `rtk node --test tests/homepage-production.test.js`: both deployment fixtures first failed because the selected homepage stylesheet was absent; they passed after structural promotion. Before applying the revised copy, both failed on the expected old-title mismatch, then passed the complete accepted-copy contracts after integration.
+- `rtk npm test`: 123 tests passed. Historical preview copy tests now use an attributable frozen body from commit 36f5533; their original assertions remain intact. The primary independently verified that fixture against the committed source.
+- `rtk test npm run test:browser`: 138 cases passed across both deployment bases. Root coverage includes 320, 390, 768 and 1440 pixels in both themes, local fonts, fully visible installation controls, readable functional text, diagram clearance, all seven FAQ disclosures, actual clipboard behavior, theme persistence and focus contrast.
+- Two classes of initial browser failures were test-model errors: reseeding storage on every reload and sampling the button fill instead of its offset focus outline. The corrected tests preserve explicit-choice persistence and the 3:1 focus-contrast requirement. These were test corrections, not production defect repairs.
+- Build output has 57 files. All 54 previously published non-homepage files remain byte-for-byte unchanged; `index.html` changes and `assets/homepage.css` plus `assets/homepage-theme.js` are added. Existing Help, all four historical previews, source fonts and shared controls remain intact.
+- Fourteen ignored local captures cover full pages, native desktop/mobile openings, proof, all expanded FAQ answers and installation. Rendered screenshots and public HTTP delivery checks have separate consumers; the former do not establish the latter.
+
+Publication remains gated by the [website workflow](https://github.com/alo-exp/optimax/actions/workflows/pages.yml), followed by HTTP byte comparison against the qualified build. The dated plugin-host evidence above is unchanged; this website work does not establish Claude live acceptance, universal host support or measured time/cost savings.

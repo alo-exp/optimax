@@ -16,8 +16,8 @@ function contrast(a,b){const x=luminance(a),y=luminance(b);return (Math.max(x,y)
 
 test('Prism preserves approved homepage copy, claims, commands, links and fragments',()=>{
  const html=source(),doc=documentFor(html);
- const build=readFileSync(new URL('../build.js',import.meta.url),'utf8');
- const home=build.match(/const home=`([\s\S]*?)`;\nawait write\('index.html'/)?.[1];
+ // Historical preview copy remains tied to the homepage at project commit 36f5533.
+ const home=readFileSync(new URL('./fixtures/homepage-before-circuit.html',import.meta.url),'utf8');
  assert.ok(home,'canonical homepage content is identifiable');
  const canonical=documentFor('<html><body>'+home.replace(/\$\{icon\('[^']+'\)\}/g,'')+'</body></html>');
  const actual=normalize(doc.body.textContent);

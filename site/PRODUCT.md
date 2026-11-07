@@ -24,7 +24,7 @@ The existing static Node build emits public HTML, CSS and JavaScript. GitHub Pag
 
 ## Capabilities and Constraints
 
-- Preserve the approved homepage copy and Help Center content during the visual redesign; preserve real proof links, install commands and behavioral controls.
+- The user selected Circuit for the production homepage and authorized a CMF-based homepage copy overhaul. Preserve the approved hero title and subtitle, real proof links, install commands, behavioral controls and Help Center content; the remaining homepage narrative may be rewritten for clarity and persuasion.
 - Independent ready work may run concurrently only when capacity, dependencies and exclusive resources allow it. Conflicting writes and consequential shared operations remain serialized.
 - Exact helper settings and attributable independent assessments determine learning. Opaque native workers are outside verified optimization.
 - The site must offer dark and light themes. The latest explicit user brief makes dark the default; retain an explicit saved light or dark choice.
@@ -32,7 +32,7 @@ The existing static Node build emits public HTML, CSS and JavaScript. GitHub Pag
 
 ## Brand Commitments
 
-The product name Optimax and organization Ālo Labs remain. Personal creator credit is absent from the site. The user explicitly authorized a wholly fresh visual identity with no visual legacy from the incumbent version; earlier palette, typography and layout decisions are not binding.
+The product name Optimax and organization Ālo Labs remain. Personal creator credit is absent from the site. The user selected Circuit's navy, cobalt and Sora visual world for the production homepage. Inherit its layout and material language while accommodating the revised copy; this is adoption of the chosen direction, not a new concept exercise. The four historical comparison previews remain available unchanged.
 
 ## Evidence on Hand
 

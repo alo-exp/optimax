@@ -27,19 +27,19 @@ test('keyboard users can reveal the skip link and reach main content',async({pag
  await page.keyboard.press('Enter');await expect(page).toHaveURL(/#main$/);await expect(page.locator('main')).toBeInViewport();
 });
 
-test('the selected Mona Sans heading family and both supplied weights load real self-hosted glyphs',async({page})=>{
- await page.goto('./');
- const fonts=await page.evaluate(async()=>{
+for(const [route,family]of [['./','Sora'],['help/','Mona Sans']])test(`the ${route} heading family ${family} and both supplied weights load real self-hosted glyphs`,async({page})=>{
+ await page.goto(route);
+ const fonts=await page.evaluate(async family=>{
   const requested=[];
   for(const weight of [400,700]){
-   const faces=await document.fonts.load(`${weight} 24px "Mona Sans"`,'Optimax');
+   const faces=await document.fonts.load(`${weight} 24px "${family}"`,'Optimax');
    requested.push({weight,count:faces.length,loaded:faces.every(face=>face.status==='loaded')});
   }
   await document.fonts.ready;
   return {requested,heading:getComputedStyle(document.querySelector('h1')).fontFamily,resources:performance.getEntriesByType('resource').filter(entry=>entry.name.endsWith('.woff2')).map(entry=>new URL(entry.name).origin)};
- });
- for(const item of fonts.requested){expect(item.count,`Mona Sans ${item.weight} face must exist`).toBeGreaterThan(0);expect(item.loaded).toBe(true);}
- expect(fonts.heading).toMatch(/Mona Sans/i);expect(fonts.resources.length).toBeGreaterThanOrEqual(2);
+ },family);
+ for(const item of fonts.requested){expect(item.count,`${family} ${item.weight} face must exist`).toBeGreaterThan(0);expect(item.loaded).toBe(true);}
+ expect(fonts.heading).toContain(family);expect(fonts.resources.length).toBeGreaterThanOrEqual(2);
  expect(fonts.resources.every(origin=>origin===new URL(page.url()).origin)).toBe(true);
 });
 

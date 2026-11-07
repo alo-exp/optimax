@@ -34,11 +34,11 @@ for(const url of ['https://optimax.alolabs.dev/','https://alo-exp.github.io/opti
     assert.ok(actions.querySelector('.nav-cta'));
     assert.equal(button.tagName,'BUTTON');assert.equal(button.type,'button');
     assert.equal(document.documentElement.getAttribute('data-theme'),'dark','static HTML must start dark even without JavaScript');
-    assert.equal(document.querySelector('meta[name="theme-color"]').content,'#082820');
+    assert.equal(document.querySelector('meta[name="theme-color"]').content,file===join(output,'index.html')?'#081525':'#082820');
     assert.equal(button.getAttribute('aria-label'),'Dark theme');assert.equal(button.getAttribute('aria-pressed'),'true');
     assert.ok(button.hasAttribute('hidden'),'hide the control until the theme behavior is bound');
     assert.match(button.textContent,/Theme/);assert.ok(button.querySelector('[aria-hidden="true"]'));
-    const theme=document.querySelector('head script[src="'+base+'assets/theme.js"]');
+    const theme=document.querySelector('head script[src="'+base+'assets/'+(file===join(output,'index.html')?'homepage-theme.js':'theme.js')+'"]');
     assert.ok(theme);for(const attribute of ['type','defer','async'])assert.equal(theme.hasAttribute(attribute),false);
     assert.ok(html.indexOf(theme.outerHTML)<html.indexOf('<link rel="stylesheet"'),'theme must be chosen before CSS');
     assert.ok(document.querySelector('script[type="module"][src="'+base+'assets/client.js"]'));
@@ -53,30 +53,30 @@ test('homepage explains useful parallel work, inspectable proof, objections and 
   assert.equal(document.querySelector('h1').textContent,'Get AI work done faster and cheaper');
   assert.equal(document.querySelector('.hero-deck').textContent,'Maximize parallelization, minimize cost');
   assert.ok(document.querySelector('.hero-support'),'the wide hero field needs its full supporting explanation');
-  assert.equal(document.querySelector('.hero-support').textContent,'Optimax breaks work into tasks, maximizes useful parallelization, and routes each assignment by complexity and monitored subagent performance—helping you get work done faster and at lower model cost, with independent review to protect quality.');
+  assert.equal(document.querySelector('.hero-support').textContent,'Optimax is an open-source plugin that helps your AI agent delegate well. Run independent tasks together, choose helper models by task complexity and reviewed results, and check each result before accepting it.');
   const visual=document.querySelector('.routing-visual');
-  assert.match(visual.textContent,/independent|Independent/);assert.match(visual.textContent,/waiting/i);
+  assert.match(visual.textContent,/independent/i);assert.match(visual.textContent,/waiting/i);
   assert.equal(visual.getAttribute('aria-describedby'),'plan-note');
-  assert.match(document.querySelector('#plan-note').textContent,/only when independent, capacity is verified and resources do not conflict/);
-  assert.match(visual.textContent,/illustrative/i);
+  assert.match(document.querySelector('#plan-note').textContent,/dependencies are accepted, capacity is verified and their work does not conflict/);
+  assert.match(document.querySelector('.parallel-plan').textContent,/illustrative/i);
   const assignments=visual.querySelector('ul.parallel-tasks');
   assert.ok(assignments,'independent work belongs to an unordered parallel group');
-  assert.deepEqual([...assignments.children].map(task=>task.querySelector('strong').textContent),['Investigate own scope','Implement own files','Verify independent work']);
+  assert.deepEqual([...assignments.children].map(task=>task.querySelector('strong').textContent),['Investigate the reported defect','Build an unrelated feature','Review a completed change']);
   assert.equal(assignments.children.length,3);
   assert.equal(visual.querySelectorAll('ol').length,0,'independent work must not imply sequential steps');
   const acceptance=visual.querySelector('.acceptance-boundary');
-  assert.ok(acceptance);assert.match(acceptance.textContent,/Integrate after acceptance/);
+  assert.ok(acceptance);assert.match(acceptance.textContent,/Integrate accepted results/);
   assert.ok(!assignments.contains(acceptance),'acceptance spans the independent group');
   const ordered=['how-it-works','mechanism','proof','benefits','questions','install','next-step'];
   const actual=[...document.querySelectorAll('main [id]')].map(element=>element.id).filter(id=>ordered.includes(id));
   assert.deepEqual(actual,ordered);
-  assert.match(document.querySelector('#how-it-works').textContent,/maximize useful parallelization/i);
+  assert.match(document.querySelector('#how-it-works').textContent,/what can run together/i);
   assert.match(document.querySelector('#mechanism').textContent,/verified capacity/i);
-  for(const heading of ['Scope the work','Route and run together','Review, accept and learn'])assert.ok([...document.querySelectorAll('#mechanism h3')].some(e=>e.textContent===heading));
+  for(const heading of ['Define what a good result looks like','Match the helper and run ready work','Review the work, then learn from it'])assert.ok([...document.querySelectorAll('#mechanism h3')].some(e=>e.textContent===heading));
   const proof=document.querySelector('#proof');assert.ok(proof.querySelectorAll('a[href^="https://github.com/alo-exp/optimax/"]').length>=3);
   assert.match(proof.textContent,/Codex/);assert.match(proof.textContent,/Claude/);assert.match(proof.textContent,/static|limited/);
   const questions=document.querySelector('#questions').textContent;
-  for(const expected of [/Orchestrator/,/cheapest/i,/capacity/i,/conflict/i,/opaque/i,/off/i])assert.match(questions,expected);
+  for(const expected of [/chosen session model/i,/cheapest/i,/capacity/i,/shared resources/i,/hidden worker/i,/off/i])assert.match(questions,expected);
   assert.match(document.querySelector('#install').textContent,/MIT/);assert.match(document.querySelector('#install').textContent,/usage charges/i);
   assert.deepEqual([...document.querySelectorAll('[data-install-panel]')].map(e=>e.textContent),[
    'codex plugin marketplace add alo-labs/agent-plugins\ncodex plugin add optimax@alo-labs-codex',
@@ -88,7 +88,7 @@ test('homepage explains useful parallel work, inspectable proof, objections and 
   assert.ok(next.querySelector('a[href="/help/first-session/"]'));assert.ok(next.querySelector('a[href="/help/session-controls/"]'));
  });
 });
-test('mineral manifest uses local type assets and rehomes labels below headings',async()=>{
+test('production surfaces use local type assets and keep labels below headings',async()=>{
  await withBuild('https://alo-exp.github.io/optimax/',async output=>{
   const css=await readFile(join(output,'assets/style.css'),'utf8');
   for(const weight of [400,700]){

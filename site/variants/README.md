@@ -1,10 +1,11 @@
 # Homepage comparison previews
 
-Circuit is shortlisted. These four independent homepage alternatives remain
-unaccepted; the previews do not replace the production homepage or establish a
-new global design system. The production [`DESIGN.md`](../DESIGN.md), existing
-main-site and Help output, and the Circuit and Prism previews remain unchanged
-when Stage and Press are built.
+The user selected Circuit for the production homepage. Its production adaptation
+lives in [`../src/homepage.html`](../src/homepage.html) and
+[`../src/homepage.css`](../src/homepage.css), with updated supporting copy and a
+separate indexable root funnel. The four previews below remain frozen historical
+comparisons with their original copy and styles. Help output and assets remain
+unchanged. The production scope is documented in [`../DESIGN.md`](../DESIGN.md).
 
 | Preview | Visual direction | Source | Public path relative to the deployment base |
 | --- | --- | --- | --- |
