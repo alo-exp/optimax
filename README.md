@@ -1,6 +1,6 @@
 # Optimax
 
-Optimax is a portable skill and thin plugin for choosing delegated Executor and Advisor models using independently assessed results. It keeps your selected orchestrator in charge and stores learning per user and project. Created by Shafqat Ullah at Ālo Labs. Source: [alo-exp/optimax](https://github.com/alo-exp/optimax); website: [optimax.alolabs.dev](https://optimax.alolabs.dev).
+Optimax is a portable skill and thin plugin for choosing delegated Executor and Advisor models using independently assessed results. It keeps your selected orchestrator in charge and stores learning per user and project. Created by Shafqat Ullah at Ālo Labs. Source: [alo-exp/optimax](https://github.com/alo-exp/optimax); [public website](https://optimax-alo-labs.tonedion1.chatgpt.site). The custom hostname `optimax.alolabs.dev` is attached and awaits DNS validation.
 
 ## Install
 

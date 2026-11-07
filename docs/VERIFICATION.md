@@ -1,23 +1,25 @@
 # Optimax 0.1.0 verification
 
-Checked 2026-11-07. This initial release has a verified shared controller and distributed artifacts, with the host and publication limits below. It is not a claim of universal native integration or measured cost savings.
+Checked 2026-11-07. Plugin release v0.1.0 has a verified shared controller and distributed artifacts. The website's subsequent main-branch update has nine passing Node tests and a verified public deployment. Host and custom-domain limits remain explicit below; no universal native integration or measured cost savings are claimed.
 
 | Area | Observed evidence | Status |
 | --- | --- | --- |
 | Shared Python runtime and release builder | 125 tests passed; historical policy IDs and event lineage preserved | Passed |
-| Website behavior | Eight Node tests including real DOM search/keyboard coverage; static build generates 16 articles and 36 indexed sections | Passed |
+| Website behavior | Nine Node tests including real generated DOM, keyboard and exact multiline clipboard coverage; 16 articles and 36 indexed sections | Passed on website follow-up |
 | Portable plugin manifest | Published Agent Plugins JSON schema validation passed | Passed |
 | Standalone skill | Official skill validator passed on fresh extraction | Passed |
 | Release contents | 14 standalone and 17 plugin files match canonical source; no personal ledger, tests, caches or session reports | Passed |
 | Installed controller | Fresh install, no-overwrite, disabled status, explicit/idempotent on, off, recovery, malformed native context and disabled preparation checks | Passed in disposable fixtures |
 | Codex direct helper path | Actual Advisor/Executor collaboration calls used the controller before and after rename; an actual Codex helper independently checked the extracted artifacts | Passed for explicitly loaded skill; not registered-plugin discovery |
-| Codex native plugin registry and CLI frontend | Marketplace registration cannot write host config; CLI frontend cannot initialize its in-process app-server in this restricted session | Blocked; not claimed verified |
+| Codex native plugin registry and CLI frontend | Registration cannot write the host marketplace cache and the in-process app-server cannot initialize; both remain denied after the Full Access setting change | Blocked; not claimed verified |
 | Claude package | JSON manifests, layout, component paths, namespace and shared Claude ladder/controller cases checked independently | Static checks passed |
 | Claude live execution / Ultracode | Not invoked before the authorized quota-reset window | Deferred to Tuesday 10 November 2026, 14:00 Australia/Sydney |
 | Website rendering and live interaction | Built-in browser unavailable: Mac locked and browser use disabled | Unverified |
-| Public website access | Native public-access mutation rejected by the session approval policy | Blocked |
-| Custom domain | optimax.alolabs.dev had no DNS record at inspection; Cloudflare is authoritative; no DNS credential available in this session | Pending configuration |
+| Public website access | Public deployment succeeded at https://optimax-alo-labs.tonedion1.chatgpt.site; all 26 built public routes/assets returned HTTP 200, including the 36-entry search index | Passed |
+| Custom domain | optimax.alolabs.dev is attached to the host and awaits one CNAME plus two TXT records; Cloudflare's saved login is expired and the browser is unavailable | Pending DNS/SSL; not live yet |
 | Tuesday automation | Scheduling tool rejected creation because approval policy is never | Not scheduled; runbook prepared |
+
+Publication evidence: signed plugin commit [`54540db`](https://github.com/alo-exp/optimax/commit/54540db3ea74374677438995d9fce83b58e1441d), signed tag and [v0.1.0 preview release](https://github.com/alo-exp/optimax/releases/tag/v0.1.0); signed marketplace commit [`bd142cc`](https://github.com/alo-labs/agent-plugins/commit/bd142ccb3ecb5c0bb0572aedc5be76666a97c842). Both catalogs pin the tested source SHA. GitHub-reported asset digests match the table below. The live website was built from Sites source commit `cfde56ea43d98fa3e4b99245051f802881d74d66` and published as version 1. Browser rendering remains unverified; HTTP and DOM checks do not substitute for it.
 
 ## Reproduce source checks
 

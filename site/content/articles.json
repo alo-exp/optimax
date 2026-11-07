@@ -43,7 +43,7 @@
         {
           "heading": "Before you install",
           "paragraphs": [
-            "These steps apply once the Optimax release is published in the alo-labs/agent-plugins catalog. Catalog publication is pending; installation may fail until the release is available.",
+            "Optimax 0.1.0 is published in the unified Ālo Labs plugin catalog. The Claude and Codex entries pin the tested release; use the commands below in your chosen host.",
             "Installation makes Optimax available but does not enable its session policy. The canonical skill directory in the source repository is skills/optimax."
           ],
           "links": [
@@ -81,7 +81,7 @@
           "heading": "Verify before relying on it",
           "paragraphs": [
             "After installation, start a session and invoke $optimax on in Codex or /optimax:optimax on in Claude; use the corresponding status command to check the reported mode. Discovery and behavior depend on the release and host capabilities.",
-            "Codex catalog registration and live qualification are pending. Claude has static validation only; live qualification is to follow 10 November 2026 at 14:00 Sydney time. If an invocation is unavailable, check the marketplace, plugin name, host version, and discovery state. Installation does not guarantee access to every model."
+            "The shared controller and packaged skill checks passed. Native Codex plugin registration and its CLI frontend could not be qualified in the restricted build environment. Claude has static validation only; live qualification is deferred until 10 November 2026 at 14:00 Australia/Sydney. If an invocation is unavailable, check the marketplace, plugin name, host version and discovery state. Installation does not guarantee access to every model."
           ]
         }
       ]
