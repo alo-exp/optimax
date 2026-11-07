@@ -1,11 +1,11 @@
 # Optimax 0.1.0 verification
 
-Checked 2026-11-07. Plugin release v0.1.0 has a verified shared controller and distributed artifacts. The GitHub Pages website has 17 passing Node tests, a successful Actions deployment and verified live content. Host limits remain distinguished below; no universal native integration or measured cost savings are claimed.
+Website update checked 2026-11-08 Australia/Sydney. The purple light/dark and CMF messaging candidate passed the expanded Node suite and static build; publication acceptance is pending below. Original plugin v0.1.0 evidence is retained for the unchanged runtime. No universal native integration or measured cost savings are claimed.
 
 | Area | Observed evidence | Status |
 | --- | --- | --- |
 | Shared Python runtime and release builder | 125 tests passed; historical policy IDs and event lineage preserved | Passed |
-| Website behavior | 17 Node tests including generated DOM, keyboard/clipboard, project-path and root-domain output graphs, search fetch/navigation, invalid configuration preservation and deployment YAML semantics; 16 articles and 36 indexed sections | Passed locally and in Actions |
+| Website behavior | Expanded Node suite covering theme preference/error/cross-tab state, actual palette contrast and gradients, generated theme controls, CMF/parallel positioning, existing keyboard/clipboard/search/path and workflow contracts; 17 articles and 40 indexed sections | Passed locally; updated Actions deployment pending |
 | Portable plugin manifest | Published Agent Plugins JSON schema validation passed | Passed |
 | Standalone skill | Official skill validator passed on fresh extraction | Passed |
 | Release contents | 14 standalone and 17 plugin files match canonical source; no personal ledger, tests, caches or session reports | Passed |
@@ -15,7 +15,7 @@ Checked 2026-11-07. Plugin release v0.1.0 has a verified shared controller and d
 | Claude package | JSON manifests, layout, component paths, namespace and shared Claude ladder/controller cases checked independently | Static checks passed |
 | Claude live execution / Ultracode | Not invoked before the authorized quota-reset window | Deferred to Tuesday 10 November 2026, 14:00 Australia/Sydney |
 | Website rendering and live interaction | Built-in browser unavailable: Mac locked and browser use disabled | Unverified |
-| Public website access | GitHub Pages deployment succeeded at https://alo-exp.github.io/optimax/; all 27 generated pages/assets returned HTTP 200 and matched the local build byte for byte. A nested unknown URL returned the custom HTTP 404 with prefixed assets/home link | Passed |
+| Public website access | GitHub Pages at https://alo-exp.github.io/optimax/ previously passed 27-file live verification. New purple/theme/CMF candidate has 29 intended public files and awaits deployment acceptance | Updated publication in progress |
 | Custom domain | optimax.alolabs.dev awaits a separate GitHub Pages cutover; eventual CNAME is alo-exp.github.io. Earlier Sites validation records are obsolete for this target; no DNS changes made | Pending; not live yet |
 | Tuesday automation | Active one-occurrence heartbeat saved for Tuesday 10 November 2026 at 14:00 on the verified Australia/Sydney host timezone (03:00 UTC) | Scheduled; not executed yet |
 | Fresh Codex session | A second real native Terra Low session discovered the plugin and returned disabled status under its distinct actual thread ID; fixture ledger hash unchanged | Passed; not a compaction test |
@@ -59,3 +59,15 @@ See the [native Codex acceptance record](CODEX-ACCEPTANCE.md) and [deferred Clau
 - `node --test tests/pages-workflow.test.js`: failed with the expected missing-workflow assertion before the workflow was created, then passed. Independent review checked the official pinned action contracts. Additional characterization assertions were added from a passing baseline for existing correct credential, action-identity and success-gating behavior; no artificial red phase is claimed for those assertions.
 - `npm test` and `npm run build`: 17 tests passed and the static build succeeded. Generated-artifact review found 27 intended public files, no symlinks and no source, credential, configuration or learning directories.
 - GitHub Actions completed the same tests, build, upload and deployment successfully. HTTPS checks verified all 27 generated files byte for byte at the project URL, plus the custom nested-route 404. Browser access remains disabled and the Mac locked. Custom-domain DNS was not changed.
+
+## Purple themes and CMF messaging update
+
+The supplied Content Messaging Framework v3.0 informed the product-page definition, compact audience/problem/future sequence, mechanism, inspectable proof, benefits, objections before installation, and first-session guidance. [MESSAGING.md](../site/MESSAGING.md) records the adaptation and evidence boundaries. No conversion statistics, testimonials, scarcity or outcomes were invented. Useful parallelization is presented alongside model routing, with verified-capacity, dependency and ownership limits.
+
+Observed TDD and regression evidence (commands from `site/`):
+
+- `node --test tests/theme.test.js`: 26 initial behavioral failures against an empty seam, then 26 passes. Three additional characterization cases established later-body binding, next-page restore and early cross-tab synchronization. `node --test --test-name-pattern='clear' tests/theme.test.js` then reproduced a cross-tab clear-all defect before its repair; final theme suite has 31 passes.
+- `node --test tests/theme-contrast.test.js`: eight expected failures before the palette change, then eight passes. A subsequent hovered-link regression reproduced 2.32:1 contrast on a technical surface before its scoped accent repair; nine cases now check actual tokens, sampled gradients, reading/focus pairs, preference fallback and control contracts.
+- `node --test tests/site-contract.test.js`: four expected assertion failures before shared markup/copy changes, then four passes. Existing install commands and navigation contracts were preserved. All 20 generated HTML pages omit the personal footer credit and include the early classic theme script and accessible shared control.
+- `rtk test npm test` and `npm run build`: full local suite and build passed after the combined source was stable. Artifact review found 29 allowlisted public files, no symlinks, no personal credit, and 17 articles / 40 search sections.
+- Independent content/source review found no material gaps and checked 282 local URL occurrences. Actual browser rendering, pointer/keyboard interaction and visual responsive acceptance remain unverified because built-in browser use is disabled and the Mac locked. Source-level CSS contracts and DOM tests are not presented as a rendered audit.

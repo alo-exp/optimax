@@ -1,43 +1,71 @@
 # ĀloLabs design foundation
 
-An independent, reusable foundation for clear technical products. Optimax is its first application; product copy, routing diagrams and help content are product-specific.
+A reusable foundation for clear technical products. Optimax is its first application; copy, delegation illustrations and help content remain product-specific.
 
 ## Principles
 
-- Build hierarchy with type, generous space and fine rules before adding decoration.
-- Use signal green sparingly for emphasis, active states and key surfaces. Graphite and warm white carry the reading experience.
-- Pair a confident sans-serif with a restrained editorial serif for emphasis. Use system fallbacks so the site remains usable without a font service.
-- Vary composition to serve the content: split explanations, editorial lists, dark technical surfaces and open reading pages.
+- Build hierarchy with type, generous space and fine rules before decoration.
+- Use a restrained violet-to-purple gradient for primary actions, hero emphasis and short transition surfaces. Keep paragraphs on solid surfaces.
+- Treat light and dark themes equally: reading, search, code, controls and focus states all use semantic tokens.
+- Pair a system sans-serif with Georgia for selective editorial emphasis. Content remains usable without external fonts, gradients or JavaScript.
+- Explain parallel work with task rows and dependency labels. Illustrative status is not a claim of live activity.
 
-## Tokens
+## Semantic tokens
 
-| Role | CSS token | Value |
+The stylesheet is the source of truth. Light is the default; `html[data-theme="dark"]` selects dark. The matching `prefers-color-scheme: dark` fallback applies only without an explicit theme, including without JavaScript. Each palette sets native `color-scheme`.
+
+| Role / CSS token | Light | Dark |
 | --- | --- | --- |
-| Primary ink | `--ink` | #171a18 |
-| Reading surface | `--paper` | #f5f4ed |
-| Secondary text | `--muted` | #646b63 |
-| Light divider | `--line` | #d5d8ce |
-| Accent surface | `--signal` | #c3f45b |
-| Dark divider | `--dark-line` | #454d43 |
-| Maximum content width | `--max` | 1320px |
+| Reading surface / `--bg` | #faf8ff | #171124 |
+| Primary ink / `--ink` | #261a39 | #f5efff |
+| Secondary text / `--muted` | #665a75 | #c0b4d0 |
+| Decorative divider / `--border` | #d9cfea | #51435f |
+| Control boundary / `--control-border` | #89749f | #9883af |
+| Elevated surface / `--elevated` | #ffffff | #21182f |
+| Selected surface / `--selected` | #ede5fb | #2d2042 |
+| Accent / `--accent` | #6d28d9 | #c4b5fd |
+| Focus / `--focus` | #6d28d9 | #c4b5fd |
+| Technical surface / `--panel` | #241a35 | #100b1a |
+| Technical ink / `--on-panel` | #f5efff | #f5efff |
+| Technical secondary text / `--panel-muted` | #c0b4d0 | #c0b4d0 |
+| Technical accent / `--panel-accent` | #d8c8ff | #d8c8ff |
+| Technical divider / `--panel-border` | #63516f | #63516f |
+| Gradient / `--gradient-start` → `--gradient-end` | #6d28d9 → #9333ea | #6d28d9 → #9333ea |
+| Gradient ink / `--on-gradient` | #ffffff | #ffffff |
+| Hero gradient / `--display-start` → `--display-end` | #6d28d9 → #9333ea | #c4b5fd → #e9d5ff |
+| Offset shadow / `--shadow` | #e8dff5 | #30203f |
 
-Body typography uses a system sans stack, with Georgia for selective italic display emphasis. Display headings use tight tracking and responsive `clamp()`; body copy uses relaxed line height. Eyebrows use compact uppercase labels with tracking. Avoid using small labels for essential instructions.
+Use panel tokens for terminal, code, footer and dark editorial sections. Technical components override `--focus` with `--panel-accent`; the closing gradient uses white focus. Decorative dividers carry no essential state. Controls receive stronger boundaries and explicit labels.
 
-## Components and layout
+Automated tests extract actual stylesheet tokens and calculate WCAG relative luminance. They require 4.5:1 for normal text on reading, elevated, selected and technical surfaces; sample each gradient at 101 positions; and require 3:1 for focus against its corresponding surface. These checks qualify the color contract, not complete accessibility or rendered layout.
 
-- **Header:** brand, concise navigation and a clear destination; a skip link precedes it.
-- **Buttons and links:** solid graphite for primary actions, quiet text links for secondary actions. Provide visible focus.
-- **Editorial sections:** an eyebrow, oversized heading and a separate explanatory column; stack at narrower widths.
-- **Dark technical panel:** dark background, fine dividers, labels and concise content. Never use decorative status as a claim of live data.
-- **Lists and help articles:** horizontal rules and clear titles; articles have readable measure and linked section anchors.
-- **Search:** labelled input, keyboard-accessible results, live count and an explicit clear action.
+## Typography and layout
 
-Desktop gutters are 48px and narrow layouts use 20px. The main layout stacks below 850px; compact adjustments begin at 520px. Content must remain readable at zoom and reflow without horizontal page scrolling.
+Use the system sans stack for body copy and Georgia for selective display emphasis. Headings have responsive sizing and tight tracking; paragraphs use relaxed line height. Eyebrows use compact uppercase labels. Essential instructions belong in normal body text.
 
-## Interaction and accessibility
+Content is capped at 1320px. Desktop gutters are 48px; narrow gutters are 20px. Main compositions stack below 850px; compact adjustments begin at 520px. Compact headlines scale to viewport width. Code wraps using `pre-wrap` and `overflow-wrap: anywhere`.
 
-Use semantic landmarks, headings and native controls. Maintain a visible keyboard focus indicator and meaningful link text. Search updates a live status and supports arrow keys, Enter and Escape; output must be built with DOM text nodes, not query-derived HTML. Respect reduced-motion preferences; motion should never be required to understand state. Test contrast, keyboard flow and responsive rendering for each new product application rather than treating tokens alone as compliance.
+## Components and interaction states
+
+- **Header:** brand, concise navigation and `.header-actions`. Actions place the CTA first and theme button last. Below 850px the CTA disappears; below 520px primary navigation disappears while the theme control stays at the right edge.
+- **Theme button:** native button, visible Theme label, stable accessible Dark theme name and `aria-pressed` state. Minimum target is 44px square; it does not shrink. JavaScript reveals it only when operational; `.theme-toggle[hidden]` overrides flex display.
+- **Primary action:** white text on a violet-to-purple gradient, with a solid-color fallback. Hover adds an underline and an outer surface-colored ring while preserving the text contrast pair.
+- **Hero emphasis:** accent text is the fallback; supporting browsers add clipped gradient text. Forced-color mode restores system text.
+- **Technical panel:** dark purple surface, subtle offset shadow, fine rules and readable labels. Dependent WAITING rows have a dashed boundary; words convey status independently of color.
+- **Editorial sections:** eyebrow, large heading and explanatory column. Keep prose on solid surfaces; gradients are reserved for short ticker and closing sections.
+- **Terminal:** readable commands, explicit platform buttons, visible selected underline and copy feedback. Commands wrap on narrow viewports.
+- **Search:** labeled input, explicit text and placeholder colors, rule-separated results, and a selected surface with outline. Search content is built with text nodes.
+- **Footer:** technical-surface tokens, readable secondary text and underlined hover links.
+- **Focus:** a 3px ring with 4px offset for links, buttons, inputs and summaries. Keyboard-selected search results also receive a 2px outline. State must never depend only on color.
+
+## Preferences and validation
+
+Reduced motion disables smooth scrolling. Theme changes do not animate. Forced-color mode restores system text and borders on gradient components.
+
+The controller owns explicit state, persistence and system-preference changes. CSS owns the no-JavaScript preference fallback and native color scheme. Verify both layers, including blocked storage and unavailable browser APIs.
+
+Before release, inspect light and dark views at 320px and desktop widths, keyboard flow, search, installation controls, article code and zoom/reflow in the built-in browser. Automated color and DOM checks are targeted evidence; visual quality and complete WCAG conformance require rendered inspection.
 
 ## Reuse
 
-Start with the semantic tokens and principles. Keep product-specific illustration, words and routes outside the foundation. Extend tokens only for a demonstrated need; document new contrast pairs and interaction states.
+Keep semantic tokens, responsive conventions, control states and accessibility rules. Replace product copy, diagrams, commands and help taxonomy with independently verified content.

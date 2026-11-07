@@ -3,3 +3,10 @@ timestamp,model_slug,reasoning_effort,score,task_complexity
 2026-11-07T12:33:13Z,gpt-6.1-sol,high,5,medium
 2026-11-07T12:33:13Z,gpt-6.1-sol,high,5,medium
 2026-11-07T12:33:13Z,gpt-6.1-sol,high,5,medium
+2026-11-07T13:03:59Z,gpt-6.1-sol,high,5,medium
+2026-11-07T13:03:59Z,gpt-6.1-sol,xhigh,5,high
+2026-11-07T13:06:13Z,gpt-6.1-sol,high,4,medium
+2026-11-07T13:10:13Z,gpt-6.1-sol,high,5,medium
+2026-11-07T13:10:13Z,gpt-6.1-sol,high,5,medium
+2026-11-07T13:10:13Z,gpt-6.1-sol,high,5,medium
+2026-11-07T13:11:52Z,gpt-6.1-sol,high,5,medium

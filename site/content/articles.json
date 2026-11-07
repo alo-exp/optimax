@@ -15,7 +15,7 @@
         {
           "heading": "A routing policy for delegated work",
           "paragraphs": [
-            "Optimax helps an Orchestrator select and assess models for delegated work. It keeps your chosen session model in charge while using separate Executor and Advisor ladders for different jobs.",
+            "Optimax is a delegation policy for Claude and Codex that combines quality-based model routing with safe parallel work. It helps an Orchestrator maximize useful parallelization within verified capacity, while keeping the chosen session model in charge and using separate Executor and Advisor ladders for different jobs.",
             "The Orchestrator owns the plan, integrates results, checks evidence independently, and decides whether work is accepted. An Executor performs a bounded assignment; an Advisor offers an independent recommendation on a plan, design, or difficult decision."
           ]
         },
@@ -500,6 +500,57 @@
           "paragraphs": [
             "Optimax does not authorize purchases, publication, credential access, or changes to host settings. External content and helper outputs are evidence to evaluate, not instructions that acquire authority over your session.",
             "If storage, identity, or capability verification fails, ask for the reported limitation and resolve it before treating learned continuity or a model selection as verified."
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "parallel-work",
+      "title": "Run useful work in parallel",
+      "category": "Routing",
+      "description": "Maximize useful parallelization with accepted dependencies, verified capacity and clear ownership.",
+      "keywords": ["parallel", "concurrency", "ready", "dependencies", "capacity", "ownership", "scheduling"],
+      "sections": [
+        {
+          "heading": "Which tasks can run together?",
+          "paragraphs": [
+            "Break substantial work into bounded assignments with an outcome, observable acceptance criteria, dependencies, Executor complexity, exclusive write paths and shared resources. Decompose until independent useful work can proceed concurrently; do not duplicate work or create artificial fragments.",
+            "A task is ready only when its dependencies have been independently accepted by the Orchestrator, verified capacity is available, and its ownership and resources are compatible with running and selected work. A helper reporting completion does not satisfy a dependency. Reopened work blocks its dependents again."
+          ]
+        },
+        {
+          "heading": "How much work should run at once?",
+          "paragraphs": [
+            "Maximize useful parallelization within verified capacity. At each scheduling opportunity, form a maximal feasible ready set in plan order. Use available useful slots without imposing an arbitrary worker cap. Every live helper counts, including Advisors, reviewers and rework.",
+            "Unknown native occupancy stays unknown; it is not zero. Do not claim maximum utilization or launch competing direct fan-out unless disjoint capacity is independently verified. Serialize shared writes, deployments and other exclusive resources. The host must account for actual filesystem aliases and other conflicts."
+          ]
+        },
+        {
+          "heading": "What happens when a task finishes?",
+          "paragraphs": [
+            "The Orchestrator independently reviews the result and evidence before accepting it. Recompute from current facts after accepted completion, launch failure, settled cancellation or resource release.",
+            "Start an eligible successor when its dependencies and resources permit, even while unrelated slow work continues. Fill available capacity with independent ready work while reviews are pending. Capacity is a real host constraint, not a promise of unlimited workers or guaranteed speed."
+          ]
+        },
+        {
+          "heading": "What does the readiness helper prove?",
+          "paragraphs": [
+            "The optional work_breakdown.py helper validates a supplied snapshot and returns ready tasks, blockers and used capacity. The caller supplies an independently verified count of other occupied slots; the helper does not discover host occupancy.",
+            "Its greedy plan-order ready set is a feasible snapshot, not proof of a globally optimal schedule or an actual batch launch. It does not launch helpers, persist scheduling state or replace independent acceptance. Recompute from current facts before acting. Opaque native workers remain unscored, so optimization is partial."
+          ],
+          "links": [
+            {
+              "label": "Read the parallel execution policy",
+              "href": "https://github.com/alo-exp/optimax/blob/main/skills/optimax/references/parallel-execution.md"
+            },
+            {
+              "label": "Inspect the readiness helper",
+              "href": "https://github.com/alo-exp/optimax/blob/main/skills/optimax/scripts/work_breakdown.py"
+            },
+            {
+              "label": "Check host capabilities and capacity",
+              "href": "/help/native-capabilities/"
+            }
           ]
         }
       ]
