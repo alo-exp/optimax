@@ -32,7 +32,7 @@ The existing static Node build emits public HTML, CSS and JavaScript. GitHub Pag
 
 ## Brand Commitments
 
-The product name Optimax and organization Ālo Labs remain. Personal creator credit is absent from the site. The user selected Circuit's navy, cobalt and Sora visual world for the production homepage. Inherit its layout and material language while accommodating the revised copy; this is adoption of the chosen direction, not a new concept exercise. The four historical comparison previews remain available unchanged.
+The product name Optimax and organization Ālo Labs remain. Personal creator credit is absent from the site. The user selected Circuit's navy, cobalt and Sora visual world for the production homepage. Inherit its layout and material language while accommodating the revised copy; this is adoption of the chosen direction, not a new concept exercise. Circuit is the only retained homepage direction, including its standalone preview.
 
 ## Evidence on Hand
 

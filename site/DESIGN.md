@@ -105,7 +105,7 @@ The frontmatter describes `/` only. [src/homepage.html](src/homepage.html), [src
 
 Help, articles and the error page retain Mona Sans, the existing juniper/mineral/brass document palette, [src/style.css](src/style.css) and [src/theme.js](src/theme.js). Article prose retains its 72ch reading measure and existing responsive behavior. Homepage adoption does not retheme these surfaces.
 
-The four `/versions/` previews remain frozen historical comparisons with their original copy, styles, fonts, noindex and self-canonical declarations. Their links remain in the comparison area; production has no comparison navigation.
+Circuit is the only retained `/versions/` preview. Preserve its original copy, styles, fonts, noindex and self-canonical declaration; production has no comparison navigation.
 
 ## Homepage color and type
 

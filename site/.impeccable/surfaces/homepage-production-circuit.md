@@ -6,7 +6,7 @@ related_targets: [src/homepage.css, build.js, MESSAGING.md, PRODUCT.md, DESIGN.m
 ---
 # Circuit production homepage with CMF copy
 
-Mode: Persuade. The user selected Circuit and authorized a complete supporting-copy overhaul using CMF by a Sol 6.1 Max subagent. Existing visual authority is Circuit; inherit it. Preserve the approved hero and subtitle, behavioral controls, installation commands, proof destinations and Help content. The original four comparison previews remain historical references.
+Mode: Persuade. The user selected Circuit and authorized a complete supporting-copy overhaul using CMF by a Sol 6.1 Max subagent. Existing visual authority is Circuit; inherit it. Preserve the approved hero and subtitle, behavioral controls, installation commands, proof destinations and Help content. Circuit is the only retained homepage direction, including its standalone preview.
 
 ## Direction contract
 
@@ -18,6 +18,6 @@ STORY: Use the actual CMF v3.0 fourteen-component buyer sequence with legitimate
 
 FIRST VIEWPORT: Retain Circuit's broad flush-left offer, visible fully usable install action, supporting explanation and connected independent work. New copy must fit comfortably at 320, 390, 768 and 1440 pixels. Model selection remains in the user's control. Diagrams are illustrative, have truthful labels and a separate review boundary, and never cross reading lines. Follow through proof, benefits, objections and installation with a clear first-session next step.
 
-FORM: User-selected existing candidate Circuit from the prior comparison; no new roll or concept tournament is appropriate. Original reference seed:ac119e5ba2e286ac identifies the historical direction only. Production root becomes indexable with canonical and metadata matched to SITE_URL and deployment base. Existing shared runtime and assets should be reused where compatible; Help and previews are preserved.
+FORM: User-selected existing candidate Circuit from the prior comparison; no new roll or concept tournament is appropriate. Original reference seed:ac119e5ba2e286ac identifies the historical direction only. Production root becomes indexable with canonical and metadata matched to SITE_URL and deployment base. Existing shared runtime and assets should be reused where compatible; Help and the standalone Circuit preview are preserved.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

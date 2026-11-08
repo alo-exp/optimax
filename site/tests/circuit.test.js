@@ -22,7 +22,7 @@ test('Circuit is a complete independent homepage with the preserved offer and pr
   const href=link.getAttribute('href'),expected=href.startsWith('/')?'{{BASE}}'+href.slice(1):href;
   assert.ok([...document.querySelectorAll('a[href]')].some(node=>node.getAttribute('href')===expected),'retain destination '+expected);
  }
- assert.ok(document.querySelector('a[href="{{BASE}}versions/prism/"]'),'provide the other comparison direction');
+ assert.equal(document.querySelectorAll('a[href*="{{BASE}}versions/"]').length,0,'Circuit must not link to removed comparison routes');
  assert.equal(document.querySelectorAll('#questions details').length,5);
 });
 

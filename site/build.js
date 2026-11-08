@@ -30,10 +30,8 @@ await write('sitemap.xml',`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="
 for(const name of ['style.css','theme.js','client.js','search.js','controls.js','deployment.js']) await copyFile('src/'+name,join(out,'assets',name));
 await cp('public/fonts',join(out,'assets/fonts'),{recursive:true});
 await copyFile('public/favicon.svg',join(out,'favicon.svg'));
-await mkdir(join(out,'assets/images'),{recursive:true});
-await copyFile('public/images/astra-exposure.webp',join(out,'assets/images/astra-exposure.webp'));
-// Preview pages are separate build inputs; the production layout above stays unchanged.
-for(const name of ['circuit','prism','stage','press','continuum','astra']){
+// Keep the selected Circuit preview separate from the production homepage.
+for(const name of ['circuit']){
  await write(`versions/${name}/index.html`,(await readFile(`variants/${name}.html`,'utf8')).replaceAll('{{BASE}}',deployment.basePath));
  await write(`versions/${name}/style.css`,(await readFile(`variants/${name}.css`,'utf8')).replaceAll('{{BASE}}',deployment.basePath));
 }
