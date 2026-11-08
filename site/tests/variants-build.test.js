@@ -17,14 +17,14 @@ for(const url of ['https://optimax.alolabs.dev/','https://alo-exp.github.io/opti
   try{
    for(const name of ['build.js','src','content','public','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
    await mkdir(join(root,'variants'));
-   for(const name of ['circuit','prism','stage','press','continuum']){
+   for(const name of ['circuit','prism','stage','press','continuum','astra']){
     await writeFile(join(root,'variants',name+'.html'),`<!doctype html><html><head><link rel="icon" type="image/svg+xml" href="{{BASE}}favicon.svg"><script src="{{BASE}}versions/theme.js"></script><link rel="stylesheet" href="./style.css"></head><body><h1>${name} preview</h1><a href="{{BASE}}help/">Help</a><script type="module" src="{{BASE}}versions/client.js"></script></body></html>`);
     await writeFile(join(root,'variants',name+'.css'),`:root{--bg:${name==='circuit'?'#001122':'#332211'}}`);
    }
    for(const name of ['theme.js','client.js'])await writeFile(join(root,'variants',name),'// shared '+name);
    execFileSync(process.execPath,['build.js'],{cwd:root,env:{...process.env,SITE_URL:url},stdio:'pipe'});
    const base=new URL(url).pathname;
-   for(const name of ['circuit','prism','stage','press','continuum']){
+   for(const name of ['circuit','prism','stage','press','continuum','astra']){
     const path=join(root,'dist/versions',name,'index.html');
     assert.ok(existsSync(path),'build must publish '+name+' preview route');
     const html=await readFile(path,'utf8');assert.match(html,new RegExp(name+' preview'));assert.doesNotMatch(html,/\{\{BASE\}\}/);
@@ -32,7 +32,7 @@ for(const url of ['https://optimax.alolabs.dev/','https://alo-exp.github.io/opti
     assert.equal(await readFile(join(root,'dist/versions',name,'style.css'),'utf8'),await readFile(join(root,'variants',name+'.css'),'utf8'));
    }
    for(const name of ['theme.js','client.js'])assert.equal(await readFile(join(root,'dist/versions',name),'utf8'),'// shared '+name);
-   assert.doesNotMatch(await readFile(join(root,'dist/index.html'),'utf8'),/circuit preview|prism preview|stage preview|press preview|continuum preview/);
+   assert.doesNotMatch(await readFile(join(root,'dist/index.html'),'utf8'),/circuit preview|prism preview|stage preview|press preview|continuum preview|astra preview/);
   }finally{await rm(root,{recursive:true,force:true});}
  });
 }
@@ -43,8 +43,8 @@ for(const deployed of ['https://optimax.alolabs.dev/','https://alo-exp.github.io
   for(const name of ['build.js','src','content','public','variants','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
   execFileSync(process.execPath,['build.js'],{cwd:root,env:{...process.env,SITE_URL:deployed},stdio:'pipe'});
   const output=join(root,'dist'),base=new URL(deployed).pathname;
-  assert.deepEqual((await readdir(join(output,'versions'),{withFileTypes:true})).filter(e=>e.isDirectory()).map(e=>e.name).sort(),['circuit','continuum','press','prism','stage']);
-  for(const name of ['circuit','prism','stage','press','continuum']){
+  assert.deepEqual((await readdir(join(output,'versions'),{withFileTypes:true})).filter(e=>e.isDirectory()).map(e=>e.name).sort(),['astra','circuit','continuum','press','prism','stage']);
+  for(const name of ['circuit','prism','stage','press','continuum','astra']){
    const pageURL=new URL('versions/'+name+'/',deployed),html=await readFile(join(output,'versions',name,'index.html'),'utf8'),document=parseHTML(html).document;
    assert.match(document.querySelector('meta[name="robots"]').content,/noindex/);assert.equal(new URL(document.querySelector('link[rel="canonical"]').getAttribute('href'),pageURL).href,pageURL.href);
    assert.doesNotMatch(html,/\{\{BASE\}\}/);assert.equal(document.querySelectorAll('#theme-toggle').length,1);

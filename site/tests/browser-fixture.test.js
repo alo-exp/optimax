@@ -16,5 +16,7 @@ test('isolated real-build fixtures retain the public font supply and license',as
    assert.ok(existsSync(asset),`isolated build must retain public asset ${relative}`);
    assert.deepEqual(await readFile(asset),await readFile(join(site,relative)));
   }
+  for(const name of ['fahkwang-latin-600-normal.woff2','fahkwang-OFL.txt']){const relative=join('public','fonts',name);assert.ok(existsSync(join(workspace,relative)),`isolated build must retain public asset ${relative}`);assert.deepEqual(await readFile(join(workspace,relative)),await readFile(join(site,relative)));}
+  const photo=join('public','images','astra-exposure.webp');assert.ok(existsSync(join(workspace,photo)),'isolated build must retain the local Astra photograph');assert.deepEqual(await readFile(join(workspace,photo)),await readFile(join(site,photo)));
  }finally{await rm(workspace,{recursive:true,force:true});}
 });

@@ -1,0 +1,13 @@
+{
+  "origin": "Original artwork generated with the built-in OpenAI ImageGen tool.",
+  "source": "exec-bb8443b1-f3d9-4937-9edc-442b92ac2e4a.png",
+  "sourceSha256": "af8641c718b10560adaa0f47d64b3f00cc668404b7e88bccb16f1ac4ad32bd7c",
+  "width": 2172,
+  "height": 724,
+  "delivery": "public/images/astra-exposure.webp",
+  "deliveryBytes": 78162,
+  "deliverySha256": "0e5bf40bf1a6349710b411ce131aaa964a7ef9eaac8c5f28205c0b7ba482ad7c",
+  "encoding": "cwebp -q 82 -m 6, plus an embedded XMP source hash and exact generation prompt.",
+  "prompt": "Use case: photorealistic-natural.\nCreate ONE original panoramic photographic artwork for the photographic contact sheet on a contemporary open-source software homepage. This is the image inside three apertures; do not draw a website, film strip, contact sheet border, graphic frame, lettering or any text. A master studio photograph, three physically different specimens spaced side by side on one continuous deep black-to-plum velvet ground, each confined to its own third, empty dark gaps between them. Three refined silver-gelatin photographic studies of precision and light. Left third: a roll of narrow polished stainless-steel shim stock unfurling in a loose sculptural asymmetric S, silvery lavender edge, soft slate-violet highlights. Middle third: an elegant translucent pleated strip of folded violet photographic acetate viewed obliquely with several overlapping luminous angular facets, crisp highlights and clear internal structure. Right third: a fine brushed-silver extension spring seen in extreme macro on a diagonal, elliptical turns with rich purple/graphite shadows, optically distinct from the ribbon and pleats. The objects sit roughly at x=16.7%, 50% and 83.3%; put their important silhouettes in the central 50% of the image height. Crop for three wide horizontal print windows. Restrained lavender duotone analog art photography, precise oblique studio lighting, real reflection/refraction and shadows, tangible textures, silver edges, luminous subjects clearly legible against black. Cool, tactile and contemporary. An actual photographic still life, not a software render, glass blob, illustration, synthetic data display, technical diagram, neon glow, gear, DNA helix, or dark background with nothing visible. Use a very wide 3:1 aspect ratio, full bleed. No words, characters, numbers, marks, edge codes, logos, or watermark.",
+  "createdAt": "2026-11-08T00:43:48.790Z"
+}
