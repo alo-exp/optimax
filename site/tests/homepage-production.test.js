@@ -12,7 +12,7 @@ const site=dirname(dirname(fileURLToPath(import.meta.url)));
 for(const deployed of ['https://optimax.alolabs.dev/','https://alo-exp.github.io/optimax/'])test('production homepage adopts Circuit without changing Help at '+deployed,async()=>{
  const root=await mkdtemp(join(tmpdir(),'optimax-production-home-'));
  try{
-  for(const name of ['build.js','src','content','public','variants','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
+  for(const name of ['build.js','src','content','public','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
   execFileSync(process.execPath,['build.js'],{cwd:root,env:{...process.env,SITE_URL:deployed},stdio:'pipe'});
   const base=new URL(deployed).pathname,output=join(root,'dist');
   const html=await readFile(join(output,'index.html'),'utf8'),document=parseHTML(html).document;
@@ -44,7 +44,7 @@ for(const deployed of ['https://optimax.alolabs.dev/','https://alo-exp.github.io
   for(const command of ['$optimax on','$optimax off','$optimax status','/optimax:optimax on','/optimax:optimax off','/optimax:optimax status'])assert.ok(texts('code').includes(command),'session command must remain exact: '+command);
   const early=document.querySelector('script[src="'+base+'assets/homepage-theme.js"]');assert.ok(early);assert.equal(early.hasAttribute('type'),false);assert.ok(html.indexOf(early.outerHTML)<html.indexOf('<link rel="stylesheet"'));
   assert.ok(document.querySelector('script[type="module"][src="'+base+'assets/client.js"]'));
-  assert.equal(await readFile(join(output,'assets/homepage-theme.js'),'utf8'),await readFile(join(site,'variants/theme.js'),'utf8'));
+  assert.equal(await readFile(join(output,'assets/homepage-theme.js'),'utf8'),await readFile(join(site,'src/homepage-theme.js'),'utf8'));
   for(const element of document.querySelectorAll('[href],[src]')){
    const raw=element.getAttribute('href')??element.getAttribute('src'),target=new URL(raw,deployed);if(target.origin!==new URL(deployed).origin)continue;
    assert.ok(target.pathname.startsWith(base),'homepage URL escapes base: '+raw);const path=target.pathname.slice(base.length),destination=join(output,path.endsWith('/')?path+'index.html':path||'index.html');assert.ok(existsSync(destination),'homepage asset missing: '+raw);

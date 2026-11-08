@@ -11,7 +11,7 @@ const site=dirname(dirname(fileURLToPath(import.meta.url)));
 async function withBuild(url,check){
  const root=await mkdtemp(join(tmpdir(),'optimax-contract-'));
  try{
-  for(const name of ['build.js','src','content','public','variants','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
+  for(const name of ['build.js','src','content','public','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
   execFileSync(process.execPath,['build.js'],{cwd:root,env:{...process.env,SITE_URL:url},stdio:'pipe'});
   await check(join(root,'dist'));
  }finally{await rm(root,{recursive:true,force:true})}

@@ -10,45 +10,49 @@ import {createHash} from 'node:crypto';
 import {parseHTML} from 'linkedom';
 
 const site=dirname(dirname(fileURLToPath(import.meta.url)));
-const removed=['prism','stage','press','continuum','astra'];
-const snapshots=JSON.parse(readFileSync(join(site,'tests/fixtures/circuit-only-public-sha256.json'),'utf8'));
+const snapshots=JSON.parse(readFileSync(join(site,'tests/fixtures/production-public-sha256.json'),'utf8'));
 
 async function filesIn(directory){
  const entries=await readdir(directory,{withFileTypes:true});
  return(await Promise.all(entries.map(entry=>entry.isDirectory()?filesIn(join(directory,entry.name)):[join(directory,entry.name)]))).flat();
 }
 
-test('Circuit preview has no links to removed comparison routes',()=>{
- const document=parseHTML(readFileSync(join(site,'variants/circuit.html'),'utf8')).document;
- const obsolete=[...document.querySelectorAll('a[href]')].map(link=>link.getAttribute('href')).filter(href=>removed.some(name=>href.includes('/versions/'+name+'/')||href.includes('versions/'+name+'/')));
- assert.deepEqual(obsolete,[],'removed design previews must not remain reachable from Circuit');
+test('production sources have no standalone preview ownership',()=>{
+ assert.equal(existsSync(join(site,'variants')),false,'preview sources must be retired');
+ assert.ok(existsSync(join(site,'src/homepage-theme.js')),'the homepage theme runtime belongs to production');
+ const document=parseHTML(readFileSync(join(site,'src/homepage.html'),'utf8')).document;
+ assert.equal(document.querySelectorAll('a[href*="versions/"]').length,0,'production navigation must not expose preview routes');
 });
 
-test('only Circuit sources, licensed fonts and font dependencies remain',()=>{
- assert.deepEqual(readdirSync(join(site,'variants')).sort(),['README.md','circuit.css','circuit.html','client.js','theme.js'].sort());
+test('production keeps its licensed fonts and pinned font dependencies',()=>{
  const expected=['OFL.txt','sora-OFL.txt',...['mona-sans','sora'].flatMap(family=>[400,700].map(weight=>family+'-latin-'+weight+'-normal.woff2'))];
- assert.deepEqual(readdirSync(join(site,'public/fonts')).sort(),expected.sort(),'only fonts used by Circuit and Help should ship');
+ assert.deepEqual(readdirSync(join(site,'public/fonts')).sort(),expected.sort(),'fonts used by the homepage and Help must ship');
  const pkg=JSON.parse(readFileSync(join(site,'package.json'),'utf8'));
  assert.deepEqual(Object.keys(pkg.devDependencies).filter(name=>name.startsWith('@fontsource/')).sort(),['@fontsource/mona-sans','@fontsource/sora']);
  assert.equal(existsSync(join(site,'public/images/astra-exposure.webp')),false);
 });
 
-for(const deployed of Object.keys(snapshots))test('Circuit-only build removes old routes and assets while preserving retained bytes at '+deployed,async()=>{
- const root=await mkdtemp(join(tmpdir(),'optimax-circuit-only-'));
+for(const deployed of Object.keys(snapshots))test('production-only build clears stale previews and preserves every production byte at '+deployed,async()=>{
+ const root=await mkdtemp(join(tmpdir(),'optimax-production-only-'));
  try{
-  for(const name of ['build.js','src','content','public','variants','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
-  await mkdir(join(root,'dist/versions/prism'),{recursive:true});
-  await writeFile(join(root,'dist/versions/prism/stale.html'),'obsolete preview');
+  for(const name of ['build.js','src','content','public','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
+  // Obsolete inputs must not restore preview publication or own the production runtime.
+  await mkdir(join(root,'variants'));
+  for(const name of ['circuit.html','circuit.css','theme.js','client.js'])await writeFile(join(root,'variants',name),'/* obsolete preview input */');
+  for(const name of ['circuit','prism']){
+   await mkdir(join(root,'dist/versions',name),{recursive:true});
+   await writeFile(join(root,'dist/versions',name,'stale.html'),'obsolete preview output');
+  }
+  await writeFile(join(root,'dist/versions/theme.js'),'obsolete shared output');
   execFileSync(process.execPath,['build.js'],{cwd:root,env:{...process.env,SITE_URL:deployed},stdio:'pipe'});
   const output=join(root,'dist'),base=new URL(deployed).pathname;
-  assert.deepEqual((await readdir(join(output,'versions'),{withFileTypes:true})).filter(entry=>entry.isDirectory()).map(entry=>entry.name),['circuit'],'build must publish only the selected Circuit preview');
+  assert.equal(existsSync(join(output,'versions')),false,'build must not publish any standalone preview directory');
   const files=(await filesIn(output)).map(file=>relative(output,file)).sort();
-  assert.deepEqual(files,[...Object.keys(snapshots[deployed]),'versions/circuit/index.html'].sort(),'fresh output must contain exactly the retained public files');
+  assert.deepEqual(files,Object.keys(snapshots[deployed]).sort(),'fresh output must contain exactly the retained production files');
   assert.equal(existsSync(join(output,'assets/images')),false,'unused image directory must not be published');
   for(const [file,sha256]of Object.entries(snapshots[deployed])){
-   assert.equal(createHash('sha256').update(await readFile(join(output,file))).digest('hex'),sha256,'retained public bytes changed: '+file);
+   assert.equal(createHash('sha256').update(await readFile(join(output,file))).digest('hex'),sha256,'retained production bytes changed: '+file);
   }
-  assert.equal(await readFile(join(output,'versions/circuit/index.html'),'utf8'),(await readFile(join(site,'variants/circuit.html'),'utf8')).replaceAll('{{BASE}}',base));
 
   for(const file of files.filter(file=>file.endsWith('.html'))){
    const pageURL=new URL(file==='index.html'?'':file.replace(/index\.html$/,''),deployed);

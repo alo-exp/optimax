@@ -20,3 +20,14 @@ test('self-hosted Mona Sans supplies licensed Latin 400 and 700 WOFF2 within the
  const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8'));
  assert.equal(pkg.devDependencies['@fontsource/mona-sans'],'5.3.0','font provenance must use the verified exact package version');
 });
+
+
+test('homepage Sora font supply contains both Latin weights and its open font license',()=>{
+ const directory=new URL('../public/fonts/',import.meta.url);
+ for(const weight of [400,700]){
+  const asset=new URL(`sora-latin-${weight}-normal.woff2`,directory);
+  assert.ok(existsSync(asset),'homepage font must ship: '+asset);
+  const bytes=readFileSync(asset);assert.equal(bytes.subarray(0,4).toString(),'wOF2');assert.ok(bytes.length>1000);
+ }
+ assert.match(readFileSync(new URL('sora-OFL.txt',directory),'utf8'),/SIL OPEN FONT LICENSE/i);
+});

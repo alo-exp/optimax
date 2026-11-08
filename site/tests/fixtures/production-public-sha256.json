@@ -37,10 +37,7 @@
     "index.html": "c0028ee758ac4e20804a80b09de7d4f8b9d555f8aa909455849d39b484973b59",
     "robots.txt": "c0dac49c50d42bbe67c13da3c47262f8cb124e8886cc3f21336a8e57c7d80c3e",
     "search-index.json": "fcb46ed0179c9cca80a25855679030d103545ec5bae9a30ae901c5cc66d4caff",
-    "sitemap.xml": "aa11e1c74fa2b9b3a178f818d3e8f2b787ddeb9e0f9ad5dee46cf13036884496",
-    "versions/circuit/style.css": "a48b03015bf7b0d8283db79a97cadd374ff634951e3a9b906e197c2a57c202c2",
-    "versions/client.js": "336000b344a82dd8d2742bd472cb1c6996b6fdd57e44304f7ef7e11401074471",
-    "versions/theme.js": "4871514be85a3835c2aaf466c8b7c87f66800d039d9f321e01901323e3b9fd76"
+    "sitemap.xml": "aa11e1c74fa2b9b3a178f818d3e8f2b787ddeb9e0f9ad5dee46cf13036884496"
   },
   "https://alo-exp.github.io/optimax/": {
     "404.html": "c951603e82b1951012eb47fd4f76d086e16ba933055a7c5c04486b3537920061",
@@ -80,9 +77,6 @@
     "index.html": "d038c1ed73992a04aab846d743be97eaed70217262a24d789ee05191f2886eb8",
     "robots.txt": "eaff3bd8728527f27b0472490da464e4d3f6aa4ddadc7c2425876ffe4715faac",
     "search-index.json": "fcb46ed0179c9cca80a25855679030d103545ec5bae9a30ae901c5cc66d4caff",
-    "sitemap.xml": "967930623d38cb0d7dab4a2fc6d8f223058d073e56682b22188f09498c6af53d",
-    "versions/circuit/style.css": "a89c4899b6a9ce1fa31edd0d5880dbfff6e9fc23a3bdc11ae8e29047432f460f",
-    "versions/client.js": "336000b344a82dd8d2742bd472cb1c6996b6fdd57e44304f7ef7e11401074471",
-    "versions/theme.js": "4871514be85a3835c2aaf466c8b7c87f66800d039d9f321e01901323e3b9fd76"
+    "sitemap.xml": "967930623d38cb0d7dab4a2fc6d8f223058d073e56682b22188f09498c6af53d"
   }
 }

@@ -105,7 +105,7 @@ The frontmatter describes `/` only. [src/homepage.html](src/homepage.html), [src
 
 Help, articles and the error page retain Mona Sans, the existing juniper/mineral/brass document palette, [src/style.css](src/style.css) and [src/theme.js](src/theme.js). Article prose retains its 72ch reading measure and existing responsive behavior. Homepage adoption does not retheme these surfaces.
 
-Circuit is the only retained `/versions/` preview. Preserve its original copy, styles, fonts, noindex and self-canonical declaration; production has no comparison navigation.
+Circuit is applied at the production root. Standalone homepage previews, `/versions/` routes and comparison navigation are removed.
 
 ## Homepage color and type
 
@@ -125,7 +125,7 @@ Intro, proof, FAQ and installation use measured split layouts and become one col
 
 Install Optimax targets #install; the secondary hero link targets #mechanism. Keep a fully visible installation action in the first viewport at 320, 390, 768 and 1440px in both themes. The theme control remains last in the right-aligned header actions, has a 44px target and starts hidden until bound. Its accessible name stays Dark theme; pressed state reflects the choice.
 
-Root reuses the existing palette-aware implementation as assets/homepage-theme.js. Help retains assets/theme.js. Both share the saved preference key, default dark without a valid choice and honor saved light. Root theme metadata follows its palette after CSS readiness and toggles. Production client and installation controls remain shared.
+Root uses the palette-aware implementation in [src/homepage-theme.js](src/homepage-theme.js), published as assets/homepage-theme.js. Help retains assets/theme.js. Both share the saved preference key, default dark without a valid choice and honor saved light. Root theme metadata follows its palette after CSS readiness and toggles. Production client and installation controls remain shared.
 
 Codex/Claude tabs retain pressed states, exact marketplace command bytes, wrapping code, copy action and visible status. Source inspection, usage charges, host limits and off controls accompany the offer. Seven native FAQ disclosures retain full answers; differentiation follows them and precedes installation. The root is indexable with absolute canonical and matching title, description and Open Graph metadata for SITE_URL. Assets and Help links respect the deployment prefix.
 

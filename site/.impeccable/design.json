@@ -24,16 +24,6 @@
         "theme": "src/theme.js",
         "font": "Mona Sans",
         "status": "preserved document system"
-      },
-      "comparisons": {
-        "paths": [
-          "/versions/circuit/",
-          "/versions/prism/",
-          "/versions/stage/",
-          "/versions/press/"
-        ],
-        "status": "frozen historical previews",
-        "indexable": false
       }
     },
     "colorMeta": {

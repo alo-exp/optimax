@@ -16,7 +16,7 @@ for(const url of ['https://optimax.alolabs.dev/','https://alo-exp.github.io/opti
  test('every generated page declares a shipped SVG favicon at '+url,async()=>{
   const root=await mkdtemp(join(tmpdir(),'optimax-favicon-'));
   try{
-   for(const name of ['build.js','src','content','public','variants','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
+   for(const name of ['build.js','src','content','public','package.json'])await cp(join(site,name),join(root,name),{recursive:true});
    execFileSync(process.execPath,['build.js'],{cwd:root,env:{...process.env,SITE_URL:url},stdio:'pipe'});
    const output=join(root,'dist'),base=new URL(url).pathname;
    for(const page of await htmlFiles(output)){

@@ -17,8 +17,8 @@ function layout(title,description,path,body){return `<!doctype html><html lang="
 const homepage=(await readFile('src/homepage.html','utf8')).replaceAll('{{BASE}}',deployment.basePath).replaceAll('{{ROOT_URL}}',e(deployment.url));
 await write('index.html',homepage);
 await write('assets/homepage.css',(await readFile('src/homepage.css','utf8')).replaceAll('{{BASE}}',deployment.basePath));
-// Reuse the palette-aware theme implementation; Help retains its original theme asset.
-await copyFile('variants/theme.js',join(out,'assets/homepage-theme.js'));
+// Publish the homepage-owned palette-aware runtime; Help keeps its theme asset.
+await copyFile('src/homepage-theme.js',join(out,'assets/homepage-theme.js'));
 const groups=[...new Set(data.articles.map(a=>a.category))];
 const help=`<section class="help-hero wrap"><h1>How can we help?</h1><p class="eyebrow">OPTIMAX / HELP CENTER</p><p>Guides to installation, routing, native modes and the decisions behind Optimax.</p><div class="search"><label for="help-search">Search the help center</label><div class="search-box">${icon('search')}<input id="help-search" type="search" autocomplete="off" placeholder="Search articles..." role="combobox" aria-autocomplete="list" aria-controls="search-results" aria-expanded="false"><button id="search-clear" type="button">Clear</button></div><p id="search-status" role="status" aria-live="polite"></p><ul id="search-results" role="listbox"></ul></div></section><section class="wrap help-library"><div class="library-heading"><p class="eyebrow">THE LIBRARY</p><p>Browse by topic <span class="direction-down">${icon('arrow')}</span></p></div>${groups.map(g=>`<div class="help-group"><div><h2>${e(g)}</h2><span class="eyebrow">TOPIC</span></div><div>${data.articles.filter(a=>a.category===g).map(a=>`<a class="article-link" href="/help/${e(a.slug)}/"><span><strong>${e(a.title)}</strong><small>${e(a.description)}</small></span><span>${icon('arrow')}</span></a>`).join('')}</div></div>`).join('')}</section>`;
 await write('help/index.html',layout('Help center','Explore Optimax guides and reference articles.','/help/',help));
@@ -30,10 +30,4 @@ await write('sitemap.xml',`<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="
 for(const name of ['style.css','theme.js','client.js','search.js','controls.js','deployment.js']) await copyFile('src/'+name,join(out,'assets',name));
 await cp('public/fonts',join(out,'assets/fonts'),{recursive:true});
 await copyFile('public/favicon.svg',join(out,'favicon.svg'));
-// Keep the selected Circuit preview separate from the production homepage.
-for(const name of ['circuit']){
- await write(`versions/${name}/index.html`,(await readFile(`variants/${name}.html`,'utf8')).replaceAll('{{BASE}}',deployment.basePath));
- await write(`versions/${name}/style.css`,(await readFile(`variants/${name}.css`,'utf8')).replaceAll('{{BASE}}',deployment.basePath));
-}
-for(const name of ['theme.js','client.js'])await copyFile(join('variants',name),join(out,'versions',name));
 console.log(`Built ${pages.length} articles and ${index.length} search entries in ${out}/`);
