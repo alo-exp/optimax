@@ -22,7 +22,7 @@ for(const deployed of ['https://optimax.alolabs.dev/','https://alo-exp.github.io
   assert.equal(document.querySelector('link[rel="canonical"]').getAttribute('href'),deployed);
   assert.doesNotMatch(document.querySelector('meta[name="robots"]')?.content||'',/noindex/i);
   assert.equal(document.querySelector('meta[name="site-base"]').content,base);
-  assert.equal(document.querySelectorAll('h1').length,1);assert.equal(document.querySelector('h1').textContent,'Get AI work done faster and cheaper');
+  assert.equal(document.querySelectorAll('h1').length,1);assert.equal(document.querySelector('h1').textContent,'Optimize Cost, Maximize Parallel Work');
   assert.equal(document.querySelector('.hero-deck').textContent,'Maximize parallelization, minimize cost');
   assert.equal(document.querySelectorAll('.parallel-tasks > li').length,3);assert.equal(document.querySelectorAll('.acceptance-boundary').length,1);
   assert.equal(document.querySelectorAll('[data-install-tab]').length,2);assert.equal(document.querySelectorAll('[data-install-panel]').length,2);assert.ok(document.querySelector('#copy-status[role="status"]'));

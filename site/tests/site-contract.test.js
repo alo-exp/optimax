@@ -50,7 +50,7 @@ for(const url of ['https://optimax.alolabs.dev/','https://alo-exp.github.io/opti
 test('homepage explains useful parallel work, inspectable proof, objections and the first session in order',async()=>{
  await withBuild('https://optimax.alolabs.dev/',async output=>{
   const document=parseHTML(await readFile(join(output,'index.html'),'utf8')).document;
-  assert.equal(document.querySelector('h1').textContent,'Get AI work done faster and cheaper');
+  assert.equal(document.querySelector('h1').textContent,'Optimize Cost, Maximize Parallel Work');
   assert.equal(document.querySelector('.hero-deck').textContent,'Maximize parallelization, minimize cost');
   assert.ok(document.querySelector('.hero-support'),'the wide hero field needs its full supporting explanation');
   assert.equal(document.querySelector('.hero-support').textContent,'Optimax is an open-source plugin that helps your AI agent delegate well. Run independent tasks together, choose helper models by task complexity and reviewed results, and check each result before accepting it.');

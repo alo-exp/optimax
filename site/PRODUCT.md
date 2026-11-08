@@ -16,7 +16,7 @@ Optimax is an open-source delegation policy and thin plugin. It breaks work into
 
 ## Positioning
 
-Approved hero: “Get AI work done faster and cheaper”. Approved subtitle: “Maximize parallelization, minimize cost”. Supporting copy connects task breakdown, useful parallelization, complexity-based routing, monitored subagent performance and independent review. Faster completion and lower model cost are desired outcomes, not measured savings or guaranteed mathematical minima.
+Approved hero: “Optimize Cost, Maximize Parallel Work”. Approved subtitle: “Maximize parallelization, minimize cost”. Supporting copy connects task breakdown, useful parallelization, complexity-based routing, monitored subagent performance and independent review. Faster completion and lower model cost are desired outcomes, not measured savings or guaranteed mathematical minima.
 
 ## Operating Context
 

@@ -14,10 +14,11 @@ const text=value=>value.replace(/\s+/g,' ').trim();
 test('Circuit is a complete independent homepage with the preserved offer and production fragments',()=>{
  assert.ok(document.querySelector('main#main'),'Circuit must provide the complete homepage, not a missing preview');
  assert.equal(document.querySelectorAll('h1').length,1);
- assert.equal(document.querySelector('h1').textContent,'Get AI work done faster and cheaper');
+ assert.equal(document.querySelector('h1').textContent,'Optimize Cost, Maximize Parallel Work');
  for(const id of ['how-it-works','mechanism','proof','benefits','questions','install','next-step'])assert.ok(document.getElementById(id),'retain production fragment #'+id);
  const copy=[...document.querySelectorAll('main h1,main h2,main h3,main p,main summary')].map(node=>text(node.textContent));
- for(const node of original.querySelectorAll('main h1,main h2,main h3,main p,main summary'))assert.ok(copy.includes(text(node.textContent)),'preserve source wording: '+text(node.textContent));
+ // The user-approved hero supersedes the historical H1; all other preview copy stays frozen.
+ for(const node of original.querySelectorAll('main h2,main h3,main p,main summary'))assert.ok(copy.includes(text(node.textContent)),'preserve source wording: '+text(node.textContent));
  for(const link of original.querySelectorAll('a[href]')){
   const href=link.getAttribute('href'),expected=href.startsWith('/')?'{{BASE}}'+href.slice(1):href;
   assert.ok([...document.querySelectorAll('a[href]')].some(node=>node.getAttribute('href')===expected),'retain destination '+expected);
