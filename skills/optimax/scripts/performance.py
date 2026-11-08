@@ -1,9 +1,10 @@
-"""POSIX stdlib controller for one canonical project and explicit user.
+"""Stdlib controller for one canonical project and explicit user.
 
-All durable state is one versioned CSV. flock on the project directory serializes
-cooperating controllers; fsync and atomic rename publish updates without lock or
-state sidecars. Requires a local POSIX filesystem; Windows/network filesystems
-are unsupported. The trusted host resolves exact model IDs, discovers supported
+All durable state is one versioned CSV. flock on the project directory (POSIX)
+or msvcrt locking on a per-project file in the temp directory (Windows)
+serializes cooperating controllers; fsync and atomic rename publish updates
+without lock or state sidecars in the project. Requires a local filesystem;
+network filesystems are unsupported. The trusted host resolves exact model IDs, discovers supported
 rungs, dispatches natively, and independently reviews actual execution receipts.
 This engine never launches agents or changes native/global model settings.
 
@@ -18,7 +19,12 @@ import argparse
 from contextlib import contextmanager
 import csv
 from datetime import datetime, timezone
-import fcntl
+try:
+    import fcntl
+except ImportError:  # Windows: lock a per-project file in the temp dir instead
+    fcntl = None
+    import msvcrt
+    import time
 import hashlib
 import json
 import os
@@ -83,6 +89,10 @@ class Engine:
 
     @contextmanager
     def _locked(self):
+        if fcntl is None:
+            with self._locked_windows():
+                yield
+            return
         descriptor = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY)
         try:
             fcntl.flock(descriptor, fcntl.LOCK_EX)
@@ -91,6 +101,27 @@ class Engine:
         finally:
             fcntl.flock(descriptor, fcntl.LOCK_UN)
             os.close(descriptor)
+
+    @contextmanager
+    def _locked_windows(self):
+        # Directories cannot be opened or locked on Windows, and a sidecar in the
+        # project would alter the ledger directory, so lock outside the project.
+        digest = hashlib.sha256(str(self.root).lower().encode("utf-8")).hexdigest()[:32]
+        lock_path = Path(tempfile.gettempdir()) / ("optimax-" + digest + ".lock")
+        with open(lock_path, "a+b") as stream:
+            while True:
+                try:
+                    stream.seek(0)
+                    msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
+                    break
+                except OSError:
+                    time.sleep(0.05)
+            try:
+                self._safe_paths()
+                yield
+            finally:
+                stream.seek(0)
+                msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
 
     def _safe_paths(self):
         for path in (self.directory, self.path):
@@ -166,6 +197,8 @@ class Engine:
                 stream.flush()
                 os.fsync(stream.fileno())
             os.replace(temporary, self.path)
+            if fcntl is None:
+                return  # Windows cannot open directories to fsync them
             directory_fd = os.open(self.directory, os.O_RDONLY | os.O_DIRECTORY)
             try:
                 os.fsync(directory_fd)

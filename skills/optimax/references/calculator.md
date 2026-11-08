@@ -1,6 +1,6 @@
 # Persistent controller and read-only calculator
 
-Use Python 3 and the bundled `scripts/performance.py` for normal operation. The controller persists only the canonical per-user/project CSV, validates and replays its versioned events, and serializes updates using POSIX file locking. A host without the required filesystem/locking support must report that blocker rather than claim persisted continuity. The host supplies trusted identity/session values and authentic execution metadata; neither script authenticates those values or launches agents.
+Use Python 3 and the bundled `scripts/performance.py` for normal operation. The controller persists only the canonical per-user/project CSV, validates and replays its versioned events, and serializes updates using POSIX `flock` on the project directory, or on Windows `msvcrt` locking of a per-project lock file in the system temp directory. A host without the required filesystem/locking support must report that blocker rather than claim persisted continuity. The host supplies trusted identity/session values and authentic execution metadata; neither script authenticates those values or launches agents.
 
 ## Session and controller commands
 
