@@ -4,7 +4,7 @@ The Circuit homepage uses the supplied Content Messaging Framework v3.0 as an ed
 
 ## Audience, offer and adaptation
 
-The intended visitor already builds with Claude or Codex and understands delegation. The homepage therefore uses the guide's legitimate aware-buyer compression of components 1–4, plus the companion's product-page guidance to define the offering immediately. The exact approved H1 is **Optimize Cost, Maximize Parallel Work** and the exact subtitle is **Maximize parallelization, minimize cost**. These express the desired outcome; supporting copy explains the mechanism and qualified proof rather than claiming measured savings.
+The intended visitor already builds with Claude or Codex and understands delegation. The homepage therefore uses the guide's legitimate aware-buyer compression of components 1–4, plus the companion's product-page guidance to define the offering immediately. The exact approved H1 is **Optimize Cost, Maximize Parallel Work** and the current authored subtitle is **The right models. Independent tasks. Reviewed results.** The title expresses the desired outcome; the subtitle introduces the mechanism; supporting copy explains the mechanism and qualified proof rather than claiming measured savings.
 
 The opening names the audience and defines Optimax as an open-source plugin for delegating work. The below-fold narrative expands the practical problem, then gives mechanism → proof → benefits → objections → differentiation → offer and controls → installation → first-session guidance. The hero/navigation installation links are shortcuts for ready visitors; the complete offer and primary installation action follow the proof and objections. This is an aware-buyer product homepage, not an uncompressed 14-block sales letter. No actual customer interviews or conversion research were supplied; buyer/problem phrasing is a source-grounded editorial hypothesis.
 
@@ -14,10 +14,10 @@ The product must remain understandable without knowing internal roles: useful pa
 
 | CMF component | Homepage location and treatment |
 | --- | --- |
-| 1. Identity Hook / Pattern Interrupt | An audience line below the approved subtitle identifies teams and individuals building with Claude or Codex in the first viewport. Compressed for an already-aware audience. |
+| 1. Identity Hook / Pattern Interrupt | An audience line below the current authored subtitle identifies teams and individuals building with Claude or Codex in the first viewport. Compressed for an already-aware audience. |
 | 2. Problem Articulation | Compressed opening context; `#how-it-works` expands independent assignments waiting, disproportionate model effort and unclear integration ownership. No invented customer quotation or quantified pain. |
 | 3. Agitation / Stakes Amplification | `#how-it-works`: waiting consumes time and rework adds effort. Brief, proportionate stakes; no fear campaign or fabricated loss amount. |
-| 4. Aspirational Future State | Exact approved hero and subtitle; the supporting definition ties the outcome to useful parallel work, reviewed model choices and independent acceptance. No fastest/cheapest guarantee. |
+| 4. Aspirational Future State | The approved H1 expresses the desired outcome; the current authored subtitle introduces model choice, independent tasks and review. The supporting definition ties the outcome to useful parallel work, reviewed model choices and independent acceptance. No fastest/cheapest guarantee. |
 | 5. Guide Introduction / Brand Positioning | Hero defines the open-source plugin; source and Ālo Labs attribution establish an inspectable project. No invented credentials or personal creator credit. |
 | 6. Solution Introduction / Unique Mechanism | `#mechanism`: define the outcome and boundaries → match and run ready work → review and learn. Accepted dependencies, capacity and ownership explain why tasks can proceed safely together. |
 | 7. Evidence & Proof Layer | `#proof`: canonical skill, parallel policy, release/client-scoped Codex acceptance, explicitly pending Claude live acceptance and verification report. Public artifacts substitute for unavailable customer proof; they do not establish savings. |

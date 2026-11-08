@@ -16,7 +16,7 @@ Optimax is an open-source delegation policy and thin plugin. It breaks work into
 
 ## Positioning
 
-Approved hero: “Optimize Cost, Maximize Parallel Work”. Approved subtitle: “Maximize parallelization, minimize cost”. Supporting copy connects task breakdown, useful parallelization, complexity-based routing, monitored subagent performance and independent review. Faster completion and lower model cost are desired outcomes, not measured savings or guaranteed mathematical minima.
+Approved hero: “Optimize Cost, Maximize Parallel Work”. Current authored subtitle: “The right models. Independent tasks. Reviewed results.” Supporting copy connects task breakdown, useful parallelization, complexity-based routing, monitored subagent performance and independent review. Faster completion and lower model cost are desired outcomes, not measured savings or guaranteed mathematical minima.
 
 ## Operating Context
 
@@ -24,7 +24,7 @@ The existing static Node build emits public HTML, CSS and JavaScript. GitHub Pag
 
 ## Capabilities and Constraints
 
-- The user selected Circuit for the production homepage and authorized a CMF-based homepage copy overhaul. Preserve the approved hero title and subtitle, real proof links, install commands, behavioral controls and Help Center content; the remaining homepage narrative may be rewritten for clarity and persuasion.
+- The user selected Circuit for the production homepage and authorized a CMF-based homepage copy overhaul. Preserve the approved hero title and current authored subtitle, real proof links, install commands, behavioral controls and Help Center content; the remaining homepage narrative may be rewritten for clarity and persuasion.
 - Independent ready work may run concurrently only when capacity, dependencies and exclusive resources allow it. Conflicting writes and consequential shared operations remain serialized.
 - Exact helper settings and attributable independent assessments determine learning. Opaque native workers are outside verified optimization.
 - The site must offer dark and light themes. The latest explicit user brief makes dark the default; retain an explicit saved light or dark choice.
