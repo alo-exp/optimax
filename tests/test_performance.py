@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills/optimax/scripts"))
 from performance import Engine, recommend
+from session_policy import advisor_context
 
 MODELS = {"terra": "terra-v1", "sol": "sol-v1"}
 CLAUDE_MODELS = {"haiku": "haiku-v1", "sonnet": "sonnet-v1", "opus": "opus-v1"}
@@ -219,6 +220,32 @@ class PerformanceTests(unittest.TestCase):
         self.enable()
         self.assertTrue(Engine(self.root, "actual-user").status(self.session)["enabled"])
         self.assertFalse(self.engine.status("other-session")["enabled"])
+
+    def test_replay_rejects_reused_or_redundant_session_events(self):
+        self.enable()
+        pending = self.prepare()
+        self.engine.set_enabled(self.session, False)
+        self.enable()
+        original = self.engine.path.read_bytes()
+        for case in ("reused_generation", "redundant_event"):
+            for operation in ("status", "assess"):
+                with self.subTest(case=case, operation=operation):
+                    self.engine.path.write_bytes(original)
+                    rows = self.events()
+                    sessions = [row for row in rows if row["event_type"] == "session"]
+                    if case == "reused_generation":
+                        sessions[-1]["data"]["generation"] = sessions[0]["data"]["generation"]
+                    else:
+                        self.engine._append(rows, "session",
+                                            dict(session=self.session, enabled=True, generation="fresh-generation"))
+                    self.write_events(rows)
+                    corrupted = self.engine.path.read_bytes()
+                    with self.assertRaises(ValueError):
+                        if operation == "status":
+                            self.engine.status(self.session)
+                        else:
+                            self.assess(pending)
+                    self.assertEqual(self.engine.path.read_bytes(), corrupted)
 
     def test_launch_reserves_exact_settings_and_one_csv_only(self):
         self.enable()
@@ -501,6 +528,8 @@ class PerformanceTests(unittest.TestCase):
             "selected_model_mismatch": ("models", {"terra": "different", "sol": "sol-v1"}),
             "invalid_mode": ("mode", "fabricated"),
             "cross_platform_mode": ("mode", "claude-ultracode"),
+            "incorrect_reason": ("reason", "fabricated"),
+            "incorrect_previous_epoch": ("previous_epoch", "fabricated"),
             "empty_run": ("run_id", ""),
             "empty_session": ("session", ""),
             "empty_user": ("user_id", ""),
@@ -768,6 +797,31 @@ class PerformanceTests(unittest.TestCase):
         self.assertTrue(self.engine.import_history(rows)["duplicate"])
         self.assertEqual(self.engine.path.read_bytes(), before)
         self.assertEqual(self.events()[-1]["data"]["rows"], rows)
+
+    def test_replay_rejects_corrupt_legacy_import_before_read_or_retry(self):
+        imported = [{"score": "5", "arbitrary": [None, True, {"value": 3}]}]
+        self.engine.import_history(imported)
+        original = self.engine.path.read_bytes()
+        for case in ("changed_rows", "non_object_row", "duplicate_digest"):
+            for operation in ("status", "retry"):
+                with self.subTest(case=case, operation=operation):
+                    self.engine.path.write_bytes(original)
+                    events = self.events()
+                    entry = events[-1]["data"]
+                    if case == "changed_rows":
+                        entry["rows"][0]["score"] = "0"
+                    elif case == "non_object_row":
+                        entry["rows"] = ["not an object"]
+                    else:
+                        self.engine._append(events, "legacy_import", dict(entry))
+                    self.write_events(events)
+                    corrupted = self.engine.path.read_bytes()
+                    with self.assertRaises(ValueError):
+                        if operation == "status":
+                            self.engine.status(self.session)
+                        else:
+                            self.engine.import_history(imported)
+                    self.assertEqual(self.engine.path.read_bytes(), corrupted)
 
     def test_corrupt_truncated_data_and_projected_fields_fail_without_clobber(self):
         self.enable()
@@ -1099,6 +1153,81 @@ class PerformanceTests(unittest.TestCase):
         planning = self.engine.prepare(**args, purpose="planning", complexity="low")
         self.assertEqual((planning["advice_level"], planning["context_floor"]), ("medium", 0))
         self.assertTrue(planning["consultation"]["required"])
+
+    def test_replay_rejects_corrupt_advisor_consultation_before_read_or_prepare(self):
+        self.enable()
+        args = dict(session=self.session, platform="codex", role="advisor",
+                    models={"sol": "sol-v1", "astra": "astra-v1"}, available_steps=[0, 1, 2])
+        run = self.engine.prepare(**args, purpose="planning", complexity="low")
+        original = self.engine.path.read_bytes()
+        cases = {"purpose": "execution", "complexity": "super_high", "needed": "yes",
+                 "required": False, "allowed": False, "consult": False, "advice_level": "high",
+                 "starting_step": False, "family": "astra", "effort": "max"}
+        high = dict(advisor_context("codex", "super_high", "planning", False),
+                    purpose="planning", complexity="super_high", needed=False)
+        disallowed = dict(advisor_context("codex", "low", "execution", True),
+                          purpose="execution", complexity="low", needed=True)
+        for case, value in list(cases.items()) + [("insufficient_floor", high), ("disallowed", disallowed), ("not_object", [])]:
+            for operation in ("status", "prepare"):
+                with self.subTest(case=case, operation=operation):
+                    self.engine.path.write_bytes(original)
+                    rows = self.events()
+                    launch = next(row for row in rows if row["event_type"] == "launch"
+                                  and row["data"]["run_id"] == run["run_id"])
+                    if case in ("insufficient_floor", "disallowed", "not_object"):
+                        launch["data"]["consultation"] = value
+                    else:
+                        launch["data"]["consultation"][case] = value
+                    self.write_events(rows)
+                    corrupted = self.engine.path.read_bytes()
+                    with self.assertRaises(ValueError):
+                        if operation == "status":
+                            self.engine.status(self.session)
+                        else:
+                            self.engine.prepare(**args)
+                    self.assertEqual(self.engine.path.read_bytes(), corrupted)
+
+    def test_replay_accepts_explicitly_raised_advisor_level_with_consultation(self):
+        self.enable()
+        args = dict(session=self.session, platform="codex", role="advisor",
+                    models={"sol": "sol-v1", "astra": "astra-v1"}, available_steps=[0, 1, 2])
+        run = self.engine.prepare(**args, purpose="planning", complexity="low", advice_level="high")
+        self.assertEqual(run["consultation"]["starting_step"], 0)
+        self.assertEqual(run["context_floor"], 1)
+        self.assertEqual(Engine(self.root, "actual-user").status(self.session)["tracks"][0]["step"], 1)
+
+    def test_replay_rejects_noop_advisor_context_event(self):
+        self.enable()
+        run = self.engine.prepare(self.session, "codex", "advisor",
+                                  models={"sol": "sol-v1", "astra": "astra-v1"},
+                                  available_steps=[0, 1, 2])
+        rows = self.events()
+        self.engine._append(rows, "advisor_context", dict(platform="codex", role="advisor",
+                            tier=None, epoch=run["epoch"], advice_level="medium", context_floor=0))
+        self.write_events(rows)
+        corrupted = self.engine.path.read_bytes()
+        for operation in ("status", "disable"):
+            with self.subTest(operation=operation), self.assertRaises(ValueError):
+                if operation == "status":
+                    self.engine.status(self.session)
+                else:
+                    self.engine.set_enabled(self.session, False)
+            self.assertEqual(self.engine.path.read_bytes(), corrupted)
+
+    def test_replay_rejects_advisor_context_before_v3(self):
+        write_policy_two_fixture(self.engine, self.session)
+        rows = self.events()
+        self.engine._append(rows, "advisor_context", dict(platform="codex", role="advisor",
+                            tier=None, epoch="advisor-v1", advice_level="medium", context_floor=0))
+        self.write_events(rows)
+        corrupted = self.engine.path.read_bytes()
+        for operation in ("status", "disable"):
+            with self.subTest(operation=operation), self.assertRaises(ValueError):
+                if operation == "status":
+                    self.engine.status(self.session)
+                else:
+                    self.engine.set_enabled(self.session, False)
+            self.assertEqual(self.engine.path.read_bytes(), corrupted)
 
     def test_medium_receipt_can_descend_after_high_prepare_and_stale_high_cannot_move(self):
         self.enable()

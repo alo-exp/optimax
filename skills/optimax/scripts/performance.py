@@ -93,6 +93,24 @@ def _validate_assessment_request(request):
 def _json(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
+def _legacy_payload(rows):
+    if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
+        raise ValueError("legacy rows must be a list of objects")
+    payload = _json(rows)
+    return payload, hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _validate_consultation(platform, consultation, advice_level):
+    if not isinstance(consultation, dict):
+        raise ValueError("invalid stored consultation")
+    purpose, complexity, needed = (consultation[field] for field in ("purpose", "complexity", "needed"))
+    expected = dict(advisor_context(platform, complexity, purpose, needed),
+                    purpose=purpose, complexity=complexity, needed=needed)
+    actual = {field: consultation[field] for field in expected}
+    if (_json(actual) != _json(expected) or not expected["consult"]
+            or ADVICE_FLOORS[advice_level] < expected["starting_step"]):
+        raise ValueError("invalid stored consultation")
+
 
 def _now():
     return datetime.now(timezone.utc).isoformat()
@@ -251,7 +269,8 @@ class Engine:
     def _state(self, rows):
         active = rows[0]["data"]["policy_version"] if rows else POLICY_VERSION
         state = dict(sessions={}, tracks={}, runs={}, assessments={}, executions=set(),
-                     imports=set(), policy_version=active, windows={}, lineage_totals={}, epochs={})
+                     imports=set(), policy_version=active, windows={}, lineage_totals={}, epochs={},
+                     session_generations={})
         try:
             for index, row in enumerate(rows[1:], 1):
                 data, event = row["data"], row["event_type"]
@@ -260,6 +279,12 @@ class Engine:
                     if type(data["enabled"]) is not bool:
                         raise ValueError("invalid enabled state")
                     _string(data["generation"], "stored generation")
+                    previous = state["sessions"].get(data["session"])
+                    generations = state["session_generations"].setdefault(data["session"], set())
+                    if ((previous is not None and previous["enabled"] == data["enabled"])
+                            or data["generation"] in generations):
+                        raise ValueError("invalid stored session transition")
+                    generations.add(data["generation"])
                     state["sessions"][data["session"]] = data
                 elif event == "policy_adoption":
                     target = {LEGACY_POLICY_VERSION: SECOND_POLICY_VERSION,
@@ -289,7 +314,9 @@ class Engine:
                     state["tracks"][_key(data)] = dict(data, policy_version=version)
                 elif event == "advisor_context":
                     track = state["tracks"][_key(data)]
-                    if (track["role"] != "advisor" or track["epoch"] != data["epoch"]
+                    if (state["policy_version"] not in (THIRD_POLICY_VERSION, POLICY_VERSION)
+                            or track["role"] != "advisor" or track["epoch"] != data["epoch"]
+                            or track.get("advice_level") == data["advice_level"]
                             or type(data["context_floor"]) is not int
                             or data["context_floor"] != ADVICE_FLOORS[data["advice_level"]]
                             or track["step"] < data["context_floor"]):
@@ -302,7 +329,7 @@ class Engine:
                     track = state["tracks"][_key(data)]
                     if track["epoch"] != data["epoch"]:
                         raise ValueError("launch without current epoch")
-                    if type(data["step"]) is not int or any(data[field] != track[field] for field in ("step", "family", "effort", "model_id")):
+                    if type(data["step"]) is not int or any(data[field] != track[field] for field in ("step", "family", "effort", "model_id", "reason", "previous_epoch")):
                         raise ValueError("launch settings differ from epoch")
                     run_policy = data.get("policy_version", track["policy_version"])
                     if policy_lineage(run_policy, data["role"], data["platform"]) != policy_lineage(track["policy_version"], track["role"], track["platform"]):
@@ -343,9 +370,10 @@ class Engine:
                     self._validate_assessment_transition(rows, index, data, run, state, expected["verified"])
                     state["executions"].add((run["platform"], request["execution_id"]))
                 elif event == "legacy_import":
-                    state["imports"].add(data["digest"])
-                    if not isinstance(data["rows"], list):
-                        raise ValueError("invalid legacy import")
+                    _, digest = _legacy_payload(data["rows"])
+                    if digest != data["digest"] or digest in state["imports"]:
+                        raise ValueError("invalid legacy import digest")
+                    state["imports"].add(digest)
         except (KeyError, TypeError, IndexError):
             raise ValueError("corrupt ledger event structure") from None
         return state
@@ -365,6 +393,10 @@ class Engine:
         if (data["step"] not in data["available_steps"]
                 or data["models"][data["family"]] != data["model_id"]):
             raise ValueError("stored launch does not match capabilities")
+        if "consultation" in data:
+            if data["role"] != "advisor" or run_policy not in (THIRD_POLICY_VERSION, POLICY_VERSION):
+                raise ValueError("consultation context is Advisor-only")
+            _validate_consultation(data["platform"], data["consultation"], data["advice_level"])
 
     def _validate_transition(self, rows, index, data, state, version, ladders):
         key = _key(data)
@@ -586,6 +618,8 @@ class Engine:
             advice_level = "medium" if advice_level is None else advice_level
             if not isinstance(advice_level, str) or advice_level not in ADVICE_FLOORS:
                 raise ValueError("advice_level must be medium, high, or super_high")
+            if consultation is not None:
+                _validate_consultation(platform, consultation, advice_level)
         else:
             if tier not in ("low", "medium", "high", "business_doc"):
                 raise ValueError("invalid executor tier")
@@ -706,10 +740,7 @@ class Engine:
 
     def import_history(self, rows):
         """Preserve legacy rows losslessly without inventing live attribution."""
-        if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
-            raise ValueError("legacy rows must be a list of objects")
-        payload = _json(rows)
-        digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        payload, digest = _legacy_payload(rows)
         with self._locked():
             events = self._load()
             state = self._state(events)
