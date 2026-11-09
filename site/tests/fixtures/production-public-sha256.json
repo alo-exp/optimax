@@ -1,7 +1,7 @@
 {
   "https://optimax.alolabs.dev/": {
     "404.html": "7c80e532ddbcc248f0a05442f51b2897475cadf38c256a9df954eda39c9496cd",
-    "assets/client.js": "b852365780be58c69ecac30acb6c99dedcf3d4f15921c428350fb4eaaf62240f",
+    "assets/client.js": "d4d1bd600ae01ed7686845a13d432d981f9f465f665321c8c24740e630ed33fb",
     "assets/controls.js": "5dd735b83c124b99672d4e75de3b8fea12f75c89980484e7be6e19229b74874b",
     "assets/deployment.js": "3196b1ca4d618f863226d566ceaec0635755a0b6c88c9a916bd545ce0afb963f",
     "assets/fonts/OFL.txt": "41e9911493de5899a20336baf13b6ea6483b5eea34e237f2ffed22c39bdc4a8d",
@@ -12,7 +12,7 @@
     "assets/fonts/sora-latin-700-normal.woff2": "c3337a673c9bbbfe433091d3831714dd9a257951f16f41eb3fc650ec593cfac2",
     "assets/homepage-theme.js": "4871514be85a3835c2aaf466c8b7c87f66800d039d9f321e01901323e3b9fd76",
     "assets/homepage.css": "df5d3f7eb6bb530833cc5657d8698fce9018fd87b069166b034c1805bbd59475",
-    "assets/search.js": "2c84027a6351f8e493ce4dfb06e66b3c9c409f7c30377948f2f3d7d0799198cc",
+    "assets/search.js": "b5b4589eefeb57889ce87188599f7eb580ad1e0ce36c9c45a00509b0123630ae",
     "assets/style.css": "edd12e6c11bb667d171655200ad3fa3f5ae1dbfd69e888012ae9d9a0da68464b",
     "assets/theme.js": "ffad2636c85ff8f235ef6bc8d34d462f9a36b34d5537a661b3819dfe6b114268",
     "favicon.svg": "02b1dbae84e3cbd45a293e616e7919b2387c480bbee40d7283937bf90628f6ab",
@@ -41,7 +41,7 @@
   },
   "https://alo-exp.github.io/optimax/": {
     "404.html": "c951603e82b1951012eb47fd4f76d086e16ba933055a7c5c04486b3537920061",
-    "assets/client.js": "b852365780be58c69ecac30acb6c99dedcf3d4f15921c428350fb4eaaf62240f",
+    "assets/client.js": "d4d1bd600ae01ed7686845a13d432d981f9f465f665321c8c24740e630ed33fb",
     "assets/controls.js": "5dd735b83c124b99672d4e75de3b8fea12f75c89980484e7be6e19229b74874b",
     "assets/deployment.js": "3196b1ca4d618f863226d566ceaec0635755a0b6c88c9a916bd545ce0afb963f",
     "assets/fonts/OFL.txt": "41e9911493de5899a20336baf13b6ea6483b5eea34e237f2ffed22c39bdc4a8d",
@@ -52,7 +52,7 @@
     "assets/fonts/sora-latin-700-normal.woff2": "c3337a673c9bbbfe433091d3831714dd9a257951f16f41eb3fc650ec593cfac2",
     "assets/homepage-theme.js": "4871514be85a3835c2aaf466c8b7c87f66800d039d9f321e01901323e3b9fd76",
     "assets/homepage.css": "0a2049b32ef1c35cb605b5cf486adc879c6de7106a0a0078561977348ef56519",
-    "assets/search.js": "2c84027a6351f8e493ce4dfb06e66b3c9c409f7c30377948f2f3d7d0799198cc",
+    "assets/search.js": "b5b4589eefeb57889ce87188599f7eb580ad1e0ce36c9c45a00509b0123630ae",
     "assets/style.css": "edd12e6c11bb667d171655200ad3fa3f5ae1dbfd69e888012ae9d9a0da68464b",
     "assets/theme.js": "ffad2636c85ff8f235ef6bc8d34d462f9a36b34d5537a661b3819dfe6b114268",
     "favicon.svg": "02b1dbae84e3cbd45a293e616e7919b2387c480bbee40d7283937bf90628f6ab",
