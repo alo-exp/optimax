@@ -66,6 +66,57 @@ class DispatchTests(unittest.TestCase):
             self.assertIn(text, result["arguments"]["message"])
         self.assertEqual(result["provenance"]["requested_model_id"], "codex-exact-v1")
 
+    def test_supported_requested_controls_allow_dispatch_without_effective_evidence(self):
+        for platform, route in (("codex", "codex-spawn"), ("claude", "claude-agent")):
+            for evidence in ({}, {"effective_settings_verified": False},
+                             {"effective_settings_verified": False,
+                              "effective_model_id": None, "effective_effort": None}):
+                c = capabilities(platform)
+                for key in ("effective_settings_verified", "effective_model_id", "effective_effort"):
+                    c.pop(key)
+                c.update(evidence)
+                with self.subTest(platform=platform, evidence=evidence):
+                    try:
+                        result = adapter.prepare_dispatch(reservation(platform), "Do the assigned work.", route, c)
+                    except ValueError as exc:
+                        self.fail("Supported requested controls must permit dispatch without effective evidence: " + str(exc))
+                    self.assertEqual(result["arguments"]["model"], "codex-exact-v1" if platform == "codex" else "opus")
+                    self.assertEqual(result["arguments"]["reasoning_effort" if platform == "codex" else "effort"],
+                                     reservation(platform)["effort"])
+                    if platform == "codex":
+                        self.assertEqual(result["arguments"]["fork_turns"], "none")
+                    self.assertIs(result["provenance"]["effective_settings_verified"], False)
+                    for key in ("effective_model_id", "effective_effort", "execution_id"):
+                        self.assertNotIn(key, result["provenance"])
+                    with self.assertRaises(ValueError):
+                        adapter.validate_receipt(reservation(platform), result["provenance"])
+
+    def test_known_effective_override_blocks_even_without_verification_flag(self):
+        for platform, route in (("codex", "codex-spawn"), ("claude", "claude-agent")):
+            for key in ("effective_model_id", "effective_effort"):
+                c = capabilities(platform)
+                c.pop("effective_settings_verified")
+                c[key] = "known-conflicting-override"
+                with self.subTest(platform=platform, key=key), self.assertRaisesRegex(ValueError, key + ".*conflicts"):
+                    adapter.prepare_dispatch(reservation(platform), "Work.", route, c)
+
+    def test_requested_only_dispatch_preserves_schema_and_static_argument_fences(self):
+        cases = (
+            ({"schema_verified": False}, "verified actual tool schema"),
+            ({"supported_models": []}, "requested model"),
+            ({"supported_efforts": []}, "requested effort"),
+            ({"static_arguments": {"model": "other"}}, "cannot override"),
+            ({"static_arguments": {"fork_turns": "all"}}, "cannot override"),
+            ({"static_arguments": {"unknown": "value"}}, "unsupported fields"),
+        )
+        for change, message in cases:
+            c = capabilities()
+            for key in ("effective_settings_verified", "effective_model_id", "effective_effort"):
+                c.pop(key)
+            c.update(change)
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, message):
+                adapter.prepare_dispatch(reservation(), "Work.", "codex-spawn", c)
+
     def test_claude_explicit_supported_alias_and_actual_argument_mapping(self):
         c = capabilities("claude")
         c["argument_map"] = dict(model="model_name", effort="thinking_effort", prompt="task")
@@ -82,22 +133,16 @@ class DispatchTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "WorkflowInput.*script.*scriptPath.*resumeFromRunId.*direct-agent"):
             adapter.prepare_dispatch(reservation("claude"), "Work.", "claude-workflow", c)
 
-    def test_effective_settings_require_verified_nonconflicting_precedence(self):
+    def test_effective_settings_claims_never_attest_execution(self):
         for platform, route in (("codex", "codex-spawn"), ("claude", "claude-agent")):
-            for key, value in (("effective_settings_verified", False),
-                               ("effective_settings_verified", 1),
-                               ("effective_model_id", "overridden-model"),
-                               ("effective_effort", "overridden-effort"),
-                               ("effective_model_id", None), ("effective_effort", None)):
-                c = capabilities(platform)
-                c[key] = value
-                with self.subTest(platform=platform, key=key, value=value), self.assertRaisesRegex(ValueError, "effective"):
-                    adapter.prepare_dispatch(reservation(platform), "Work.", route, c)
-            for key in ("effective_settings_verified", "effective_model_id", "effective_effort"):
-                c = capabilities(platform)
-                c.pop(key)
-                with self.subTest(platform=platform, missing=key), self.assertRaisesRegex(ValueError, "effective"):
-                    adapter.prepare_dispatch(reservation(platform), "Work.", route, c)
+            for verified in (True, False):
+                c = capabilities(platform) | {"effective_settings_verified": verified}
+                with self.subTest(platform=platform, verified=verified):
+                    result = adapter.prepare_dispatch(reservation(platform), "Work.", route, c)
+                    self.assertIs(result["provenance"]["effective_settings_verified"], False)
+            c = capabilities(platform) | {"effective_settings_verified": 1}
+            with self.subTest(platform=platform, malformed=True), self.assertRaisesRegex(ValueError, "effective"):
+                adapter.prepare_dispatch(reservation(platform), "Work.", route, c)
 
     def test_role_specific_leaf_fence_in_every_brief(self):
         for platform, route in (("codex", "codex-spawn"), ("claude", "claude-agent")):

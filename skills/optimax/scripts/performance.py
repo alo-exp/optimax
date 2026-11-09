@@ -41,11 +41,11 @@ import uuid
 try:
     from .ladder import (_FLOORS, _LADDERS, _TRACK_FIELDS, _validate_fields, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
                          SECOND_POLICY_VERSION, THIRD_POLICY_VERSION, POLICY_VERSION, policy, policy_lineage, recommend)
-    from .session_policy import advisor_context, orchestrator_recommendation
+    from .session_policy import advisor_context, execution_contract, orchestrator_recommendation
 except ImportError:
     from ladder import (_FLOORS, _LADDERS, _TRACK_FIELDS, _validate_fields, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
                         SECOND_POLICY_VERSION, THIRD_POLICY_VERSION, POLICY_VERSION, policy, policy_lineage, recommend)
-    from session_policy import advisor_context, orchestrator_recommendation
+    from session_policy import advisor_context, execution_contract, orchestrator_recommendation
 
 SCHEMA_VERSION = "2"
 PROJECTIONS = ("platform", "role", "tier", "run_id", "epoch")
@@ -517,7 +517,8 @@ class Engine:
                                window_run_ids=result["window_run_ids"], average=result["average"]))
         return dict(enabled=state["sessions"].get(session, {}).get("enabled", False),
                     session=session, user_id=self.user, root=str(self.root), ledger=str(self.path),
-                    policy_version=state["policy_version"], tracks=tracks)
+                    policy_version=state["policy_version"], tracks=tracks,
+                    execution_contract=execution_contract(state["sessions"].get(session, {}).get("enabled", False)))
 
     def status(self, session):
         _string(session, "session")

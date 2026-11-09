@@ -90,3 +90,29 @@ def advisor_context(platform, complexity, purpose, needed=False):
         "effort": effort,
         **_assumption(complexity),
     }
+
+
+SUBSTANTIVE_ACTIVITIES = (
+    "code", "test_authoring", "test_work", "research", "documentation",
+    "release_preparation", "semantic_integration",
+)
+ROOT_ACTIVITIES = ("coordination", "source_inspection", "independent_verification", "acceptance")
+
+
+def execution_contract(enabled):
+    """Describe the current mode; host snapshots and exceptions remain host claims."""
+    if type(enabled) is not bool:
+        raise ValueError("enabled must be an explicit boolean from current session status")
+    return {
+        "enabled": enabled,
+        "substantive_owner": "executor" if enabled else "governing_host_policy",
+        "root_execution": "listed_coordination_and_verification" if enabled else "governing_host_policy",
+        "root_activities": list(ROOT_ACTIVITIES),
+        "substantive_activities": list(SUBSTANTIVE_ACTIVITIES),
+        "advisor_authorizes_execution": False,
+        "automatic_root_fallback": False,
+        "blanket_root_permission": False,
+        "ownership_evidence": "declared_host_snapshot",
+        "provider_verified": False,
+        "learning_eligible": False,
+    }

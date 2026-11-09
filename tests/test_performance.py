@@ -221,6 +221,26 @@ class PerformanceTests(unittest.TestCase):
         self.assertTrue(Engine(self.root, "actual-user").status(self.session)["enabled"])
         self.assertFalse(self.engine.status("other-session")["enabled"])
 
+
+    def test_disabled_contract_defers_to_host_policy_without_blanket_root_permission(self):
+        result = self.engine.status(self.session)
+        self.assertEqual(result.get("execution_contract", {}).get("root_execution"), "governing_host_policy")
+        self.assertIs(result.get("execution_contract", {}).get("blanket_root_permission"), False)
+        self.assertFalse(self.engine.path.exists())
+
+    def test_mode_contract_survives_status_without_new_events_or_learning(self):
+        enabled = self.enable()
+        self.assertEqual(enabled.get("execution_contract", {}).get("substantive_owner"), "executor")
+        self.assertIs(enabled.get("execution_contract", {}).get("advisor_authorizes_execution"), False)
+        before = self.engine.path.read_bytes()
+        status = Engine(self.root, "actual-user").status(self.session)
+        self.assertEqual(status.get("execution_contract"), enabled.get("execution_contract"))
+        self.assertEqual(self.engine.path.read_bytes(), before)
+        self.assertEqual(status["tracks"], [])
+        off = self.engine.set_enabled(self.session, False)
+        self.assertEqual(off.get("execution_contract", {}).get("root_execution"), "governing_host_policy")
+        self.assertIs(off.get("execution_contract", {}).get("blanket_root_permission"), False)
+
     def test_replay_rejects_reused_or_redundant_session_events(self):
         self.enable()
         pending = self.prepare()

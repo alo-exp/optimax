@@ -9,11 +9,12 @@ schema_verified=True, tool, allowed_arguments, required_arguments, argument_map
 (model/effort/prompt plus fork for Codex), supported_models, supported_efforts.
 Optional model_aliases map exact requested IDs to supported Claude aliases.
 Optional static_arguments supply other required fields such as task_name.
-Direct routes require effective_settings_verified=True and exact effective_model_id
-and effective_effort after the caller verifies host precedence. For example, Codex
-customAgent TOML can override spawn settings and Claude's CLAUDE_CODE_EFFORT_LEVEL
-can override invocation effort. These caller assertions do not authenticate runtime;
-a receipt based on independent native evidence is still required. Workflow stage
+Direct routes require supported requested model/effort controls, not post-run
+effective-setting evidence. Optional effective_model_id/effective_effort assertions
+must not conflict with the reservation; the legacy effective_settings_verified
+flag is accepted but does not attest execution. Preparation always records
+effective_settings_verified=False and invents no effective identity. Independent
+native evidence is still required for a learning receipt. Workflow stage
 integration is not implemented.
 """
 import copy
@@ -115,15 +116,17 @@ def prepare_dispatch(reservation, brief, route, capabilities):
         raise _error("route does not match reservation platform")
     tool, allowed, required, mapping = _argument_schema(route, capabilities)
     selected_model = _selected_model(identity, route, capabilities)
-    if capabilities.get("effective_settings_verified") is not True:
-        raise _error("verified effective settings precedence is required")
+    if ("effective_settings_verified" in capabilities
+            and type(capabilities["effective_settings_verified"]) is not bool):
+        raise _error("effective_settings_verified must be a boolean when provided")
     for field, expected in (("effective_model_id", identity["model_id"]),
                             ("effective_effort", identity["effort"])):
-        if capabilities.get(field) != expected:
-            raise _error(field + " conflicts with reservation or is missing")
+        if capabilities.get(field) is not None and capabilities[field] != expected:
+            raise _error(field + " conflicts with reservation")
     provenance = {
         "run_id": identity["run_id"], "epoch": identity["epoch"], "role": identity["role"],
         "requested_model_id": identity["model_id"], "requested_effort": identity["effort"],
+        "effective_settings_verified": False,
     }
     fence = ("Root-owned leaf fence: root owns enable/off, Advisor consultation, WBS expansion, "
              "dispatch, and the runtime ledger. Do not let inherited skills trigger their own scheduler. ")

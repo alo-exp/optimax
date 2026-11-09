@@ -6,7 +6,7 @@ Checked 2026-11-07. Interfaces, account access, model versions, and effort suppo
 
 Select helpers from the host's ladder, independently of the Orchestrator model family. A user-selected Claude Orchestrator uses the Claude helper ladders; a Codex Orchestrator uses the Codex helper ladders. Do not mix providers or invoke an external paid API merely because a requested rung is missing.
 
-Resolve the latest available version within Haiku, Sonnet, Opus, Terra, Sol, or Astra as applicable. Preserve explicit user version pins. Record the exact resolved model ID and effective effort for each run. A family alias or a requested setting alone does not prove what ran. Use stable versions unless the user explicitly permits previews. Newer unrelated families do not enter the ladder automatically.
+Resolve the latest available version within Haiku, Sonnet, Opus, Terra, Sol, or Astra as applicable. Preserve explicit user version pins. Record the exact requested model ID and effort at dispatch, and the verified effective pair only when an actual receipt establishes it. A family alias or a requested setting alone does not prove what ran. Use stable versions unless the user explicitly permits previews. Newer unrelated families do not enter the ladder automatically.
 
 If the runtime exposes only an alias, use it only when official mapping or launch metadata establishes its exact version. If the actual version or effort remains unverifiable, report that limit and exclude the result from performance windows. Do not label inherited defaults as an explicitly selected rung.
 
@@ -14,7 +14,7 @@ Discover model and effort support before launch. If a pair is unsupported or ina
 
 Select model and effort on the **helper invocation or helper definition**. Never use a session-wide `/model`, `/effort`, global environment override, or parent config edit to simulate per-helper settings. Avoid persistent agent-definition changes unless necessary and authorized. Do not reuse a resumed helper if its retained model/effort would differ from the newly selected rung.
 
-Use [native-mode integration](native-modes.md) for direct, Codex native, and Claude Ultracode stage contracts. Native-mode labels do not select models. Prepare a run through the durable controller, apply only fields accepted by the actual interface, then obtain the effective receipt. If the native path cannot set and verify the required pair, use a supported direct helper. If neither path works, report the capability blocker. Keep opaque runtime workers outside policy learning and disclose that coverage.
+Use [native-mode integration](native-modes.md) for direct, Codex native, and Claude Ultracode stage contracts. Native-mode labels do not select models. Prepare a run through the durable controller, apply only fields accepted by the actual interface, and obtain an effective receipt when exposed. If the native path lacks supported requested controls for the required pair or has a known conflicting override, use a supported direct helper. Missing effective receipts alone do not block permitted dispatch: disclose requested-only attribution and exclude that result from learning. If neither path can request the pair, report the capability blocker; do not automatically move substantive work to the root. Keep opaque runtime workers outside policy learning and disclose that coverage.
 
 ## Claude
 

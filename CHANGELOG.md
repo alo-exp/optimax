@@ -4,6 +4,8 @@
 
 - Prepare an unpublished candidate bundling Review Ladder with Optimax in the plugin archive; the standalone archive remains Optimax-only.
 - Add the explicit review and repair ladder, Opus Max policy, and audit corrections to the skill instructions.
+- Address [issue #2](https://github.com/alo-exp/optimax/issues/2) with explicit substantive Executor ownership and readiness checkpoints before test, implementation and documentation changes; keep root acceptance independent.
+- Permit dispatch when the host supports the requested model and effort controls even if effective-setting receipts are unavailable. Unknown effective settings remain ineligible for learned scores, and late recovery must report earlier unprepared work honestly rather than inventing retroactive compliance.
 - Qualify candidate release metadata and bundled runtime assets with local automated checks. Published catalog resolution, live discovery of the new command, complete ladder execution, Claude acceptance and native Windows execution remain separate pending gates.
 
 ## 0.1.1 (prerelease)

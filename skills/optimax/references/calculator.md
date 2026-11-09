@@ -74,16 +74,25 @@ After independently reviewing the actual output, submit the returned run ID and 
 
 A fresh session is disabled until explicitly enabled. While off, preparation and learning stop; prior evidence and in-flight work remain. Disabling invalidates pending learning from that session generation, including pre-off work finishing after re-enable. Re-enable for newly prepared runs rather than retroactively importing suspended work. See [native-mode integration](native-modes.md) for staged workflow operation and receipt boundaries.
 
+## Execution contract and visible checkpoint
+
+The `on`, `status`, and `off` responses include `execution_contract`. Enabled mode requires an Executor for substantive code, test authoring, research, documentation, release preparation and semantic integration. The listed root activities cover coordination, source inspection, independent verification and acceptance. `advisor_authorizes_execution`, `automatic_root_fallback`, `blanket_root_permission`, `provider_verified`, and `learning_eligible` are false. Off mode defers to governing host policy; it grants no blanket root authority. This contract describes policy and does not authenticate actual assignments.
+
+Before substantive work, material phase changes, resume/compaction, late correction and acceptance, show an actual host-returned Executor assignment or a concrete blocker/permitted explicit exception. A controller reservation or Advisor consultation alone is insufficient. Use the optional task `execution` metadata and explicit `enabled` boolean in [the readiness helper](parallel-execution.md) to validate the supplied checkpoint snapshot. Its CLI accepts stdin JSON and returns `execution_checkpoints`; the host must invoke it and enforce the decision. No installed hook or universal tool interception is claimed. Optional `root_start_authorized` in that snapshot records authorization when `root_started` work began, using exactly true/false/null (omitted means unknown). Current exceptions and off mode do not rewrite prior known or unknown history; prior authorization does not grant current permission. See the readiness reference for the separate `deviation` and current `execution_allowed` semantics.
+
+Schema-checked supported requested controls permit dispatch without an effective runtime receipt. Record the actual assignment ID and requested-only pair; retain useful output for independent review, but do not submit fabricated effective fields or an eligible assessment. Only a genuine matching receipt plus independent acceptance permits model-specific learning. Known precedence conflicts or unsupported selection fields remain capability blockers.
+
 ## Session decision helpers
 
-The pure [scripts/session_policy.py](../scripts/session_policy.py) module supplies two Python functions without invoking helpers or changing settings:
+The pure [scripts/session_policy.py](../scripts/session_policy.py) module supplies decision helpers without invoking helpers or changing settings:
 
 ```python
-from scripts.session_policy import advisor_context, orchestrator_recommendation
+from scripts.session_policy import advisor_context, execution_contract, orchestrator_recommendation
 
 orchestrator_recommendation("codex", "low")
 advisor_context("codex", "low", "planning")
 advisor_context("codex", "medium", "execution", needed=True)
+execution_contract(enabled=True)
 ```
 
 Run Python from the skill root when using that import. `orchestrator_recommendation(platform, complexity=None, native_context=None)` returns a recommendation and `applied: False`; a missing level includes its conservative Medium assumption. The optional native context uses the CLI facts above; active or unknown state preserves the supplied pair and nests the ordinary baseline. Omitting it retains the existing behavior and does not detect native state. The host must discover and supply the facts: use `active: null` for an inconclusive probe when the current pair is known. If that pair is unknown, disclose that a safe switch cannot be recommended and preserve settings; do not invent facts or treat an omitted context as inactive. `Engine.set_enabled` also accepts this optional context. The host displays it on **every explicit enabling invocation**, including idempotent `on`, and compares it with the selected Orchestrator. If already satisfied, state that; never apply settings automatically. Low maps to Claude Haiku XHigh or Codex Terra Medium; every other level maps to Claude Sonnet High or Codex Terra High.

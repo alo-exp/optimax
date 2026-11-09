@@ -6,11 +6,11 @@ State the authorized scope, requirement sources, accepted decisions, goals/non-g
 
 ## Rung coverage
 
-| Rung: actual model / effort | Reviewed candidate | Covered scope and coverage basis | Clean streak | Observations / unique confirmed IDs / closed IDs | Blocker |
+| Rung: requested / verified effective model and effort | Reviewed candidate | Covered scope and coverage basis | Clean streak | Observations / unique confirmed IDs / closed IDs | Blocker |
 | --- | --- | --- | --- | --- | --- |
-| Fill from observed runtime | Exact revision | Fresh full pass, scoped revisit, or carried-forward evidence; cite source revision and validity reason | 0/2, 1/2, or 2/2 for stated scope | Counts with stated per-row denominator | None or exact gap |
+| Actual assignment ID; requested pair; effective pair or unavailable | Exact revision | Fresh full pass, scoped revisit, or carried-forward evidence; requested-only or verified-effective coverage; cite source revision and validity reason | 0/2, 1/2, or 2/2 for stated scope and attribution contract | Counts with stated per-row denominator | None or exact gap |
 
-Use separate rows where candidate or scope differs. An affected-scope revisit does not imply a fresh full-scope review, and retained evidence is not a new run. Give requested settings separately when they differ from observed settings. Identify the extra fresh highest-rung final review and its exact unchanged candidate.
+Use separate rows where candidate or scope differs. An affected-scope revisit does not imply a fresh full-scope review, and retained evidence is not a new run. Give requested settings separately from observed settings; missing effective receipts alone do not block permitted requested-rung dispatch or establish verified-effective coverage. If the contract explicitly requires verified-effective rungs, mark that obligation pending until actual receipts establish it. Exclude requested-only results from model-specific learning. Include the visible execution checkpoint, actual host-returned owner/assignment ID or concrete blocker/permitted exception, and any late-correction deviation with preserved work and remaining delegated scope. Identify the extra fresh highest-rung final review and its exact unchanged candidate.
 
 An observation is a report of a possible issue; several observations can map to one stable finding ID. State the statuses included in each count. Overall unique counts use the union of IDs, not the sum of overlapping rung counts. Preserve duplicate observations and finder attribution without counting them as new defects. Link unresolved IDs to their triggers, evidence, dispositions, accepted repairs, and test results in the existing report.
 

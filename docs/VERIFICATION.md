@@ -15,6 +15,14 @@ This source candidate adds Review Ladder, the Opus Max policy and audit correcti
 
 Commands ran through RTK. The full suite emitted the expected duplicate-ZIP warning from the malformed-archive fixture. Local source tests cover the controller, policy contracts, review instructions and archive builder; static instruction checks do not prove a host executed the complete review ladder. No published artifact hashes are claimed for this candidate.
 
+### Issue #2 ownership and native forward evaluation
+
+The [issue #2](https://github.com/alo-exp/optimax/issues/2) candidate makes substantive Executor ownership explicit and adds readiness checkpoints around test, implementation and documentation work. Supported requested model and effort controls can permit dispatch without an effective-setting receipt; unknown effective settings must not produce learned scores. Recovery after work has already begun must identify the earlier unprepared work and apply the contract prospectively, without claiming retroactive compliance.
+
+The [native forward evaluation record](CODEX-ACCEPTANCE.md#candidate-forward-evaluation-2026-11-09) identifies the evaluated snapshot and its limits. A fresh Codex CLI run read the copied candidate skill, dispatched an Advisor and a bounded Executor, and showed an Executor ownership checkpoint. The recorded root changes were controller-request and readiness metadata; the completed fixture contained the repair, regression tests and usage documentation. The root verified the test-only phase before authorizing production changes, and an independent evaluator reproduced the intended regression failures against the seeded implementation and observed the repaired fixture passing.
+
+This is scoped evidence for that snapshot and task. It does not establish complete child patch traces, effective helper model/effort receipts, parallel Executor scheduling, adaptive cost routing, direct fallback, late correction, compaction recovery or universal enforcement against root actions. The disposable ledger learned no scores. A later checkpoint-history repair falls outside that native run. Final source qualification and the complete eight-rung review sweep remain pending; the candidate remains unpublished. Historical native runs below retain their original release scope, and no Claude or native Windows result is added here.
+
 ## 0.1.1 prerelease qualification — 9 November 2026
 
 This release includes [Windows support PR #1](https://github.com/alo-exp/optimax/pull/1) and its follow-up corrections: a stable per-project lock in the resolved user profile, contention-only retries, and propagation of permanent lock failures. Controllers must share the same resolved profile with a writable local `~/.optimax/locks` cache; network filesystems remain unsupported.
