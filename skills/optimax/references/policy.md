@@ -10,6 +10,8 @@ Changed intentionally: name the original role Executor; add mandatory planning/d
 
 The source uses one global per-person CSV and silent reporting. This package instead uses the user's explicitly adopted per-user, per-project durable ledger. It needs no mandatory Drive or memory service, global installation, or host setting change. Do not combine users or projects, or migrate incomplete historical rows by guessing attribution.
 
+At activation, review the [instruction audit](calculator.md#instruction-audit-on-activation) and governing priority before using a ledger or applying model, delegation, assessment, or storage policy. A conflicting binding rule can block the affected operation. Preserve the historical five-column file and existing authorized work; do not create a competing learning store or claim learning where ledger binding or execution receipts are missing.
+
 ## Policy versions and adoption
 
 Current policy is `optimal-ultra-ladder-v4`. Frozen v1, v2, and v3 registries validate historical events against the policies that actually produced them. V2 adopted the current Executor ladders; v3 adopted expanded Advisor ladders and consultation floors; v4 adds Claude Opus Max as the fourth Advisor rung. A schema version describes CSV shape; a policy version describes ladder semantics. Do not reinterpret an old rung index using the new ladder.

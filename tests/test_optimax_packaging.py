@@ -110,6 +110,16 @@ class OptimaxPackagingTests(unittest.TestCase):
                         self.assertEqual(json.loads(plugin.read(name))['version'], '0.2.0')
             self.assertRegex((ROOT / 'CHANGELOG.md').read_text(encoding='utf-8'), r'\A# Changelog\n\n## 0\.2\.0 \(prerelease\)')
 
+    def test_release_archives_include_instruction_audit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            build = subprocess.run([sys.executable, str(ROOT / 'build_release.py'), '--output', str(output)], capture_output=True, text=True)
+            self.assertEqual(build.returncode, 0, build.stderr)
+            for archive, member in (('optimax-skill.zip', 'optimax/scripts/instruction_audit.py'),
+                                    ('optimax-plugin.zip', 'skills/optimax/scripts/instruction_audit.py')):
+                with self.subTest(archive=archive), zipfile.ZipFile(output / archive) as z:
+                    self.assertEqual(z.read(member), (RUNTIME / 'scripts/instruction_audit.py').read_bytes())
+
     def test_release_archives_match_current_changelog_and_runtime_sources(self):
         release = re.search(r'^## (\d+\.\d+\.\d+)(?:\s|$)', (ROOT / 'CHANGELOG.md').read_text(encoding='utf-8'), re.MULTILINE)
         self.assertIsNotNone(release, 'changelog must identify the current release')

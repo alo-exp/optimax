@@ -80,6 +80,12 @@ class InstallTests(unittest.TestCase):
             installer.install(self.zip, self.dest)
         self.assertFalse(self.dest.exists())
 
+    def test_missing_instruction_audit_is_rejected_before_creating_destination(self):
+        archive(self.zip, omit=('scripts/instruction_audit.py',))
+        with self.assertRaisesRegex(ValueError, 'scripts/instruction_audit.py'):
+            installer.install(self.zip, self.dest)
+        self.assertFalse(self.dest.exists())
+
     def test_invalid_skill_frontmatter_is_rejected_before_destination_creation(self):
         cases = {
             'unclosed': '---\nname: optimax\ndescription: Useful skill\n',

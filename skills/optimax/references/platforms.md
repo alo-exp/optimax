@@ -4,6 +4,8 @@ Checked 2026-11-07. Interfaces, account access, model versions, and effort suppo
 
 ## Shared rules
 
+On each explicit activation, use the bounded [instruction audit](calculator.md#instruction-audit-on-activation) and host semantic review to identify applicable restrictions before selecting helpers. Actual host settings and governing instructions determine applicability; candidate discovery is not proof of loading.
+
 Select helpers from the host's ladder, independently of the Orchestrator model family. A user-selected Claude Orchestrator uses the Claude helper ladders; a Codex Orchestrator uses the Codex helper ladders. Do not mix providers or invoke an external paid API merely because a requested rung is missing.
 
 Resolve the latest available version within Haiku, Sonnet, Opus, Terra, Sol, or Astra as applicable. Preserve explicit user version pins. Record the exact requested model ID and effort at dispatch, and the verified effective pair only when an actual receipt establishes it. A family alias or a requested setting alone does not prove what ran. Use stable versions unless the user explicitly permits previews. Newer unrelated families do not enter the ladder automatically.

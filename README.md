@@ -41,6 +41,8 @@ The standalone `optimax-skill.zip` and its installer remain Optimax-only; they d
 
 In Claude Code use `/optimax:optimax on`, `/optimax:optimax off`, or `/optimax:optimax status` to control or inspect the session. In Codex, invoke `$optimax` and supply the same options. Native Codex installation, discovery and session controls passed for v0.1.0 on the tested client; Claude live acceptance is deferred. Installation alone does not enable the policy.
 
+Each explicit activation, including repeated `on`, checks conventional host instruction candidates for potential conflicts. The host must review their applicability and priority; the audit cannot prove which files loaded or that all instructions are compatible. See [instruction audit usage and limits](skills/optimax/references/calculator.md#instruction-audit-on-activation). Status and off do not run the audit.
+
 The controller uses `PROJECTROOT/model-perf/<actual-user-id>-model-perf.csv`, where the project root is the canonical primary checkout and the user ID is a stable, verified identity. The rename does not reset or migrate learning: the historical `optimal-ultra-ladder-v1`, `v2`, and `v3` identifiers, lineage, events, and epochs remain intact. Keep project ledgers private.
 
 Version 0.1.1 adds Windows-compatible controller locking and filesystem handling. Windows controllers sharing a project must use the same resolved user profile with a writable `~/.optimax/locks` cache; the shared profile location keeps lock coordination independent of temporary-directory settings. Permanent lock errors fail promptly. Portable regression tests cover these paths on POSIX; native Windows execution remains untested.

@@ -16,6 +16,7 @@ REQUIRED = {
     'references/parallel-execution.md',
     'scripts/ladder.py', 'scripts/performance.py', 'scripts/session_policy.py',
     'scripts/native_dispatch.py', 'scripts/work_breakdown.py',
+    'scripts/instruction_audit.py',
 }
 EXCLUDED = {'tests', 'model-perf', '.git', '__pycache__'}
 

@@ -1083,6 +1083,16 @@ class PerformanceTests(unittest.TestCase):
         self.assertEqual(len(restarted["tracks"]), 1)
         self.assertEqual(restarted["tracks"][0]["context_floor"], 0)
 
+    def test_explicit_on_reports_local_instruction_candidate(self):
+        instruction = self.root / "AGENTS.md"
+        instruction.write_text("All subagents must use the Sol model.\n", encoding="utf-8")
+        with patch("os.getcwd", return_value=str(self.root)):
+            result = self.engine.set_enabled(self.session, True, platform="codex")
+        audit = result.get("instruction_audit")
+        self.assertIsNotNone(audit)
+        self.assertTrue(any(item["path"] == str(instruction.resolve()) for item in audit["candidates"]))
+        self.assertTrue(any(item["category"] == "fixed_helper_model_effort" for item in audit["findings"]))
+
     def test_explicit_on_always_suggests_without_duplicate_state_or_native_changes(self):
         first = self.engine.set_enabled(self.session, True, platform="claude", complexity="low")
         self.assertEqual(first["orchestrator_suggestion"]["recommendations"][0]["family"], "haiku")

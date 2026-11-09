@@ -17,6 +17,7 @@ FILES = (
     'references/platforms.md', 'references/policy.md', 'references/parallel-execution.md',
     'scripts/install_local.py', 'scripts/ladder.py', 'scripts/performance.py',
     'scripts/session_policy.py', 'scripts/native_dispatch.py', 'scripts/work_breakdown.py',
+    'scripts/instruction_audit.py',
 )
 REVIEW_LADDER_FILES = ('SKILL.md', 'agents/openai.yaml', 'references/report-template.md')
 MANIFESTS = ('plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json')

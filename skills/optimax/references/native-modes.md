@@ -4,6 +4,8 @@ Optimax controls the assignments it prepares and verifies. Native orchestration 
 
 ## Supported boundary
 
+Explicit activation requires the [instruction audit](calculator.md#instruction-audit-on-activation), including host review of native and local restrictions. The audit does not activate a native mode, intercept tools, or change settings.
+
 For every controlled stage, obtain a controller preparation contract before dispatch and request that stage's exact model and effort through the actual supported helper interface. Supported requested controls permit dispatch even if effective receipt visibility is absent. Retain a genuine runtime receipt when available; match it to the prepared run and independently review the output before performance assessment. Without a receipt, report the actual host assignment and requested-only settings and exclude the run from learned scores. Requested settings, a successful tool call, a model alias, or a native-mode label alone do not establish effective execution settings.
 
 The modes are `direct`, `codex-ultra`, and `claude-ultracode`. These labels attribute a prepared stage; they do not activate a native feature. Record separately whether the native feature is active, who owns execution of the stage, and which dispatch route is used. Direct fallback is not full native integration. Inspect the current tool schema and capability listing. Never invent Workflow fields, assume an undocumented universal hook, edit host-wide settings, or promise interception of every internal worker. If a native runtime's internal workers cannot be selected and verified, report them as outside policy control and exclude them from score learning.

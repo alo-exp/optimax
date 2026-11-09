@@ -42,10 +42,12 @@ try:
     from .ladder import (_FLOORS, _LADDERS, _TRACK_FIELDS, _validate_fields, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
                          SECOND_POLICY_VERSION, THIRD_POLICY_VERSION, POLICY_VERSION, policy, policy_lineage, recommend)
     from .session_policy import advisor_context, execution_contract, orchestrator_recommendation
+    from .instruction_audit import audit_instructions
 except ImportError:
     from ladder import (_FLOORS, _LADDERS, _TRACK_FIELDS, _validate_fields, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
                         SECOND_POLICY_VERSION, THIRD_POLICY_VERSION, POLICY_VERSION, policy, policy_lineage, recommend)
     from session_policy import advisor_context, execution_contract, orchestrator_recommendation
+    from instruction_audit import audit_instructions
 
 SCHEMA_VERSION = "2"
 PROJECTIONS = ("platform", "role", "tier", "run_id", "epoch")
@@ -525,17 +527,20 @@ class Engine:
         with self._locked():
             return self._status(session, self._state(self._load()))
 
-    def set_enabled(self, session, enabled, platform=None, complexity=None, native_context=None):
+    def set_enabled(self, session, enabled, platform=None, complexity=None, native_context=None, instruction_context=None):
         _string(session, "session")
         if type(enabled) is not bool:
             raise ValueError("enabled must be a boolean")
         if native_context is not None and (not enabled or platform is None):
             raise ValueError("native_context requires on and an explicit platform")
+        if instruction_context is not None and not enabled:
+            raise ValueError("instruction_context requires on")
         suggestions = None
         if enabled:
             platforms = ("claude", "codex") if platform is None else (platform,)
             suggestions = dict(applied=False, recommendations=[dict(
                 platform=item, **orchestrator_recommendation(item, complexity, native_context)) for item in platforms])
+            instruction_audit = audit_instructions(platform, instruction_context)
         with self._locked():
             rows = self._load()
             state = self._state(rows)
@@ -547,6 +552,7 @@ class Engine:
             result = self._status(session, state)
             if suggestions is not None:
                 result["orchestrator_suggestion"] = suggestions
+                result["instruction_audit"] = instruction_audit
             return result
 
     def _transition_payload(self, platform, role, tier, step, models, available, reason, previous,
@@ -766,6 +772,7 @@ def main(argv=None):
     parser.add_argument("--platform", choices=("claude", "codex"))
     parser.add_argument("--complexity", choices=("low", "medium", "high", "super_high"))
     parser.add_argument("--native-context", help="JSON object describing current native mode and settings")
+    parser.add_argument("--instruction-context", help="JSON object describing host instruction context")
     parser.add_argument("command", choices=("status", "on", "off", "prepare", "assess", "import-history", "adopt-policy"))
     parser.add_argument("request", nargs="?")
     try:
@@ -777,6 +784,11 @@ def main(argv=None):
         native_context = json.loads(arguments.native_context) if arguments.native_context is not None else None
         if arguments.native_context is not None and not isinstance(native_context, dict):
             raise ValueError("--native-context must be a JSON object")
+        if arguments.instruction_context is not None and command != "on":
+            raise ValueError("--instruction-context is only valid for on")
+        instruction_context = json.loads(arguments.instruction_context) if arguments.instruction_context is not None else None
+        if arguments.instruction_context is not None and not isinstance(instruction_context, dict):
+            raise ValueError("--instruction-context must be a JSON object")
         if command == "adopt-policy":
             if arguments.request is not None:
                 raise ValueError("adopt-policy does not accept a request file")
@@ -787,7 +799,7 @@ def main(argv=None):
             result = (engine.status(arguments.session) if command == "status"
                       else engine.set_enabled(arguments.session, command == "on",
                                               platform=arguments.platform, complexity=arguments.complexity,
-                                              native_context=native_context))
+                                              native_context=native_context, instruction_context=instruction_context))
         else:
             if arguments.request is None:
                 raise ValueError("this command requires a JSON request file")

@@ -4,6 +4,8 @@
 
 This source candidate adds Review Ladder, the Opus Max policy and audit corrections. It is not a published release. No v0.2.0 tag, download digest, catalog update or live installed-host result is established by the local checks below. Historical v0.1.1 artifact hashes and v0.1.0 native Codex acceptance remain separate evidence.
 
+Activation-audit changes made after the recorded snapshots require their own qualification. The earlier test counts and native forward evaluation below apply only to their identified source snapshots; they do not establish live audit behavior or complete host instruction discovery.
+
 | Area | Observed candidate evidence | Scope |
 | --- | --- | --- |
 | Python suite | `python3 -B -m unittest discover -s tests`: 184 tests passed on macOS | Previous source baseline: 183 tests; one candidate-version packaging regression added |
