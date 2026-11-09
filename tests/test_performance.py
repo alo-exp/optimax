@@ -743,6 +743,121 @@ class PerformanceTests(unittest.TestCase):
             self.enable()
         self.assertEqual(target.read_text(), "untouched")
 
+    @unittest.skipUnless(__import__('os').name == 'posix', 'requires POSIX directory symlinks')
+    def test_directory_swapped_after_commit_validation_cannot_write_outside_project(self):
+        self.enable()
+        original_ledger = self.engine.path.read_bytes()
+        retained = self.root / 'retained-model-perf'
+        with tempfile.TemporaryDirectory() as outside_name:
+            outside = Path(outside_name)
+            outside_ledger = outside / self.engine.path.name
+            outside_ledger.write_bytes(b'outside ledger must remain untouched')
+            before = {path.name: path.read_bytes() for path in outside.iterdir()}
+            original_check = self.engine._safe_paths
+            checks = 0
+            swapped = False
+
+            def swap_after_second_check():
+                nonlocal checks, swapped
+                original_check()
+                checks += 1
+                if checks == 2:
+                    self.engine.directory.rename(retained)
+                    self.engine.directory.symlink_to(outside, target_is_directory=True)
+                    swapped = True
+
+            error = None
+            with patch.object(self.engine, '_safe_paths', side_effect=swap_after_second_check):
+                try:
+                    self.engine.set_enabled(self.session, False)
+                except (ValueError, OSError) as caught:
+                    error = caught
+
+            self.assertTrue(swapped, 'commit validation swap was not exercised')
+            self.assertEqual(
+                {path.name: path.read_bytes() for path in outside.iterdir()}, before,
+                'commit followed a model-perf directory replaced by an outside symlink')
+            self.assertEqual((retained / self.engine.path.name).read_bytes(), original_ledger)
+            self.assertIsNotNone(error, 'directory substitution must reject the mutation')
+
+    @unittest.skipUnless(__import__('os').name == 'posix', 'requires POSIX directory symlinks')
+    def test_directory_swapped_after_pending_write_aborts_and_cleans_anchored_temp(self):
+        import os
+        self.enable()
+        original_ledger = self.engine.path.read_bytes()
+        retained = self.root / 'retained-model-perf'
+        with tempfile.TemporaryDirectory() as outside_name:
+            outside = Path(outside_name)
+            original_fsync = os.fsync
+            swapped = False
+            def swap_after_flush(descriptor):
+                nonlocal swapped
+                original_fsync(descriptor)
+                if not swapped:
+                    self.engine.directory.rename(retained)
+                    self.engine.directory.symlink_to(outside, target_is_directory=True)
+                    swapped = True
+            error = None
+            with patch('performance.os.fsync', side_effect=swap_after_flush):
+                try:
+                    self.engine.set_enabled(self.session, False)
+                except (ValueError, OSError) as caught:
+                    error = caught
+            self.assertTrue(swapped, 'pending-write swap was not exercised')
+            self.assertEqual(list(outside.iterdir()), [], 'publication escaped the pinned directory')
+            self.assertEqual((retained / self.engine.path.name).read_bytes(), original_ledger)
+            self.assertEqual(sorted(path.name for path in retained.iterdir()), [self.engine.path.name],
+                             'failed publication left a pending file in the pinned directory')
+            self.assertIsNotNone(error, 'directory substitution must reject the mutation')
+
+    @unittest.skipUnless(__import__('os').name == 'posix', 'requires POSIX directory symlinks')
+    def test_status_rejects_parent_directory_swapped_after_validation(self):
+        self.enable()
+        original = self.engine.path.read_bytes()
+        retained = self.root / 'retained-model-perf'
+        with tempfile.TemporaryDirectory() as outside_name:
+            outside = Path(outside_name)
+            (outside / self.engine.path.name).write_bytes(original)
+            check = self.engine._safe_paths
+            swapped = False
+            def swap():
+                nonlocal swapped
+                check()
+                self.engine.directory.rename(retained)
+                self.engine.directory.symlink_to(outside, target_is_directory=True)
+                swapped = True
+            with patch.object(self.engine, '_safe_paths', side_effect=swap):
+                with self.assertRaises((ValueError, OSError)):
+                    self.engine.status(self.session)
+            self.assertTrue(swapped)
+            self.assertEqual((outside / self.engine.path.name).read_bytes(), original)
+            self.assertEqual((retained / self.engine.path.name).read_bytes(), original)
+
+    @unittest.skipUnless(__import__('os').name == 'posix', 'requires POSIX directory descriptors')
+    def test_directory_guard_closes_and_cleans_pending_after_write_interruption(self):
+        import os
+        self.enable()
+        original = self.engine.path.read_bytes()
+        for failure in (OSError('sync failed'), KeyboardInterrupt()):
+            with self.subTest(failure=type(failure).__name__):
+                descriptors = []
+                real_open = os.open
+                def opened(*args, **kwargs):
+                    descriptor = real_open(*args, **kwargs)
+                    if args[0] == self.engine.directory:
+                        descriptors.append(descriptor)
+                    return descriptor
+                with patch('performance.os.open', side_effect=opened), \
+                        patch('performance.os.fsync', side_effect=failure):
+                    with self.assertRaises(type(failure)):
+                        self.engine.set_enabled(self.session, False)
+                self.assertTrue(descriptors)
+                for descriptor in descriptors:
+                    with self.assertRaises(OSError):
+                        os.fstat(descriptor)
+                self.assertEqual(self.engine.path.read_bytes(), original)
+                self.assertEqual(list(self.engine.directory.iterdir()), [self.engine.path])
+
     @unittest.skipUnless(hasattr(__import__('os'), 'mkfifo') and hasattr(__import__('os'), 'O_NONBLOCK'),
                          'requires FIFO and nonblocking open support')
     def test_fifo_swapped_after_path_validation_does_not_block_status(self):
@@ -782,7 +897,12 @@ else:
         self.engine.path.unlink()
         os.mkfifo(self.engine.path)
         descriptor = os.open(self.engine.path, os.O_RDONLY | os.O_NONBLOCK)
-        with patch('performance.os.open', return_value=descriptor), \
+        original_open = os.open
+        def open_ledger_only(path, *args, **kwargs):
+            if path == self.engine.path.name:
+                return descriptor
+            return original_open(path, *args, **kwargs)
+        with patch('performance.os.open', side_effect=open_ledger_only), \
              patch('performance.csv.DictReader') as reader:
             with self.assertRaisesRegex(ValueError, 'ledger must be a regular file'):
                 self.engine._load()

@@ -192,21 +192,69 @@ class Engine:
         if self.path.exists() and not stat.S_ISREG(self.path.stat().st_mode):
             raise ValueError("ledger must be a regular file")
 
+    @contextmanager
+    def _directory_guard(self):
+        if sys.platform != "win32":
+            descriptor = os.open(self.directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            try:
+                yield descriptor
+            finally:
+                os.close(descriptor)
+            return
+        # A no-delete-sharing handle pins the directory's name on Windows.
+        import ctypes
+        from ctypes import wintypes
+        kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel.CreateFileW.argtypes = [wintypes.LPCWSTR, wintypes.DWORD, wintypes.DWORD,
+                                       ctypes.c_void_p, wintypes.DWORD, wintypes.DWORD,
+                                       wintypes.HANDLE]
+        kernel.CreateFileW.restype = wintypes.HANDLE
+        kernel.GetFileInformationByHandleEx.argtypes = [
+            wintypes.HANDLE, ctypes.c_int, ctypes.c_void_p, wintypes.DWORD]
+        kernel.GetFileInformationByHandleEx.restype = wintypes.BOOL
+        kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel.CloseHandle.restype = wintypes.BOOL
+
+        class AttributeTagInfo(ctypes.Structure):
+            _fields_ = [("FileAttributes", wintypes.DWORD), ("ReparseTag", wintypes.DWORD)]
+
+        handle = kernel.CreateFileW(str(self.directory), 0x80, 0x3, None, 3, 0x02200000, None)
+        if handle == ctypes.c_void_p(-1).value:
+            raise OSError("cannot guard ledger directory")
+        try:
+            info = AttributeTagInfo()
+            if not kernel.GetFileInformationByHandleEx(handle, 9, ctypes.byref(info), ctypes.sizeof(info)):
+                raise OSError("cannot inspect ledger directory")
+            if info.FileAttributes & 0x400 or not info.FileAttributes & 0x10:
+                raise ValueError("ledger directory must be a directory without reparse points")
+            yield None
+        finally:
+            kernel.CloseHandle(handle)
+
+    def _check_directory_identity(self, descriptor):
+        current = self.directory.stat(follow_symlinks=False)
+        if not stat.S_ISDIR(current.st_mode) or not os.path.samestat(current, os.fstat(descriptor)):
+            raise ValueError("ledger directory changed during mutation")
+
     def _load(self):
         if not self.path.exists():
             return []
-        descriptor = os.open(self.path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
-                             | getattr(os, "O_NONBLOCK", 0))
-        with os.fdopen(descriptor, "r", newline="", encoding="utf-8") as stream:
-            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
-                raise ValueError("ledger must be a regular file")
-            reader = csv.DictReader(stream, strict=True)
-            header = tuple(reader.fieldnames or ())
-            if header not in (FIELDS, LEGACY_FIELDS):
-                raise ValueError("unsupported or corrupt ledger header")
-            version = SCHEMA_VERSION if header == FIELDS else "1"
-            projections = tuple(field for field in PROJECTIONS if field in header)
-            rows = list(reader)
+        with self._directory_guard() as directory_fd:
+            flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
+            if directory_fd is None:
+                descriptor = os.open(self.path, flags)
+            else:
+                descriptor = os.open(self.path.name, flags, dir_fd=directory_fd)
+            with os.fdopen(descriptor, "r", newline="", encoding="utf-8") as stream:
+                if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                    raise ValueError("ledger must be a regular file")
+                reader = csv.DictReader(stream, strict=True)
+                header = tuple(reader.fieldnames or ())
+                if header not in (FIELDS, LEGACY_FIELDS):
+                    raise ValueError("unsupported or corrupt ledger header")
+                version = SCHEMA_VERSION if header == FIELDS else "1"
+                projections = tuple(field for field in PROJECTIONS if field in header)
+                rows = list(reader)
         if not rows:
             raise ValueError("ledger metadata is missing")
         for index, row in enumerate(rows, 1):
@@ -251,25 +299,35 @@ class Engine:
     def _commit(self, rows):
         self._safe_paths()
         self.directory.mkdir(mode=0o700, exist_ok=True)
-        descriptor, temporary = tempfile.mkstemp(prefix=".pending-", dir=self.directory)
-        try:
-            with os.fdopen(descriptor, "w", newline="", encoding="utf-8") as stream:
-                writer = csv.DictWriter(stream, fieldnames=FIELDS)
-                writer.writeheader()
-                writer.writerows(dict(row, data=_json(row["data"])) for row in rows)
-                stream.flush()
-                os.fsync(stream.fileno())
-            os.replace(temporary, self.path)
-            if fcntl is None:
-                return  # Windows cannot open directories to fsync them
-            directory_fd = os.open(self.directory, os.O_RDONLY | os.O_DIRECTORY)
+        with self._directory_guard() as directory_fd:
+            if directory_fd is None:
+                descriptor, temporary = tempfile.mkstemp(prefix=".pending-", dir=self.directory)
+            else:
+                temporary = ".pending-" + uuid.uuid4().hex
+                descriptor = os.open(temporary, os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+                                     0o600, dir_fd=directory_fd)
             try:
-                os.fsync(directory_fd)
+                with os.fdopen(descriptor, "w", newline="", encoding="utf-8") as stream:
+                    writer = csv.DictWriter(stream, fieldnames=FIELDS)
+                    writer.writeheader()
+                    writer.writerows(dict(row, data=_json(row["data"])) for row in rows)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                if directory_fd is None:
+                    os.replace(temporary, self.path)
+                else:
+                    self._check_directory_identity(directory_fd)
+                    os.replace(temporary, self.path.name,
+                               src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
+                    os.fsync(directory_fd)
             finally:
-                os.close(directory_fd)
-        finally:
-            if os.path.exists(temporary):
-                os.unlink(temporary)
+                try:
+                    if directory_fd is None:
+                        os.unlink(temporary)
+                    else:
+                        os.unlink(temporary, dir_fd=directory_fd)
+                except FileNotFoundError:
+                    pass
 
     def _state(self, rows):
         active = rows[0]["data"]["policy_version"] if rows else POLICY_VERSION

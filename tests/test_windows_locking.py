@@ -98,6 +98,71 @@ class WindowsLockingTests(unittest.TestCase):
         self.addCleanup(stack.close)
         return stack
 
+    def test_windows_directory_guard_denies_rename_and_closes_after_interruption(self):
+        import ctypes
+        self.engine.directory.mkdir()
+        kernel = SimpleNamespace(CreateFileW=Mock(return_value=123),
+                                 GetFileInformationByHandleEx=Mock(return_value=1),
+                                 CloseHandle=Mock(return_value=1))
+        def attributes(handle, kind, info, size):
+            info._obj.FileAttributes = 0x10
+            return 1
+        kernel.GetFileInformationByHandleEx.side_effect = attributes
+        with patch.object(sys, 'platform', 'win32'), \
+                patch.object(ctypes, 'WinDLL', return_value=kernel, create=True):
+            self.engine.set_enabled('session', True)
+            original = self.engine.path.read_bytes()
+            with patch('performance.os.replace', side_effect=KeyboardInterrupt()):
+                with self.assertRaises(KeyboardInterrupt):
+                    self.engine.set_enabled('session', False)
+            self.assertEqual(self.engine.path.read_bytes(), original)
+            self.assertEqual(list(self.engine.directory.iterdir()), [self.engine.path])
+        kernel.CreateFileW.assert_called()
+        for call in kernel.CreateFileW.call_args_list:
+            self.assertEqual(call.args[2] & 0x4, 0, 'guard must deny FILE_SHARE_DELETE')
+            self.assertEqual(call.args[4], 3, 'guard opens existing directory')
+            self.assertEqual(call.args[5] & 0x02200000, 0x02200000)
+        self.assertEqual(kernel.CloseHandle.call_count, kernel.CreateFileW.call_count)
+
+    def test_windows_directory_guard_rejects_reparse_and_non_directory_before_write(self):
+        import ctypes
+        for value in (0x410, 0x80):
+            with self.subTest(attributes=value):
+                self.engine.directory.mkdir(exist_ok=True)
+                kernel = SimpleNamespace(CreateFileW=Mock(return_value=123),
+                                         GetFileInformationByHandleEx=Mock(),
+                                         CloseHandle=Mock(return_value=1))
+                def attributes(handle, kind, info, size):
+                    info._obj.FileAttributes = value
+                    return 1
+                kernel.GetFileInformationByHandleEx.side_effect = attributes
+                with patch.object(sys, 'platform', 'win32'), \
+                        patch.object(ctypes, 'WinDLL', return_value=kernel, create=True):
+                    with self.assertRaises((ValueError, OSError)):
+                        self.engine.set_enabled('session', True)
+                self.assertEqual(list(self.engine.directory.iterdir()), [])
+                kernel.CloseHandle.assert_called_once_with(123)
+
+    def test_windows_directory_guard_api_failures_do_not_write_and_close_valid_handles(self):
+        import ctypes
+        self.engine.directory.mkdir()
+        invalid = ctypes.c_void_p(-1).value
+        for handle, query_result in ((invalid, 1), (123, 0)):
+            with self.subTest(handle=handle, query_result=query_result):
+                kernel = SimpleNamespace(CreateFileW=Mock(return_value=handle),
+                                         GetFileInformationByHandleEx=Mock(return_value=query_result),
+                                         CloseHandle=Mock(return_value=1))
+                with patch.object(sys, 'platform', 'win32'), \
+                        patch.object(ctypes, 'WinDLL', return_value=kernel, create=True):
+                    with self.assertRaises(OSError):
+                        self.engine.set_enabled('session', True)
+                self.assertEqual(list(self.engine.directory.iterdir()), [])
+                if handle == invalid:
+                    kernel.CloseHandle.assert_not_called()
+                    kernel.GetFileInformationByHandleEx.assert_not_called()
+                else:
+                    kernel.CloseHandle.assert_called_once_with(handle)
+
     def test_permanent_lock_errors_propagate_without_retry(self):
         for number in (errno.EINVAL, errno.EBADF):
             with self.subTest(errno=number):
