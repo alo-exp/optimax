@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "Ālo Labs optimizes delegated model selection with independently assessed results.",
   "author": {"name": "Shafqat Ullah", "url": "https://alolabs.dev"},
-  "homepage": "https://optimax.alolabs.dev",
+  "homepage": "https://alo-exp.github.io/optimax/",
   "repository": "https://github.com/alo-exp/optimax",
   "license": "MIT"
 }

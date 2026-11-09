@@ -144,6 +144,16 @@ class OptimaxPackagingTests(unittest.TestCase):
                 self.assertEqual(manifest['author']['name'], 'Shafqat Ullah')
                 self.assertIn('Ālo Labs', manifest['description'])
 
+    def test_packaged_plugin_homepages_point_to_live_site(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            build = subprocess.run([sys.executable, str(ROOT / 'build_release.py'), '--output', str(output)], capture_output=True, text=True)
+            self.assertEqual(build.returncode, 0, build.stderr)
+            with zipfile.ZipFile(output / 'optimax-plugin.zip') as plugin:
+                for name in ('plugin.json', '.claude-plugin/plugin.json'):
+                    with self.subTest(manifest=name):
+                        self.assertEqual(json.loads(plugin.read(name))['homepage'], 'https://alo-exp.github.io/optimax/')
+
     def test_candidate_release_archive_identifies_0_2_0(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp)
