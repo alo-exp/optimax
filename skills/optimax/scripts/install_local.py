@@ -1,9 +1,9 @@
 # Install a packaged optimax skill locally.
 import argparse
+import io
 import lzma
 from pathlib import Path, PurePosixPath
 import re
-import shutil
 import stat
 import sys
 import zipfile
@@ -19,6 +19,29 @@ REQUIRED = {
     'scripts/instruction_audit.py',
 }
 EXCLUDED = {'tests', 'model-perf', '.git', '__pycache__'}
+MAX_MEMBER_BYTES = 1024 * 1024
+MAX_TOTAL_BYTES = 8 * 1024 * 1024
+READ_CHUNK_BYTES = 64 * 1024
+
+
+def _stream_member(z, info, budget, output=None):
+    """Consume through EOF with bounded reads; check decoded bytes before writing."""
+    member_bytes = 0
+    try:
+        with z.open(info) as stream:
+            while True:
+                remaining = min(MAX_MEMBER_BYTES - member_bytes, MAX_TOTAL_BYTES - budget[0])
+                chunk = stream.read(min(READ_CHUNK_BYTES, remaining + 1))
+                if not chunk:
+                    break
+                member_bytes += len(chunk)
+                budget[0] += len(chunk)
+                if member_bytes > MAX_MEMBER_BYTES or budget[0] > MAX_TOTAL_BYTES:
+                    raise ValueError(f'archive byte limit exceeded: {info.filename}')
+                if output is not None:
+                    output.write(chunk)
+    except (RuntimeError, NotImplementedError) as exc:
+        raise ValueError(f'unreadable archive entry {info.filename}: {exc}') from exc
 
 # Reject common YAML implicit non-string scalars in the supported plain subset.
 NONSTRING_SCALAR = re.compile(
@@ -106,17 +129,14 @@ def _manifest(z):
         files[rel] = info
     missing = REQUIRED - files.keys()
     if missing: raise ValueError(f'missing required runtime files: {sorted(missing)}')
-    try:
-        skill_bytes = z.read(files['SKILL.md'])
-    except (RuntimeError, NotImplementedError) as exc:
-        raise ValueError(f'unreadable archive entry SKILL.md: {exc}') from exc
-    _validate_skill_frontmatter(skill_bytes.decode('utf-8'))
-    for info in files.values():
-        try:
-            with z.open(info) as stream:
-                while stream.read(65536): pass
-        except (RuntimeError, NotImplementedError) as exc:
-            raise ValueError(f'unreadable archive entry {info.filename}: {exc}') from exc
+    if (any(info.file_size > MAX_MEMBER_BYTES for info in files.values())
+            or sum(info.file_size for info in files.values()) > MAX_TOTAL_BYTES):
+        raise ValueError('archive byte limit exceeded')
+    budget = [0]
+    skill = io.BytesIO()
+    for name, info in files.items():
+        _stream_member(z, info, budget, skill if name == 'SKILL.md' else None)
+    _validate_skill_frontmatter(skill.getvalue().decode('utf-8'))
     return files
 
 
@@ -141,12 +161,12 @@ def install(archive, dest):
                 path = dest / directory
                 path.mkdir()
                 owned.append((path, _identity(path), True))
+            budget = [0]
             for name, info in sorted(files.items()):
                 target = dest / name
                 with target.open('xb') as output:
                     owned.append((target, _identity(target), False))
-                    with z.open(info) as source:
-                        shutil.copyfileobj(source, output)
+                    _stream_member(z, info, budget, output)
         except BaseException as exc:
             incomplete = False
             for path, identity, is_dir in reversed(owned):

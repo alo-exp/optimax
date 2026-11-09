@@ -9,7 +9,7 @@ import stat
 import tempfile
 import zipfile
 
-from skills.optimax.scripts.install_local import _validate_skill_frontmatter
+from skills.optimax.scripts.install_local import _manifest, _validate_skill_frontmatter
 
 ROOT = Path(__file__).resolve().parent
 RUNTIME = ROOT / 'skills' / 'optimax'
@@ -69,6 +69,8 @@ def build(output):
                     info.external_attr = 0o100644 << 16
                     info.compress_type = zipfile.ZIP_DEFLATED
                     z.writestr(info, data, compresslevel=9)
+        with zipfile.ZipFile(staging / 'optimax-skill.zip') as candidate:
+            _manifest(candidate)
         backups = {}
         for destination in destinations:
             if destination.exists():

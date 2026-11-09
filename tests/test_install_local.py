@@ -41,6 +41,132 @@ class InstallTests(unittest.TestCase):
         self.dest = self.base / 'optimax'
         archive(self.zip)
 
+    def test_compressed_member_budget_rejects_before_destination_creation(self):
+        skill = (ROOT / 'SKILL.md').read_bytes() + b'x' * (1024 * 1024)
+        archive(self.zip, omit=('SKILL.md',),
+                extras=(('optimax/SKILL.md', skill),), compression=zipfile.ZIP_DEFLATED)
+        self.assertLess(self.zip.stat().st_size, 100000)
+        with self.assertRaisesRegex(ValueError, 'byte limit'):
+            installer.install(self.zip, self.dest)
+        self.assertFalse(self.dest.exists())
+
+    def test_aggregate_budget_and_cli_reject_before_destination_creation(self):
+        extras = tuple((f'optimax/references/extra-{i}.md', b'x' * (1024 * 1024))
+                       for i in range(8))
+        archive(self.zip, extras=extras, compression=zipfile.ZIP_DEFLATED)
+        with self.assertRaisesRegex(ValueError, 'byte limit'):
+            installer.install(self.zip, self.dest)
+        self.assertFalse(self.dest.exists())
+        run = subprocess.run([sys.executable, str(ROOT / 'scripts/install_local.py'),
+                              '--archive', str(self.zip), '--dest', str(self.dest)],
+                             capture_output=True, text=True)
+        self.assertEqual(run.returncode, 1)
+        self.assertIn('byte limit', run.stderr)
+        self.assertNotIn('Traceback', run.stderr)
+        self.assertFalse(self.dest.exists())
+
+    def test_advertised_budget_checked_before_opening_any_member(self):
+        archive(self.zip, extras=(('optimax/references/large.md', b'x' * (1024 * 1024 + 1)),))
+        with mock.patch.object(zipfile.ZipFile, 'open', side_effect=AssertionError('opened member')):
+            with self.assertRaisesRegex(ValueError, 'byte limit'):
+                installer.install(self.zip, self.dest)
+        self.assertFalse(self.dest.exists())
+
+    def test_actual_member_budget_rejects_underreported_metadata(self):
+        import copy
+        archive(self.zip, extras=(('optimax/references/large.md', b'x' * (1024 * 1024 + 1)),),
+                compression=zipfile.ZIP_DEFLATED)
+        original_list = zipfile.ZipFile.infolist
+        original_open = zipfile.ZipFile.open
+        reads = []
+        original_read = zipfile.ZipExtFile.read
+
+        def understated(z):
+            infos = [copy.copy(info) for info in original_list(z)]
+            for info in infos:
+                info.file_size = min(info.file_size, 1024)
+            return infos
+
+        def real_open(z, info, *args, **kwargs):
+            return original_open(z, z.getinfo(info.filename), *args, **kwargs)
+
+        def bounded_read(stream, size=-1):
+            reads.append(size)
+            return original_read(stream, size)
+
+        with mock.patch.object(zipfile.ZipFile, 'infolist', understated), \
+                mock.patch.object(zipfile.ZipFile, 'open', real_open), \
+                mock.patch.object(zipfile.ZipExtFile, 'read', bounded_read):
+            with self.assertRaisesRegex(ValueError, 'byte limit'):
+                installer.install(self.zip, self.dest)
+        self.assertTrue(reads)
+        self.assertTrue(all(0 < size <= 65536 for size in reads), reads)
+        self.assertFalse(self.dest.exists())
+
+    def test_actual_aggregate_budget_rejects_underreported_metadata(self):
+        import copy
+        extras = tuple((f'optimax/references/extra-{i}.md', b'x' * (1024 * 1024))
+                       for i in range(8))
+        archive(self.zip, extras=extras, compression=zipfile.ZIP_DEFLATED)
+        original_list = zipfile.ZipFile.infolist
+        original_open = zipfile.ZipFile.open
+        def understated(z):
+            infos = [copy.copy(info) for info in original_list(z)]
+            for info in infos:
+                info.file_size = min(info.file_size, 1024)
+            return infos
+        def real_open(z, info, *args, **kwargs):
+            return original_open(z, z.getinfo(info.filename), *args, **kwargs)
+        with mock.patch.object(zipfile.ZipFile, 'infolist', understated), \
+                mock.patch.object(zipfile.ZipFile, 'open', real_open):
+            with self.assertRaisesRegex(ValueError, 'byte limit'):
+                installer.install(self.zip, self.dest)
+        self.assertFalse(self.dest.exists())
+
+    def test_exact_member_and_aggregate_limits_and_ignored_entries(self):
+        with zipfile.ZipFile(self.zip) as z:
+            size = sum(i.file_size for i in z.infolist()
+                       if i.filename not in ('optimax/tests/example.py', 'optimax/model-perf/private.csv'))
+        extra = 8 * 1024 * 1024 - size
+        chunks = []
+        while extra:
+            n = min(extra, 1024 * 1024)
+            chunks.append((f'optimax/references/padding-{len(chunks)}.md', b'x' * n))
+            extra -= n
+        chunks.append(('optimax/tests/ignored.py', b'x' * (1024 * 1024 + 1)))
+        archive(self.zip, extras=chunks, compression=zipfile.ZIP_DEFLATED)
+        installer.install(self.zip, self.dest)
+        self.assertEqual(sum(p.stat().st_size for p in self.dest.rglob('*') if p.is_file()),
+                         8 * 1024 * 1024)
+        self.assertFalse((self.dest / 'tests').exists())
+
+    def test_extraction_actual_overflow_cleans_owned_files_and_preserves_foreign(self):
+        archive(self.zip, extras=(('optimax/tests/payload.py', b'x' * (1024 * 1024 + 1)),),
+                compression=zipfile.ZIP_DEFLATED)
+        original_open = zipfile.ZipFile.open
+        original_read = zipfile.ZipExtFile.read
+        redirected = []
+        def changed_source(z, info, *args, **kwargs):
+            if self.dest.exists() and info.filename == 'optimax/SKILL.md':
+                redirected.append(True)
+                info = z.getinfo('optimax/tests/payload.py')
+            return original_open(z, info, *args, **kwargs)
+        def observe_partial(stream, size=-1):
+            data = original_read(stream, size)
+            target = self.dest / 'SKILL.md'
+            if target.exists() and target.stat().st_size:
+                (self.dest / 'foreign').write_text('safe')
+                self.assertLessEqual(target.stat().st_size, 1024 * 1024)
+            return data
+        with mock.patch.object(zipfile.ZipFile, 'open', changed_source), \
+                mock.patch.object(zipfile.ZipExtFile, 'read', observe_partial):
+            with self.assertRaisesRegex(OSError, 'byte limit.*incomplete cleanup') as caught:
+                installer.install(self.zip, self.dest)
+        self.assertTrue(redirected)
+        self.assertIsInstance(caught.exception.__cause__, ValueError)
+        self.assertEqual((self.dest / 'foreign').read_text(), 'safe')
+        self.assertEqual(sorted(p.name for p in self.dest.iterdir()), ['foreign'])
+
     def test_install_runtime_and_status(self):
         before = self.zip.read_bytes()
         installer.install(self.zip, self.dest)
@@ -235,12 +361,18 @@ class InstallTests(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in self.dest.iterdir()), ['foreign'])
 
     def test_keyboard_interrupt_removes_partial_install_and_allows_retry(self):
-        def interrupt(source, output):
-            output.write(b'partial')
-            raise KeyboardInterrupt('cancelled')
-        with mock.patch.object(installer.shutil, 'copyfileobj', interrupt):
+        original = zipfile.ZipExtFile.read
+        interrupted = []
+        def interrupt(source, size=-1):
+            partial = self.dest / 'SKILL.md'
+            if partial.exists() and partial.stat().st_size:
+                interrupted.append(True)
+                raise KeyboardInterrupt('cancelled')
+            return original(source, size)
+        with mock.patch.object(zipfile.ZipExtFile, 'read', interrupt):
             with self.assertRaisesRegex(KeyboardInterrupt, 'cancelled'):
                 installer.install(self.zip, self.dest)
+        self.assertTrue(interrupted)
         self.assertFalse(self.dest.exists())
         installer.install(self.zip, self.dest)
         self.assertTrue((self.dest / 'SKILL.md').is_file())
@@ -285,13 +417,19 @@ class InstallTests(unittest.TestCase):
         self.assertFalse(self.dest.exists())
 
     def test_keyboard_interrupt_reports_incomplete_cleanup_and_preserves_foreign(self):
-        def interrupt(source, output):
-            output.write(b'partial')
-            (self.dest / 'foreign').write_text('safe')
-            raise KeyboardInterrupt('cancelled')
-        with mock.patch.object(installer.shutil, 'copyfileobj', interrupt):
+        original = zipfile.ZipExtFile.read
+        interrupted = []
+        def interrupt(source, size=-1):
+            partial = self.dest / 'SKILL.md'
+            if partial.exists() and partial.stat().st_size:
+                interrupted.append(True)
+                (self.dest / 'foreign').write_text('safe')
+                raise KeyboardInterrupt('cancelled')
+            return original(source, size)
+        with mock.patch.object(zipfile.ZipExtFile, 'read', interrupt):
             with self.assertRaisesRegex(OSError, 'incomplete cleanup') as caught:
                 installer.install(self.zip, self.dest)
+        self.assertTrue(interrupted)
         self.assertIsInstance(caught.exception.__cause__, KeyboardInterrupt)
         self.assertEqual((self.dest / 'foreign').read_text(), 'safe')
         self.assertEqual(sorted(p.name for p in self.dest.iterdir()), ['foreign'])

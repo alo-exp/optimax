@@ -27,6 +27,26 @@ class ReleaseSafetyTests(unittest.TestCase):
                 archive.writestr('previous-version.txt', b'previous release')
         return self.snapshot(output)
 
+    def test_oversized_runtime_preserves_previous_pair_and_foreign_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp).resolve()
+            previous = self.previous_release(output)
+            foreign = output / 'foreign'
+            foreign.write_bytes(b'keep')
+            runtime = output / 'runtime'
+            runtime.mkdir()
+            for name in builder.FILES:
+                target = runtime / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((builder.RUNTIME / name).read_bytes())
+            (runtime / 'scripts/ladder.py').write_bytes(b'x' * (1024 * 1024 + 1))
+            with patch.object(builder, 'RUNTIME', runtime):
+                with self.assertRaisesRegex(ValueError, 'byte limit'):
+                    builder.build(output)
+            self.assertEqual(self.snapshot(output), previous)
+            self.assertEqual(foreign.read_bytes(), b'keep')
+            self.assertFalse(list(output.glob('.optimax-release-*')))
+
     def test_existing_destination_directory_preserves_previous_archive(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp).resolve()
