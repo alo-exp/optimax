@@ -39,4 +39,5 @@ export function attachSearch({input,results,status,clear,document,index,basePath
     }
   });
   clear.addEventListener('click',()=>{input.value='';reset();input.focus()});
+  if(input.value.trim().length>=2) render();
 }
