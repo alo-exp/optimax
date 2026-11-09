@@ -142,6 +142,134 @@ class ReleaseSafetyTests(unittest.TestCase):
                     builder.build(output)
             self.assertEqual(list(output.iterdir()), [])
 
+    def test_interruption_after_promotion_restores_existing_or_absent_pair(self):
+        for existing in (False, True):
+            for interrupted_index in (0, 1):
+                with self.subTest(existing=existing, interrupted_index=interrupted_index):
+                    with tempfile.TemporaryDirectory() as tmp:
+                        output = Path(tmp).resolve()
+                        previous = self.previous_release(output) if existing else {}
+                        original = os.replace
+
+                        def interrupt_after_replace(source, destination):
+                            result = original(source, destination)
+                            if (Path(destination) == output / NAMES[interrupted_index]
+                                    and Path(source).name == NAMES[interrupted_index]):
+                                raise KeyboardInterrupt('injected after promotion')
+                            return result
+
+                        with patch.object(os, 'replace', interrupt_after_replace):
+                            with self.assertRaisesRegex(KeyboardInterrupt, 'injected after promotion'):
+                                builder.build(output)
+                        if existing:
+                            self.assertTrue(self.snapshot(output) == previous, 'previous archive bytes not restored')
+                        else:
+                            self.assertEqual(list(output.iterdir()), [])
+                        self.assertEqual(sorted(p.name for p in output.iterdir()), sorted(previous))
+
+    def test_interruption_before_promotion_preserves_existing_or_absent_pair(self):
+        for existing in (False, True):
+            with self.subTest(existing=existing), tempfile.TemporaryDirectory() as tmp:
+                output = Path(tmp).resolve()
+                previous = self.previous_release(output) if existing else {}
+                original = os.replace
+
+                def interrupt_before_replace(source, destination):
+                    if Path(destination) == output / NAMES[0]:
+                        raise KeyboardInterrupt('injected before promotion')
+                    return original(source, destination)
+
+                with patch.object(os, 'replace', interrupt_before_replace):
+                    with self.assertRaisesRegex(KeyboardInterrupt, 'injected before promotion'):
+                        builder.build(output)
+                if existing:
+                    self.assertEqual(self.snapshot(output), previous)
+                self.assertEqual(sorted(p.name for p in output.iterdir()), sorted(previous))
+
+    def test_foreign_replacement_is_preserved_and_recovery_retained(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp).resolve()
+            previous = self.previous_release(output)
+            original = os.replace
+
+            def replace_with_foreign_then_interrupt(source, destination):
+                if Path(destination) == output / NAMES[0] and Path(source).name == NAMES[0]:
+                    original(source, destination)
+                    foreign = output / 'foreign'
+                    foreign.write_bytes(b'foreign replacement')
+                    original(foreign, destination)
+                    raise KeyboardInterrupt('injected promotion interruption')
+                return original(source, destination)
+
+            with patch.object(os, 'replace', replace_with_foreign_then_interrupt):
+                with self.assertRaisesRegex(OSError, 'recovery files retained at') as caught:
+                    builder.build(output)
+            self.assertIsInstance(caught.exception.__context__, KeyboardInterrupt)
+            self.assertEqual((output / NAMES[0]).read_bytes(), b'foreign replacement')
+            recovery, = output.glob('.optimax-release-*')
+            self.assertEqual((recovery / (NAMES[0] + '.previous')).read_bytes(), previous[NAMES[0]])
+
+    def test_interruption_during_rollback_retains_recovery(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp).resolve()
+            previous = self.previous_release(output)
+            original = os.replace
+
+            def interrupt_promotion_and_rollback(source, destination):
+                if Path(destination) == output / NAMES[1] and Path(source).name == NAMES[1]:
+                    raise OSError('injected promotion failure')
+                if str(source).endswith('.previous'):
+                    raise KeyboardInterrupt('injected rollback interruption')
+                return original(source, destination)
+
+            with patch.object(os, 'replace', interrupt_promotion_and_rollback):
+                with self.assertRaisesRegex(OSError, 'recovery files retained at') as caught:
+                    builder.build(output)
+            self.assertIsInstance(caught.exception.__context__, OSError)
+            recovery, = output.glob('.optimax-release-*')
+            self.assertEqual((recovery / (NAMES[0] + '.previous')).read_bytes(), previous[NAMES[0]])
+
+    def test_interrupted_promotion_restores_mixed_prior_state(self):
+        for existing_index in (0, 1):
+            with self.subTest(existing_index=existing_index), tempfile.TemporaryDirectory() as tmp:
+                output = Path(tmp).resolve()
+                destination = output / NAMES[existing_index]
+                destination.write_bytes(b'previous archive')
+                original = os.replace
+
+                def interrupt_second(source, target):
+                    result = original(source, target)
+                    if Path(target) == output / NAMES[1] and Path(source).name == NAMES[1]:
+                        raise KeyboardInterrupt('interrupted mixed promotion')
+                    return result
+
+                with patch.object(os, 'replace', interrupt_second):
+                    with self.assertRaisesRegex(KeyboardInterrupt, 'interrupted mixed promotion'):
+                        builder.build(output)
+                self.assertEqual(destination.read_bytes(), b'previous archive')
+                self.assertEqual(sorted(p.name for p in output.iterdir()), [NAMES[existing_index]])
+
+    def test_interruption_after_rollback_rename_retains_recovery(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp).resolve()
+            previous = self.previous_release(output)
+            original = os.replace
+
+            def interrupt_after_restore(source, destination):
+                if Path(destination) == output / NAMES[1] and Path(source).name == NAMES[1]:
+                    raise OSError('injected promotion failure')
+                result = original(source, destination)
+                if str(source).endswith('.previous'):
+                    raise KeyboardInterrupt('interrupted after restoration')
+                return result
+
+            with patch.object(os, 'replace', interrupt_after_restore):
+                with self.assertRaisesRegex(OSError, 'recovery files retained at'):
+                    builder.build(output)
+            self.assertEqual((output / NAMES[0]).read_bytes(), previous[NAMES[0]])
+            recovery, = output.glob('.optimax-release-*')
+            self.assertEqual((recovery / (NAMES[1] + '.previous')).read_bytes(), previous[NAMES[1]])
+
     def test_invalid_input_preserves_previous_pair_and_foreign_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp).resolve()

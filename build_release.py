@@ -69,26 +69,44 @@ def build(output):
                 backup = staging / (destination.name + '.previous')
                 shutil.copy2(destination, backup)
                 backups[destination] = backup
-        promoted = []
+        def identity(path):
+            try:
+                metadata = path.lstat()
+            except FileNotFoundError:
+                return None
+            return metadata.st_dev, metadata.st_ino
+
+        originals = {destination: identity(destination) for destination in destinations}
+        attempts = []
+        # Keep recovery files even if rollback itself is interrupted.
+        retain_recovery = True
         try:
             for destination in destinations:
-                os.replace(staging / destination.name, destination)
-                promoted.append(destination)
-        except BaseException:
+                staged = staging / destination.name
+                attempts.append((destination, identity(staged)))
+                os.replace(staged, destination)
+        except BaseException as promotion_error:
             # Individual renames are atomic; the pair is not crash-atomic.
             rollback_errors = []
-            for destination in reversed(promoted):
+            for destination, staged_identity in reversed(attempts):
                 try:
+                    current = identity(destination)
+                    if current == originals[destination]:
+                        continue
+                    if current != staged_identity:
+                        raise OSError(f'unexpected replacement at {destination}')
                     if destination in backups:
                         os.replace(backups[destination], destination)
                     else:
                         destination.unlink()
-                except OSError as error:
+                except BaseException as error:
                     rollback_errors.append(error)
             if rollback_errors:
-                retain_recovery = True
-                raise OSError(f'release rollback failed; recovery files retained at {staging}') from rollback_errors[0]
+                details = '; '.join(str(error) or type(error).__name__ for error in rollback_errors)
+                raise OSError(f'release rollback failed ({details}); recovery files retained at {staging}') from promotion_error
+            retain_recovery = False
             raise
+        retain_recovery = False
     finally:
         if not retain_recovery:
             shutil.rmtree(staging)
