@@ -39,11 +39,11 @@ import uuid
 
 try:
     from .ladder import (_FLOORS, _LADDERS, _TRACK_FIELDS, _validate_fields, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
-                         SECOND_POLICY_VERSION, POLICY_VERSION, policy, policy_lineage, recommend)
+                         SECOND_POLICY_VERSION, THIRD_POLICY_VERSION, POLICY_VERSION, policy, policy_lineage, recommend)
     from .session_policy import advisor_context, orchestrator_recommendation
 except ImportError:
     from ladder import (_FLOORS, _LADDERS, _TRACK_FIELDS, _validate_fields, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
-                        SECOND_POLICY_VERSION, POLICY_VERSION, policy, policy_lineage, recommend)
+                        SECOND_POLICY_VERSION, THIRD_POLICY_VERSION, POLICY_VERSION, policy, policy_lineage, recommend)
     from session_policy import advisor_context, orchestrator_recommendation
 
 SCHEMA_VERSION = "2"
@@ -230,15 +230,16 @@ class Engine:
                     _string(data["generation"], "stored generation")
                     state["sessions"][data["session"]] = data
                 elif event == "policy_adoption":
-                    target, retired_role = {
-                        LEGACY_POLICY_VERSION: (SECOND_POLICY_VERSION, "executor"),
-                        SECOND_POLICY_VERSION: (POLICY_VERSION, "advisor"),
-                    }.get(state["policy_version"], (None, None))
+                    target = {LEGACY_POLICY_VERSION: SECOND_POLICY_VERSION,
+                              SECOND_POLICY_VERSION: THIRD_POLICY_VERSION,
+                              THIRD_POLICY_VERSION: POLICY_VERSION}.get(state["policy_version"])
                     if data != {"from_policy_version": state["policy_version"], "to_policy_version": target} or target is None:
                         raise ValueError("invalid policy adoption")
+                    previous = state["policy_version"]
                     state["policy_version"] = target
                     state["tracks"] = {key: track for key, track in state["tracks"].items()
-                                       if track["role"] != retired_role}
+                                       if policy_lineage(previous, track["role"], track["platform"]) ==
+                                          policy_lineage(target, track["role"], track["platform"])}
                 elif event == "transition":
                     version = data.get("policy_version", state["policy_version"])
                     if version != state["policy_version"]:
@@ -247,7 +248,7 @@ class Engine:
                     recommend({"track": data, "available_steps": data["available_steps"],
                                "assessments": [], "policy_version": version,
                                "advice_level": data.get("advice_level", "medium")})
-                    if data["role"] == "advisor" and version == POLICY_VERSION:
+                    if data["role"] == "advisor" and version in (THIRD_POLICY_VERSION, POLICY_VERSION):
                         if data["context_floor"] != ADVICE_FLOORS[data["advice_level"]] or data["step"] < data["context_floor"]:
                             raise ValueError("invalid stored Advisor context floor")
                     if ladders[(data["platform"], data["role"])][data["step"]] != (data["family"], data["effort"]):
@@ -270,9 +271,9 @@ class Engine:
                     if any(data[field] != track[field] for field in ("step", "family", "effort", "model_id")):
                         raise ValueError("launch settings differ from epoch")
                     run_policy = data.get("policy_version", track["policy_version"])
-                    if policy_lineage(run_policy, data["role"]) != policy_lineage(track["policy_version"], track["role"]):
+                    if policy_lineage(run_policy, data["role"], data["platform"]) != policy_lineage(track["policy_version"], track["role"], track["platform"]):
                         raise ValueError("launch policy differs from epoch")
-                    if data["role"] == "advisor" and run_policy == POLICY_VERSION:
+                    if data["role"] == "advisor" and run_policy in (THIRD_POLICY_VERSION, POLICY_VERSION):
                         if (data["context_floor"] != ADVICE_FLOORS[data["advice_level"]]
                                 or data["context_floor"] != track["context_floor"]
                                 or data["advice_level"] != track["advice_level"]):
@@ -342,7 +343,7 @@ class Engine:
         version = record["policy_version"]
         ladders, _ = policy(version)
         timestamp = _validate_fields(record, ladders)
-        lineage = policy_lineage(version, record["role"])
+        lineage = policy_lineage(version, record["role"], record["platform"])
         sequence = len(state["assessments"])
         state["assessments"][record["run_id"]] = data
         totals = state["lineage_totals"]
@@ -357,7 +358,7 @@ class Engine:
 
     def _recommend(self, track, state, available=None, advice_level=None):
         version = track["policy_version"]
-        lineage = policy_lineage(version, track["role"])
+        lineage = policy_lineage(version, track["role"], track["platform"])
         key = (lineage, *(track[field] for field in _TRACK_FIELDS))
         window = state["windows"].get(key, {"count": 0, "records": []})
         result = recommend({"track": track, "policy_version": version,
@@ -415,7 +416,7 @@ class Engine:
                      effort=effort, model_id=models[family], epoch=epoch,
                      models=models, available_steps=available, reason=reason,
                      previous_epoch=previous["epoch"] if previous else None, policy_version=policy_version)
-        if role == "advisor" and policy_version == POLICY_VERSION:
+        if role == "advisor" and policy_version in (THIRD_POLICY_VERSION, POLICY_VERSION):
             track.update(advice_level=advice_level, context_floor=ADVICE_FLOORS[advice_level])
         return track
 
@@ -430,7 +431,9 @@ class Engine:
         current = state["policy_version"]
         changed = current != POLICY_VERSION
         while current != POLICY_VERSION:
-            target = SECOND_POLICY_VERSION if current == LEGACY_POLICY_VERSION else POLICY_VERSION
+            target = {LEGACY_POLICY_VERSION: SECOND_POLICY_VERSION,
+                      SECOND_POLICY_VERSION: THIRD_POLICY_VERSION,
+                      THIRD_POLICY_VERSION: POLICY_VERSION}[current]
             self._append(rows, "policy_adoption", {
                 "from_policy_version": current, "to_policy_version": target})
             current = target
@@ -550,7 +553,7 @@ class Engine:
         exclusions = []
         if not request["verified"]:
             exclusions.append("unverified")
-        if policy_lineage(run["policy_version"], run["role"]) != policy_lineage(state["policy_version"], run["role"]):
+        if policy_lineage(run["policy_version"], run["role"], run["platform"]) != policy_lineage(state["policy_version"], run["role"], run["platform"]):
             exclusions.append("policy_changed")
         if (request["effective_model_id"] != run["model_id"]
                 or request["effective_effort"] != run["effort"]):

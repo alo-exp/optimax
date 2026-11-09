@@ -40,6 +40,21 @@ def capabilities(platform="codex"):
 
 
 class DispatchTests(unittest.TestCase):
+    def test_claude_advisor_max_requires_verified_support_and_exact_receipt(self):
+        r = reservation("claude") | {"role": "advisor", "effort": "max"}
+        c = capabilities("claude") | {"effective_effort": "max", "supported_efforts": ["high", "max"]}
+        result = adapter.prepare_dispatch(r, "Review.", "claude-agent", c)
+        self.assertEqual(result["arguments"]["effort"], "max")
+        self.assertEqual(result["arguments"]["model"], "opus")
+        receipt = dict(run_id=r["run_id"], epoch=r["epoch"], requested_model_id=r["model_id"],
+                       requested_effort="max", effective_model_id=r["model_id"],
+                       effective_effort="max", execution_id="native-max")
+        self.assertEqual(adapter.validate_receipt(r, receipt), receipt)
+        with self.assertRaises(ValueError):
+            adapter.validate_receipt(r, receipt | {"effective_effort": "xhigh"})
+        with self.assertRaisesRegex(ValueError, "effort"):
+            adapter.prepare_dispatch(r, "Review.", "claude-agent", c | {"supported_efforts": ["high"]})
+
     def test_codex_exact_overrides_and_selfcontained_provenance(self):
         result = adapter.prepare_dispatch(reservation(), "Fix the exact brief.\nKeep tests.", "codex-spawn", capabilities())
         self.assertEqual(result["tool"], "collaboration.spawn_agent")

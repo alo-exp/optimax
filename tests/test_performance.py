@@ -110,6 +110,80 @@ def write_policy_two_fixture(engine, session):
 
 
 class PerformanceTests(unittest.TestCase):
+    def test_v4_adoption_preserves_unchanged_windows_and_retires_only_claude_advisor(self):
+        write_policy_two_fixture(self.engine, self.session)
+        rows = self.events()
+        self.engine._append(rows, "policy_adoption", {"from_policy_version": "optimal-ultra-ladder-v2", "to_policy_version": "optimal-ultra-ladder-v3"})
+        old_runs = {}
+        for platform, family, effort, models in (("codex", "sol", "xhigh", {"sol": "sol-old"}),
+                                                  ("claude", "opus", "medium", {"opus": "opus-old"})):
+            track = dict(platform=platform, role="advisor", tier=None, step=0, family=family,
+                         effort=effort, model_id=models[family], epoch=platform + "-v3-epoch",
+                         models=models, available_steps=[0, 1, 2], reason="initial", previous_epoch=None,
+                         policy_version="optimal-ultra-ladder-v3", advice_level="medium", context_floor=0)
+            self.engine._append(rows, "transition", track)
+            for i in range(2):
+                run = dict(track, run_id=f"{platform}-v3-{i}", session=self.session,
+                           user_id=self.engine.user, session_generation="legacy-generation", mode="direct")
+                self.engine._append(rows, "launch", run)
+                if i == 0:
+                    request = dict(run_id=run["run_id"], score=4, effective_model_id=run["model_id"],
+                                   effective_effort=effort, execution_id=platform + "-v3-exec", verified=True)
+                    attribution = {key: run[key] for key in ("platform", "role", "tier", "step", "model_id", "epoch", "run_id", "policy_version")}
+                    attribution.update(score=4, verified=True, timestamp="2026-11-07T00:04:00+00:00")
+                    self.engine._append(rows, "assessment", dict(request=request, attribution=attribution,
+                        result=dict(run_id=run["run_id"], eligible=True, exclusions=[], transition=None)))
+                old_runs[platform] = run
+        self.write_events(rows)
+        self.assertEqual(self.engine.status(self.session)["policy_version"], "optimal-ultra-ladder-v3")
+        corrupt = self.events()
+        transition = next(row for row in corrupt if row["event_type"] == "transition" and row["platform"] == "claude")
+        transition["data"]["context_floor"] = 1
+        self.write_events(corrupt)
+        with self.assertRaisesRegex(ValueError, "context floor"):
+            self.engine.status(self.session)
+        self.write_events(rows)
+        corrupt = self.events()
+        adoption = next(row for row in corrupt if row["event_type"] == "policy_adoption")
+        adoption["data"]["to_policy_version"] = "optimal-ultra-ladder-v4"
+        self.write_events(corrupt)
+        with self.assertRaisesRegex(ValueError, "policy adoption"):
+            self.engine.status(self.session)
+        self.write_events(rows)
+        legacy_fields = [field for field in rows[0] if field != "tier"]
+        with self.engine.path.open("w", newline="", encoding="utf-8") as stream:
+            writer = csv.DictWriter(stream, fieldnames=legacy_fields)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({field: ("1" if field == "schema_version" else
+                                         json.dumps(row[field]) if field == "data" else row[field])
+                                 for field in legacy_fields})
+        self.assertEqual(self.engine.status(self.session)["policy_version"], "optimal-ultra-ladder-v3")
+        before = self.engine.path.read_bytes()
+        with patch("performance.os.replace", side_effect=PermissionError("adoption denied")):
+            with self.assertRaises(PermissionError):
+                self.engine.adopt_policy()
+        self.assertEqual(self.engine.path.read_bytes(), before)
+        self.assertTrue(self.engine.adopt_policy()["changed"])
+        upgraded = self.events()
+        self.assertEqual({event["schema_version"] for event in upgraded}, {"2"})
+        for old, current in zip(rows, upgraded):
+            self.assertEqual({key: value for key, value in old.items() if key != "schema_version"},
+                             {key: value for key, value in current.items() if key != "schema_version"})
+        self.assertFalse(self.engine.adopt_policy()["changed"])
+        status = Engine(self.root, "actual-user").status(self.session)
+        self.assertEqual(status["policy_version"], "optimal-ultra-ladder-v4")
+        tracks = {(t["platform"], t["role"]): t for t in status["tracks"]}
+        self.assertEqual((tracks[("codex", "executor")]["epoch"], tracks[("codex", "executor")]["eligible_count"]), ("executor-v1", 3))
+        self.assertEqual((tracks[("codex", "advisor")]["epoch"], tracks[("codex", "advisor")]["eligible_count"]), ("codex-v3-epoch", 1))
+        self.assertNotIn(("claude", "advisor"), tracks)
+        self.assertTrue(self.assess(old_runs["codex"])["eligible"])
+        self.assertIn("policy_changed", self.assess(old_runs["claude"])["exclusions"])
+        fresh = self.engine.prepare(self.session, "claude", "advisor", models={"opus": "opus-old"},
+                                    available_steps=[0, 1, 2, 3], advice_level="super_high")
+        self.assertEqual((fresh["step"], fresh["context_floor"]), (2, 2))
+        self.assertNotEqual(fresh["epoch"], "claude-v3-epoch")
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -681,7 +755,7 @@ class PerformanceTests(unittest.TestCase):
             self.prepare()
         self.assertEqual(self.engine.path.read_bytes(), before)
 
-    def test_sequential_v1_v2_v3_adoption_preserves_history_and_retires_changed_roles(self):
+    def test_sequential_v1_v2_v3_v4_adoption_preserves_history_and_retires_changed_roles(self):
         old_executor = write_policy_one_fixture(self.engine, self.session)
         before = self.engine.path.read_bytes()
         historical = self.events()
@@ -690,10 +764,10 @@ class PerformanceTests(unittest.TestCase):
         self.assertEqual(self.engine.path.read_bytes(), before)
         adopted = self.engine.adopt_policy()
         self.assertTrue(adopted["changed"])
-        self.assertEqual(adopted["policy_version"], "optimal-ultra-ladder-v3")
+        self.assertEqual(adopted["policy_version"], "optimal-ultra-ladder-v4")
         self.assertEqual([row["data"]["to_policy_version"] for row in self.events()
                           if row["event_type"] == "policy_adoption"],
-                         ["optimal-ultra-ladder-v2", "optimal-ultra-ladder-v3"])
+                         ["optimal-ultra-ladder-v2", "optimal-ultra-ladder-v3", "optimal-ultra-ladder-v4"])
         self.assertEqual(self.events()[:len(historical)], historical)
         after = self.engine.path.read_bytes()
         self.assertFalse(self.engine.adopt_policy()["changed"])
@@ -726,7 +800,7 @@ class PerformanceTests(unittest.TestCase):
         self.assertEqual(self.engine.path.read_bytes(), before)
         self.engine.prepare(self.session, "codex", "executor", "medium",
                             {"terra": "terra-new", "sol": "sol-new"}, list(range(7)))
-        self.assertEqual(sum(row["event_type"] == "policy_adoption" for row in self.events()), 2)
+        self.assertEqual(sum(row["event_type"] == "policy_adoption" for row in self.events()), 3)
         events = self.events()
         events[0]["data"]["policy_version"] = "unknown-policy"
         self.write_events(events)
@@ -753,7 +827,7 @@ class PerformanceTests(unittest.TestCase):
         first = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(first.returncode, 0, first.stderr)
         self.assertEqual(json.loads(first.stdout),
-                         {"changed": True, "policy_version": "optimal-ultra-ladder-v3"})
+                         {"changed": True, "policy_version": "optimal-ultra-ladder-v4"})
         before = self.engine.path.read_bytes()
         second = subprocess.run(command, capture_output=True, text=True)
         self.assertEqual(second.returncode, 0, second.stderr)
@@ -821,7 +895,9 @@ class PerformanceTests(unittest.TestCase):
         outstanding = write_policy_two_fixture(self.engine, self.session)
         before = self.events()
         old_advisor = next(row["data"] for row in before if row["run_id"] == "advisor-3")
-        self.engine.adopt_policy()
+        rows = self.events()
+        self.engine._append(rows, "policy_adoption", {"from_policy_version": "optimal-ultra-ladder-v2", "to_policy_version": "optimal-ultra-ladder-v3"})
+        self.write_events(rows)
         status = self.engine.status(self.session)
         self.assertEqual(status["policy_version"], "optimal-ultra-ladder-v3")
         self.assertEqual(self.events()[:len(before)], before)
@@ -833,7 +909,7 @@ class PerformanceTests(unittest.TestCase):
         launched = self.engine.prepare(self.session, "codex", "executor", "medium",
                                         {"terra": "terra-old", "sol": "sol-old"}, list(range(7)))
         self.assertEqual(launched["epoch"], "executor-v1")
-        self.assertEqual(launched["policy_version"], "optimal-ultra-ladder-v3")
+        self.assertEqual(launched["policy_version"], "optimal-ultra-ladder-v4")
         self.assertEqual(self.assess(launched)["transition"]["step"], 2)
         advisor = self.engine.prepare(self.session, "codex", "advisor",
                                       models={"sol": "sol-old", "astra": "astra-new"},
@@ -927,7 +1003,7 @@ class PerformanceTests(unittest.TestCase):
 
     def test_policy_version_is_explicit(self):
         self.enable()
-        self.assertEqual(self.events()[0]["data"]["policy_version"], "optimal-ultra-ladder-v3")
+        self.assertEqual(self.events()[0]["data"]["policy_version"], "optimal-ultra-ladder-v4")
 
     def test_cli_json_success_and_clean_errors(self):
         common = [sys.executable, str(SCRIPT), "--root", str(self.root),

@@ -19,7 +19,7 @@ For `on`, `--platform` accepts `claude` or `codex`, and `--complexity` accepts `
 
 To preserve a known or possibly active native configuration in the recommendation, pass `--platform codex --native-context '{"mode":"codex-ultra","active":true,"model_id":"CURRENT_MODEL_ID","effort":"CURRENT_EFFORT"}' on` (use `claude-ultracode` with `claude`). `active` is `true`, `false`, or `null` for unknown; true and unknown require the current nonempty model ID and effort. Active or unknown context retains the current pair in the recommendation and includes the ordinary recommendation as `baseline`; `applied` remains false. False returns the ordinary baseline with context. This is advice only: it does not activate, disable, or cancel native work.
 
-`adopt-policy` takes no request file and records adoption of `optimal-ultra-ladder-v3` when needed. The first successful `prepare` also adopts atomically. Status and idempotent adoption do not fabricate a launch. V3 starts fresh Advisor windows while preserving compatible unchanged Executor v2 epochs/windows. Frozen v1/v2 registries retain historical event meaning. Policy adoption and CSV schema upgrade are distinct; see [the policy](policy.md).
+`adopt-policy` takes no request file and records adoption of `optimal-ultra-ladder-v4` when needed. The first successful `prepare` also adopts atomically. Status and idempotent adoption do not fabricate a launch. Adoption proceeds in order through v2 and v3 to v4. V4 preserves compatible Executor and Codex Advisor lineage/windows; Claude Advisor starts a fresh selection and epoch at the next consultation floor, retaining historical events and excluding late old-lineage receipts. Policy adoption and CSV schema upgrade are distinct; see [the policy](policy.md).
 
 An example preparation request for a low-complexity Codex Executor is:
 
@@ -106,7 +106,7 @@ This empty-history example selects the starting Codex Executor rung for a low-co
 
 ```json
 {
-  "policy_version": "optimal-ultra-ladder-v3",
+  "policy_version": "optimal-ultra-ladder-v4",
   "track": {
     "platform": "codex",
     "role": "executor",
@@ -120,7 +120,7 @@ This empty-history example selects the starting Codex Executor rung for a low-co
 }
 ```
 
-- `policy_version`: top-level ladder registry selector. Use `optimal-ultra-ladder-v3` for current decisions; frozen v1/v2 remain available for historical validation. It defaults to current v3 when omitted. Never mix assessments from different role-policy lineages into one standalone request.
+- `policy_version`: top-level ladder registry selector. Use `optimal-ultra-ladder-v4` for current decisions; frozen v1/v2/v3 remain available for historical validation. It defaults to current v4 when omitted. Never mix assessments from different role-policy lineages into one standalone request.
 - `platform`: `claude` or `codex`.
 - `role`: `executor` or `advisor`.
 - `tier`: Executor uses its actual `low`, `medium`, or `high` tier, with `business_doc` retained where specified by policy. Advisor uses JSON `null`; it has one unpartitioned track per platform. The pure calculator requires the `tier` field, unlike the controller which permits omission for Advisor preparation.
@@ -147,7 +147,7 @@ Every attributed assessment contains all six track fields above, plus:
 }
 ```
 
-For an Advisor calculator request, set `role: "advisor"`, `tier: null`, and its own Advisor rung/model/epoch in both the current track and attributed assessments. Use Advisor availability indices `[0, 1, 2]` and top-level `advice_level: "medium"`, `"high"`, or `"super_high"` to enforce the consultation floor (default Medium). Supply that advice level explicitly for a non-Medium consultation floor. Keep advice level as consultation provenance rather than a score partition. Never reuse an Executor epoch or split the Advisor's shared window by advice level.
+For an Advisor calculator request, set `role: "advisor"`, `tier: null`, and its own Advisor rung/model/epoch in both the current track and attributed assessments. Supply supported Advisor availability indices discovered on the host (Claude can include `[0, 1, 2, 3]`; Codex can include `[0, 1, 2]`) and top-level `advice_level: "medium"`, `"high"`, or `"super_high"` to enforce the consultation floor (default Medium). Supply that advice level explicitly for a non-Medium consultation floor. Keep advice level as consultation provenance rather than a score partition. Never reuse an Executor epoch or split the Advisor's shared window by advice level.
 
 `step` denotes the actual effective model/effort rung, not merely the requested setting. Verify actual effort against the ladder when attributing a row. A requested Max run that actually used High is not a Max assessment. Unknown effective effort or version makes the record ineligible. The helper trusts the caller's attribution and does not derive a model family from opaque provider deployment identifiers.
 

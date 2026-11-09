@@ -31,13 +31,44 @@ def request(platform="codex", role="executor", tier=DEFAULT_TIER, step=0, scores
 
 
 class LadderTests(unittest.TestCase):
+    def test_current_claude_advisor_escalates_from_xhigh_to_max(self):
+        base = request(platform="claude", role="advisor", step=2, scores=[4] * 5)
+        base.update(available_steps=[0, 1, 2, 3], advice_level="super_high")
+        result = ladder.recommend(base)
+        self.assertEqual(result["selected_step"], 3)
+        self.assertEqual((result["selected_family"], result["selected_effort"]), ("opus", "max"))
+
+    def test_v4_claude_max_boundaries_and_v3_frozen(self):
+        for scores, expected in (([5] * 5, 2), ([4] * 5, 3)):
+            base = request(platform="claude", role="advisor", step=3, scores=scores)
+            base.update(available_steps=[0, 1, 2, 3], advice_level="super_high")
+            self.assertEqual(ladder.recommend(base)["selected_step"], expected)
+        base = request(platform="claude", role="advisor", step=2, scores=[4] * 5)
+        base.update(available_steps=[0, 2, 3], advice_level="super_high")
+        self.assertEqual(ladder.recommend(base)["selected_step"], 3)
+        base["available_steps"] = [0, 2]
+        self.assertEqual(ladder.recommend(base)["selected_step"], 2)
+        base["track"]["step"] = 3
+        with self.assertRaises(ValueError):
+            ladder.recommend(base)
+        old = request(platform="claude", role="advisor", step=2, scores=[4] * 5)
+        old.update(policy_version="optimal-ultra-ladder-v3", advice_level="super_high")
+        self.assertEqual(ladder.recommend(old)["selected_step"], 2)
+        old["track"]["step"] = 0
+        self.assertEqual(ladder.recommend(old)["selected_step"], 2)
+        self.assertEqual(ladder.policy_lineage("optimal-ultra-ladder-v3", "advisor"), "advisor-v3")
+        self.assertEqual(ladder.policy_lineage("optimal-ultra-ladder-v4", "advisor", "claude"), "advisor-v4")
+        self.assertEqual(ladder.policy_lineage("optimal-ultra-ladder-v4", "advisor", "codex"), "advisor-v3")
+        with self.assertRaises(ValueError):
+            ladder.policy_lineage("optimal-ultra-ladder-v4", "advisor")
+
     def test_advisor_v3_ceiling_and_contextual_floors(self):
         expected = {"claude": [("opus", "medium"), ("opus", "high"), ("opus", "xhigh")],
                     "codex": [("sol", "xhigh"), ("sol", "max"), ("astra", "max")]}
         for platform, rungs in expected.items():
             for level, floor in (("medium", 0), ("high", 1), ("super_high", 2)):
                 base = request(platform=platform, role="advisor")
-                base.update(available_steps=[0, 1, 2], advice_level=level)
+                base.update(policy_version="optimal-ultra-ladder-v3", available_steps=[0, 1, 2], advice_level=level)
                 result = ladder.recommend(base)
                 self.assertEqual(result["selected_step"], floor)
                 self.assertEqual((result["selected_family"], result["selected_effort"]), rungs[floor])

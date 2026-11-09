@@ -19,8 +19,8 @@ must be at or above its tier floor. Both track.step and assessment.step describe
 the independently established effective model/effort rung, rather than only a
 requested rung. The caller supplies verified exact model IDs; this helper does
 not verify provider identity or resolve aliases. Logical families below contain
-no fixed versions. Optional request.policy_version selects a frozen v1/v2
-registry for historical replay; the default is optimal-ultra-ladder-v3. Unknown
+no fixed versions. Optional request.policy_version selects a frozen v1/v2/v3
+registry for historical replay; the default is optimal-ultra-ladder-v4. Unknown
 policy versions are rejected. Current Advisor requests accept advice_level
 medium/high/super_high (default medium), constraining the minimum supported rung
 to 0/1/2 without creating separate performance tracks.
@@ -53,7 +53,8 @@ import sys
 
 LEGACY_POLICY_VERSION = "optimal-ultra-ladder-v1"
 SECOND_POLICY_VERSION = "optimal-ultra-ladder-v2"
-POLICY_VERSION = "optimal-ultra-ladder-v3"
+THIRD_POLICY_VERSION = "optimal-ultra-ladder-v3"
+POLICY_VERSION = "optimal-ultra-ladder-v4"
 ADVICE_FLOORS = {"medium": 0, "high": 1, "super_high": 2}
 _LEGACY_LADDERS = {
     ("claude", "executor"): (
@@ -92,21 +93,29 @@ _FLOORS = {
 }
 
 
-_LADDERS = dict(_V2_LADDERS)
-_LADDERS.update({
+_V3_LADDERS = dict(_V2_LADDERS)
+_V3_LADDERS.update({
     ("claude", "advisor"): (("opus", "medium"), ("opus", "high"), ("opus", "xhigh")),
     ("codex", "advisor"): (("sol", "xhigh"), ("sol", "max"), ("astra", "max")),
 })
+_LADDERS = dict(_V3_LADDERS)
+_LADDERS[("claude", "advisor")] = (*_V3_LADDERS[("claude", "advisor")], ("opus", "max"))
 
 
-def policy_lineage(version, role):
-    """Identify role definitions whose unchanged epochs may share evidence."""
+def policy_lineage(version, role, platform=None):
+    """Identify definitions whose unchanged epochs may share evidence."""
     policy(version)
     if role not in ("executor", "advisor"):
         raise ValueError("invalid role")
+    if platform is not None and platform not in ("claude", "codex"):
+        raise ValueError("invalid platform")
     if role == "executor":
         return "executor-v1" if version == LEGACY_POLICY_VERSION else "executor-v2"
-    return "advisor-v3" if version == POLICY_VERSION else "advisor-v1"
+    if version == POLICY_VERSION:
+        if platform is None:
+            raise ValueError("platform required for current Advisor lineage")
+        return "advisor-v4" if platform == "claude" else "advisor-v3"
+    return "advisor-v3" if version == THIRD_POLICY_VERSION else "advisor-v1"
 
 
 def policy(version=POLICY_VERSION):
@@ -115,6 +124,8 @@ def policy(version=POLICY_VERSION):
         return _LEGACY_LADDERS, _LEGACY_FLOORS
     if version == SECOND_POLICY_VERSION:
         return _V2_LADDERS, _FLOORS
+    if version == THIRD_POLICY_VERSION:
+        return _V3_LADDERS, _FLOORS
     if version == POLICY_VERSION:
         return _LADDERS, _FLOORS
     raise ValueError("unsupported policy version")
@@ -178,7 +189,7 @@ def recommend(request):
     _validate_fields(track, ladders)
     ladder = ladders[(track["platform"], track["role"])]
     floor = 0 if track["role"] == "advisor" else floors[track["platform"]][track["tier"]]
-    contextual = track["role"] == "advisor" and request.get("policy_version", POLICY_VERSION) == POLICY_VERSION
+    contextual = track["role"] == "advisor" and request.get("policy_version", POLICY_VERSION) in (THIRD_POLICY_VERSION, POLICY_VERSION)
     if contextual:
         level = request.get("advice_level", "medium")
         if not isinstance(level, str) or level not in ADVICE_FLOORS:

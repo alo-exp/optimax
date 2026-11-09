@@ -231,7 +231,7 @@
           "heading": "One track per host",
           "paragraphs": [
             "The Advisor has one performance track per host, with no complexity tier. The consultation context establishes a minimum rung: Medium is rung 0, High is rung 1, and Super High is rung 2.",
-            "For Claude the ladder is Opus Medium → Opus High → Opus XHigh. For Codex it is Sol XHigh → Sol Max → Astra Max. The selected Advisor can move with independent assessments, subject to the current consultation floor."
+            "For Claude the ladder is Opus Medium → Opus High → Opus XHigh → Opus Max. For Codex it is Sol XHigh → Sol Max → Astra Max. The selected Advisor can move with independent assessments, subject to the current consultation floor. Claude Opus Max is an escalation rung, not a fourth context level; availability must be verified on the host."
           ]
         },
         {
@@ -492,7 +492,7 @@
           "heading": "Before and after an update",
           "paragraphs": [
             "Use your host's supported plugin update process, then refresh discovery and check $optimax status or /optimax:optimax status. Confirm the expected project root and stable user identity before relying on learned routing.",
-            "Keep PROJECTROOT/model-perf/<actual-user-id>-model-perf.csv and any historical evidence. An upgrade, reinstall, or off command must not delete the ledger. Changes in exact model versions or applicable policy lineage can start new epochs without erasing earlier records."
+            "Keep PROJECTROOT/model-perf/<actual-user-id>-model-perf.csv and any historical evidence. An upgrade, reinstall, or off command must not delete the ledger. In policy v4, Executor and Codex Advisor history continues while Claude Advisor begins a fresh selection and epoch at the next consultation floor. Earlier events remain auditable, and late v3 Claude Advisor receipts do not enter the v4 lineage."
           ]
         },
         {
