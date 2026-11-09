@@ -84,7 +84,7 @@ def install(archive, dest):
                     owned.append((target, _identity(target), False))
                     with z.open(info) as source:
                         shutil.copyfileobj(source, output)
-        except Exception as exc:
+        except BaseException as exc:
             incomplete = False
             for path, identity, is_dir in reversed(owned):
                 try:

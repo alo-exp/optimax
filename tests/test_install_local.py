@@ -110,6 +110,29 @@ class InstallTests(unittest.TestCase):
         self.assertEqual((self.dest / 'foreign').read_text(), 'safe')
         self.assertEqual(sorted(p.name for p in self.dest.iterdir()), ['foreign'])
 
+    def test_keyboard_interrupt_removes_partial_install_and_allows_retry(self):
+        def interrupt(source, output):
+            output.write(b'partial')
+            raise KeyboardInterrupt('cancelled')
+        with mock.patch.object(installer.shutil, 'copyfileobj', interrupt):
+            with self.assertRaisesRegex(KeyboardInterrupt, 'cancelled'):
+                installer.install(self.zip, self.dest)
+        self.assertFalse(self.dest.exists())
+        installer.install(self.zip, self.dest)
+        self.assertTrue((self.dest / 'SKILL.md').is_file())
+
+    def test_keyboard_interrupt_reports_incomplete_cleanup_and_preserves_foreign(self):
+        def interrupt(source, output):
+            output.write(b'partial')
+            (self.dest / 'foreign').write_text('safe')
+            raise KeyboardInterrupt('cancelled')
+        with mock.patch.object(installer.shutil, 'copyfileobj', interrupt):
+            with self.assertRaisesRegex(OSError, 'incomplete cleanup') as caught:
+                installer.install(self.zip, self.dest)
+        self.assertIsInstance(caught.exception.__cause__, KeyboardInterrupt)
+        self.assertEqual((self.dest / 'foreign').read_text(), 'safe')
+        self.assertEqual(sorted(p.name for p in self.dest.iterdir()), ['foreign'])
+
     def test_cli_installs_to_explicit_destination(self):
         run = subprocess.run([sys.executable, str(ROOT / 'scripts/install_local.py'), '--archive', str(self.zip), '--dest', str(self.dest)], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
