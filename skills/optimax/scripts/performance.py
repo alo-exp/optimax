@@ -195,8 +195,11 @@ class Engine:
     def _load(self):
         if not self.path.exists():
             return []
-        descriptor = os.open(self.path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        descriptor = os.open(self.path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+                             | getattr(os, "O_NONBLOCK", 0))
         with os.fdopen(descriptor, "r", newline="", encoding="utf-8") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise ValueError("ledger must be a regular file")
             reader = csv.DictReader(stream, strict=True)
             header = tuple(reader.fieldnames or ())
             if header not in (FIELDS, LEGACY_FIELDS):

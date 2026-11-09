@@ -743,6 +743,61 @@ class PerformanceTests(unittest.TestCase):
             self.enable()
         self.assertEqual(target.read_text(), "untouched")
 
+    @unittest.skipUnless(hasattr(__import__('os'), 'mkfifo') and hasattr(__import__('os'), 'O_NONBLOCK'),
+                         'requires FIFO and nonblocking open support')
+    def test_fifo_swapped_after_path_validation_does_not_block_status(self):
+        self.enable()
+        code = '''
+import os, sys
+from performance import Engine
+engine = Engine(sys.argv[1], "actual-user")
+original = engine._safe_paths
+def swap():
+    original()
+    engine.path.unlink()
+    os.mkfifo(engine.path)
+engine._safe_paths = swap
+try:
+    engine.status("session-a")
+except ValueError as error:
+    print(error)
+else:
+    sys.exit("status accepted FIFO")
+'''
+        try:
+            result = subprocess.run(
+                [sys.executable, '-c', code, str(self.root)],
+                env={**__import__('os').environ, 'PYTHONPATH': str(SCRIPT.parent)},
+                capture_output=True, text=True, timeout=2)
+        except subprocess.TimeoutExpired:
+            self.fail('status blocked opening a FIFO swapped in after path validation')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('ledger must be a regular file', result.stdout)
+
+    @unittest.skipUnless(hasattr(__import__('os'), 'mkfifo') and hasattr(__import__('os'), 'O_NONBLOCK'),
+                         'requires FIFO and nonblocking open support')
+    def test_nonregular_descriptor_rejected_before_csv_and_closed(self):
+        import os
+        self.enable()
+        self.engine.path.unlink()
+        os.mkfifo(self.engine.path)
+        descriptor = os.open(self.engine.path, os.O_RDONLY | os.O_NONBLOCK)
+        with patch('performance.os.open', return_value=descriptor), \
+             patch('performance.csv.DictReader') as reader:
+            with self.assertRaisesRegex(ValueError, 'ledger must be a regular file'):
+                self.engine._load()
+            reader.assert_not_called()
+        with self.assertRaises(OSError):
+            os.fstat(descriptor)
+
+    @unittest.skipUnless(hasattr(__import__('os'), 'O_NONBLOCK'), 'flag already unavailable')
+    def test_regular_ledger_reads_when_nonblock_flag_unavailable(self):
+        import os
+        self.enable()
+        with patch.object(os, 'O_NONBLOCK'):
+            del os.O_NONBLOCK
+            self.assertTrue(self.engine.status(self.session)['enabled'])
+
     def test_foreign_identity_schema_policy_and_sequence_fail_closed(self):
         self.enable()
         original = self.engine.path.read_text()
