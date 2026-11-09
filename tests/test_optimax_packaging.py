@@ -37,7 +37,7 @@ class OptimaxPackagingTests(unittest.TestCase):
             self.assertTrue((dest / 'scripts/performance.py').is_file())
             home = Path(tmp) / 'home'
             (home / '.codex/skills').mkdir(parents=True)
-            result = subprocess.run([sys.executable, str(RUNTIME / 'scripts/install_local.py'), '--archive', str(archive)], env={**os.environ, 'HOME': str(home)}, capture_output=True, text=True)
+            result = subprocess.run([sys.executable, str(RUNTIME / 'scripts/install_local.py'), '--archive', str(archive)], env={**os.environ, 'HOME': str(home), 'USERPROFILE': str(home)}, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertTrue((home / '.codex/skills/optimax/SKILL.md').is_file())
 
