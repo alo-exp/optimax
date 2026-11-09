@@ -81,7 +81,13 @@
           "heading": "Verify before relying on it",
           "paragraphs": [
             "After installation, start a session and invoke $optimax on in Codex or /optimax:optimax on in Claude; use the corresponding status command to check the reported mode. Discovery and behavior depend on the release and host capabilities.",
-            "The published Codex plugin passed live installation, discovery, session controls and a fresh-session status check on the tested client. Native Ultra and compaction behavior remain outside that evidence. Claude has static validation only; a one-off live acceptance run is scheduled for 10 November 2026 at 14:00 Australia/Sydney. If an invocation is unavailable, check the marketplace, plugin name, host version and discovery state. Installation does not guarantee access to every model."
+            "On 7 November 2026, Optimax v0.1.0 passed live installation, discovery, session controls and fresh-session status checks on Codex CLI 0.166.0-alpha.6; see the acceptance record for its scope and limits, including native Ultra and compaction. Claude has static validation only, with a one-off live acceptance run scheduled for 10 November 2026 at 14:00 Australia/Sydney; if an invocation is unavailable, check the marketplace, plugin name, host version and discovery state, and remember that installation does not guarantee access to every model."
+          ],
+          "links": [
+            {
+              "label": "Codex acceptance record",
+              "href": "https://github.com/alo-exp/optimax/blob/f6d2701aa92e34a334a0c05436b2489b7a1ccd7e/docs/CODEX-ACCEPTANCE.md"
+            }
           ]
         }
       ]
