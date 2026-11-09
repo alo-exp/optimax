@@ -9,7 +9,7 @@ import stat
 import tempfile
 import zipfile
 
-from skills.optimax.scripts.install_local import _manifest, _validate_skill_frontmatter
+from skills.optimax.scripts.install_local import READ_CHUNK_BYTES, _manifest, _validate_skill_frontmatter
 
 ROOT = Path(__file__).resolve().parent
 RUNTIME = ROOT / 'skills' / 'optimax'
@@ -32,6 +32,26 @@ def read_safe(root, relative):
     if not path.is_file():
         raise ValueError(f'missing release file: {relative}')
     return path.read_bytes()
+
+
+def validate_staged_archive(path, expected):
+    with zipfile.ZipFile(path) as archive:
+        members = archive.infolist()
+        names = [member.filename for member in members]
+        if len(names) != len(expected) or set(names) != set(expected):
+            raise ValueError(f'unexpected staged archive members: {path.name}')
+        for member in members:
+            data = expected[member.filename]
+            if not stat.S_ISREG(member.external_attr >> 16) or member.file_size != len(data):
+                raise ValueError(f'invalid staged archive member: {member.filename}')
+            offset = 0
+            with archive.open(member) as stream:
+                while chunk := stream.read(READ_CHUNK_BYTES):
+                    if chunk != data[offset:offset + len(chunk)]:
+                        raise ValueError(f'invalid staged archive payload: {member.filename}')
+                    offset += len(chunk)
+            if offset != len(data):
+                raise ValueError(f'invalid staged archive payload: {member.filename}')
 
 
 def build(output):
@@ -58,10 +78,11 @@ def build(output):
     staging = Path(tempfile.mkdtemp(prefix='.optimax-release-', dir=output))
     retain_recovery = False
     try:
-        for archive, entries in (
-            ('optimax-skill.zip', {'optimax/LICENSE': license_data, **{'optimax/' + name: data for name, data in runtime.items()}}),
-            ('optimax-plugin.zip', {'LICENSE': license_data, **manifests, **review_ladder, **{'skills/optimax/' + name: data for name, data in runtime.items()}}),
-        ):
+        archives = {
+            'optimax-skill.zip': {'optimax/LICENSE': license_data, **{'optimax/' + name: data for name, data in runtime.items()}},
+            'optimax-plugin.zip': {'LICENSE': license_data, **manifests, **review_ladder, **{'skills/optimax/' + name: data for name, data in runtime.items()}},
+        }
+        for archive, entries in archives.items():
             with zipfile.ZipFile(staging / archive, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
                 for name, data in sorted(entries.items()):
                     info = zipfile.ZipInfo(name, (1980, 1, 1, 0, 0, 0))
@@ -69,6 +90,8 @@ def build(output):
                     info.external_attr = 0o100644 << 16
                     info.compress_type = zipfile.ZIP_DEFLATED
                     z.writestr(info, data, compresslevel=9)
+        for archive, entries in archives.items():
+            validate_staged_archive(staging / archive, entries)
         with zipfile.ZipFile(staging / 'optimax-skill.zip') as candidate:
             _manifest(candidate)
         backups = {}

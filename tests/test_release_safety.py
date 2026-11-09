@@ -108,6 +108,90 @@ class ReleaseSafetyTests(unittest.TestCase):
             self.assertEqual(self.snapshot(output), previous)
             self.assertEqual(sorted(p.name for p in output.iterdir()), sorted(NAMES))
 
+    def test_corrupt_staged_plugin_is_rejected_before_promotion(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp).resolve()
+            previous = self.previous_release(output)
+            foreign = output / 'foreign'
+            foreign.write_bytes(b'keep')
+            original_close = zipfile.ZipFile.close
+            injected = False
+
+            def corrupt_after_close(archive):
+                nonlocal injected
+                path = Path(archive.filename) if archive.filename else None
+                should_corrupt = archive.mode == 'w' and path is not None and path.name == NAMES[1] and archive.fp is not None
+                original_close(archive)
+                if should_corrupt:
+                    with path.open('r+b') as staged:
+                        staged.write(b'X')
+                    with zipfile.ZipFile(path) as probe:
+                        with self.assertRaises(zipfile.BadZipFile):
+                            probe.read(probe.infolist()[0])
+                    injected = True
+
+            error = None
+            with patch.object(zipfile.ZipFile, 'close', corrupt_after_close):
+                try:
+                    builder.build(output)
+                except (ValueError, OSError, zipfile.BadZipFile) as exc:
+                    error = exc
+            self.assertTrue(injected, 'fault must be injected after the plugin write closes')
+            self.assertEqual(self.snapshot(output), previous)
+            self.assertEqual(foreign.read_bytes(), b'keep')
+            self.assertFalse(list(output.glob('.optimax-release-*')))
+            self.assertIsNotNone(error, 'corrupt staged plugin must be rejected')
+
+    def test_invalid_staged_plugin_contents_are_rejected_before_promotion(self):
+        for fault in ('wrong_payload', 'missing', 'duplicate', 'extra', 'nonregular'):
+            with self.subTest(fault=fault), tempfile.TemporaryDirectory() as tmp:
+                output = Path(tmp).resolve()
+                previous = self.previous_release(output)
+                foreign = output / 'foreign'
+                foreign.write_bytes(b'keep')
+                original_close = zipfile.ZipFile.close
+                injected = False
+
+                def alter_after_close(archive):
+                    nonlocal injected
+                    path = Path(archive.filename) if archive.filename else None
+                    should_alter = archive.mode == 'w' and path is not None and path.name == NAMES[1] and archive.fp is not None
+                    original_close(archive)
+                    if not should_alter:
+                        return
+                    with zipfile.ZipFile(path) as source:
+                        entries = [(info, source.read(info)) for info in source.infolist()]
+                    replacement = path.with_suffix('.replacement')
+                    with zipfile.ZipFile(replacement, 'w') as target:
+                        for index, (info, data) in enumerate(entries):
+                            if index == 0 and fault == 'missing':
+                                continue
+                            if index == 0 and fault == 'wrong_payload':
+                                data = bytes([data[0] ^ 1]) + data[1:]
+                            if index == 0 and fault == 'nonregular':
+                                info.external_attr = 0o120777 << 16
+                            target.writestr(info, data)
+                        if fault == 'duplicate':
+                            target.writestr(entries[0][0], entries[0][1])
+                        if fault == 'extra':
+                            target.writestr('unexpected.txt', b'extra')
+                    replacement.replace(path)
+                    with zipfile.ZipFile(path) as probe:
+                        self.assertIsNone(probe.testzip(), 'fault must have valid CRCs')
+                    injected = True
+
+                error = None
+                with patch.object(zipfile.ZipFile, 'close', alter_after_close):
+                    try:
+                        builder.build(output)
+                    except (ValueError, OSError, zipfile.BadZipFile) as exc:
+                        error = exc
+                self.assertTrue(injected, 'fault must be injected after plugin write closes')
+                self.assertTrue(self.snapshot(output) == previous, 'previous pair changed')
+                self.assertEqual(foreign.read_bytes(), b'keep')
+                self.assertFalse(list(output.glob('.optimax-release-*')))
+                self.assertIsNotNone(error, f'{fault} staged plugin must be rejected')
+
     def test_second_promotion_failure_restores_previous_pair(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp).resolve()
