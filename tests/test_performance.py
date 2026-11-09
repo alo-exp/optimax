@@ -10,7 +10,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "skills/optimax/scripts"))
-from performance import Engine
+from performance import Engine, recommend
 
 MODELS = {"terra": "terra-v1", "sol": "sol-v1"}
 CLAUDE_MODELS = {"haiku": "haiku-v1", "sonnet": "sonnet-v1", "opus": "opus-v1"}
@@ -181,6 +181,181 @@ class PerformanceTests(unittest.TestCase):
         self.assertNotEqual(track["epoch"], runs[0]["epoch"])
         launched = fresh.prepare(self.session, "codex", "executor", "low", MODELS, list(range(7)))
         self.assertEqual(launched["epoch"], track["epoch"])
+
+    def test_forged_assessment_transition_is_rejected_on_status_and_retry(self):
+        self.enable()
+        run = self.prepare()
+        self.assertIsNone(self.assess(run, score=5)["transition"])
+        rows = self.events()
+        rows[-1]["data"]["result"]["transition"] = {"step": 6, "reason": "fabricated"}
+        self.write_events(rows)
+        corrupted = self.engine.path.read_bytes()
+        fresh = Engine(self.root, "actual-user")
+        with self.assertRaises(ValueError):
+            fresh.status(self.session)
+        self.assertEqual(self.engine.path.read_bytes(), corrupted)
+        with self.assertRaises(ValueError):
+            self.assess(run, score=5)
+        self.assertEqual(self.engine.path.read_bytes(), corrupted)
+
+    def test_status_replay_uses_linear_calculator_input_on_long_history(self):
+        self.enable()
+        run = self.prepare()
+        self.assertIsNone(self.assess(run, score=5)["transition"])
+        rows = self.events()
+        launch = next(row for row in rows if row["event_type"] == "launch")
+        assessment = next(row for row in rows if row["event_type"] == "assessment")
+        rows = [row for row in rows if row["event_type"] not in ("launch", "assessment")]
+        count = 60
+        for index in range(count):
+            launch_copy = json.loads(json.dumps(launch))
+            assessed = json.loads(json.dumps(assessment))
+            run_id = f"scale-run-{index}"
+            launch_copy["run_id"] = launch_copy["data"]["run_id"] = run_id
+            assessed["run_id"] = run_id
+            assessed["data"]["request"].update(run_id=run_id, execution_id=f"scale-exec-{index}")
+            assessed["data"]["attribution"]["run_id"] = run_id
+            assessed["data"]["result"]["run_id"] = run_id
+            rows.extend((launch_copy, assessed))
+        for sequence, row in enumerate(rows, 1):
+            row["sequence"] = str(sequence)
+        self.write_events(rows)
+        before = self.engine.path.read_bytes()
+        visits = []
+        def counted(request):
+            visits.append(len(request["assessments"]))
+            return recommend(request)
+        with patch("performance.recommend", side_effect=counted):
+            track = Engine(self.root, "actual-user").status(self.session)["tracks"][0]
+        self.assertEqual(track["eligible_count"], count)
+        self.assertEqual(track["window_run_ids"], [f"scale-run-{i}" for i in range(count - 5, count)])
+        self.assertEqual(track["average"], 5)
+        self.assertEqual(self.engine.path.read_bytes(), before)
+        self.assertLessEqual(sum(visits), 6 * count + 10)
+
+    def test_indexed_replay_matches_full_calculator_with_interleaved_history(self):
+        self.enable()
+        for index in range(16):
+            tier = "low" if index % 2 == 0 else "high"
+            models = MODELS if index < 6 else {"terra": "terra-v2", "sol": "sol-v2"}
+            run = self.prepare(tier=tier, models=models)
+            self.assess(run, score=5, verified=index not in (8, 9))
+        rows = self.events()
+        assessments = [row for row in rows if row["event_type"] == "assessment"]
+        for index, row in enumerate(assessments):
+            # Equal timestamps preserve append order; reversed days exercise sorting.
+            day = 1 if index in (12, 14) else 28 - index
+            row["data"]["attribution"]["timestamp"] = f"2026-01-{day:02d}T00:00:00+00:00"
+        self.write_events(rows)
+        records = [row["data"]["attribution"] for row in assessments]
+        fresh = Engine(self.root, "actual-user")
+        tracks = fresh.status(self.session)["tracks"]
+        state = fresh._state(fresh._load())
+        for track in tracks:
+            expected = recommend(dict(track=track, assessments=records,
+                                      policy_version=track["policy_version"],
+                                      available_steps=track["available_steps"]))
+            actual = fresh._recommend(track, state)
+            for key in ("eligible_count", "excluded_count", "window_run_ids", "average",
+                        "selected_step", "reason", "reset_required"):
+                self.assertEqual(actual[key], expected[key], key)
+            for key in ("eligible_count", "window_run_ids", "average"):
+                self.assertEqual(track[key], expected[key], key)
+
+    def test_invalid_excluded_or_old_assessment_timestamps_are_rejected(self):
+        self.enable()
+        for index in range(7):
+            run = self.prepare()
+            self.assess(run, score=5, verified=index != 6)
+        original = self.engine.path.read_bytes()
+        for index in (0, 6):
+            with self.subTest(index=index):
+                self.engine.path.write_bytes(original)
+                rows = self.events()
+                assessments = [row for row in rows if row["event_type"] == "assessment"]
+                assessments[index]["data"]["attribution"]["timestamp"] = "invalid"
+                self.write_events(rows)
+                corrupted = self.engine.path.read_bytes()
+                with self.assertRaises(ValueError):
+                    Engine(self.root, "actual-user").status(self.session)
+                self.assertEqual(self.engine.path.read_bytes(), corrupted)
+        self.engine.path.write_bytes(original)
+
+    def test_replay_rejects_corrupt_transition_results_and_events(self):
+        self.enable()
+        runs = [self.prepare() for _ in range(5)]
+        for run in runs:
+            result = self.assess(run)
+        self.assertEqual(result["transition"]["step"], 1)
+        self.engine.set_enabled("another-session", True)
+        original = self.engine.path.read_bytes()
+        cases = ("none", "missing", "wrong_type", "different", "wrong_step",
+                 "wrong_reason", "wrong_model", "missing_event", "moved_event")
+        for case in cases:
+            with self.subTest(case=case):
+                self.engine.path.write_bytes(original)
+                rows = self.events()
+                assessment = next(row for row in rows if row["event_type"] == "assessment"
+                                  and row["data"]["request"]["run_id"] == runs[-1]["run_id"])
+                index = rows.index(assessment)
+                transition = rows[index + 1]["data"]
+                stored = assessment["data"]["result"]
+                if case == "none":
+                    stored["transition"] = None
+                elif case == "missing":
+                    del stored["transition"]
+                elif case == "wrong_type":
+                    stored["transition"] = "invalid"
+                elif case == "different":
+                    stored["transition"]["reason"] = "fabricated"
+                elif case in ("wrong_step", "wrong_reason", "wrong_model"):
+                    field, value = {"wrong_step": ("step", 0),
+                                    "wrong_reason": ("reason", "fabricated"),
+                                    "wrong_model": ("model_id", "fabricated")}[case]
+                    stored["transition"][field] = value
+                    transition[field] = value
+                elif case == "missing_event":
+                    del rows[index + 1]
+                else:
+                    rows[index + 1], rows[index + 2] = rows[index + 2], rows[index + 1]
+                for sequence, row in enumerate(rows, 1):
+                    row["sequence"] = str(sequence)
+                self.write_events(rows)
+                corrupted = self.engine.path.read_bytes()
+                with self.assertRaises(ValueError):
+                    Engine(self.root, "actual-user").status(self.session)
+                self.assertEqual(self.engine.path.read_bytes(), corrupted)
+                with self.assertRaises(ValueError):
+                    self.assess(runs[-1])
+                self.assertEqual(self.engine.path.read_bytes(), corrupted)
+        self.engine.path.write_bytes(original)
+
+    def test_valid_transition_retries_survive_restart_and_later_advances(self):
+        self.enable()
+        first_runs = [self.prepare() for _ in range(5)]
+        for run in first_runs:
+            promotion = self.assess(run, score=4)
+        self.assertEqual(promotion["transition"]["step"], 1)
+        second_runs = [self.prepare() for _ in range(5)]
+        for run in second_runs:
+            demotion = self.assess(run, score=5)
+        self.assertEqual(demotion["transition"]["step"], 0)
+        fresh = Engine(self.root, "actual-user")
+        for run, score, result in ((first_runs[-1], 4, promotion), (second_runs[-1], 5, demotion)):
+            self.assertEqual(fresh.assess(run["run_id"], score, run["model_id"], run["effort"],
+                                          "exec-" + run["run_id"]), result)
+        self.assertEqual(fresh.status(self.session)["tracks"][0]["step"], 0)
+
+    def test_no_transition_can_precede_separate_prepare_rollover(self):
+        self.enable()
+        run = self.prepare()
+        result = self.assess(run, score=5)
+        self.assertIsNone(result["transition"])
+        self.prepare(models={"terra": "terra-v2", "sol": "sol-v2"})
+        fresh = Engine(self.root, "actual-user")
+        self.assertEqual(fresh.status(self.session)["tracks"][0]["model_id"], "terra-v2")
+        self.assertEqual(fresh.assess(run["run_id"], 5, run["model_id"], run["effort"],
+                                      "exec-" + run["run_id"]), result)
 
     def test_old_epoch_late_results_never_move_current_or_replay_evidence(self):
         self.enable()

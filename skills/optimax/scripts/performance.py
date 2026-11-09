@@ -38,11 +38,11 @@ import tempfile
 import uuid
 
 try:
-    from .ladder import (_FLOORS, _LADDERS, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
+    from .ladder import (_FLOORS, _LADDERS, _TRACK_FIELDS, _validate_fields, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
                          SECOND_POLICY_VERSION, POLICY_VERSION, policy, policy_lineage, recommend)
     from .session_policy import advisor_context, orchestrator_recommendation
 except ImportError:
-    from ladder import (_FLOORS, _LADDERS, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
+    from ladder import (_FLOORS, _LADDERS, _TRACK_FIELDS, _validate_fields, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
                         SECOND_POLICY_VERSION, POLICY_VERSION, policy, policy_lineage, recommend)
     from session_policy import advisor_context, orchestrator_recommendation
 
@@ -219,9 +219,9 @@ class Engine:
     def _state(self, rows):
         active = rows[0]["data"]["policy_version"] if rows else POLICY_VERSION
         state = dict(sessions={}, tracks={}, runs={}, assessments={}, executions=set(),
-                     imports=set(), policy_version=active)
+                     imports=set(), policy_version=active, windows={}, lineage_totals={})
         try:
-            for row in rows[1:]:
+            for index, row in enumerate(rows[1:], 1):
                 data, event = row["data"], row["event_type"]
                 if event == "session":
                     _string(data["session"], "stored session")
@@ -298,8 +298,9 @@ class Engine:
                             or data["result"]["exclusions"] != self._exclusions(run, request, state)
                             or data["result"]["run_id"] != run_id):
                         raise ValueError("corrupt stored assessment result")
-                    state["assessments"][run_id] = dict(
-                        data, attribution=dict(expected, policy_version=run["policy_version"]))
+                    self._ingest_assessment(state, dict(
+                        data, attribution=dict(expected, policy_version=run["policy_version"])))
+                    self._validate_assessment_transition(rows, index, data, run, state, expected["verified"])
                     state["executions"].add((run["platform"], request["execution_id"]))
                 elif event == "legacy_import":
                     state["imports"].add(data["digest"])
@@ -309,15 +310,63 @@ class Engine:
             raise ValueError("corrupt ledger event structure") from None
         return state
 
+    def _validate_assessment_transition(self, rows, index, data, run, state, eligible):
+        track = state["tracks"].get(_key(run))
+        selection = None
+        if eligible and track is not None and track["epoch"] == run["epoch"]:
+            selection = self._recommend(track, state, advice_level=run.get("advice_level"))
+        stored = data["result"]["transition"]
+        if not selection or not selection["reset_required"]:
+            if stored is not None:
+                raise ValueError("unexpected assessment transition")
+            return
+        following = rows[index + 1] if index + 1 < len(rows) else None
+        if (not isinstance(stored, dict) or following is None
+                or following["event_type"] != "transition" or stored != following["data"]):
+            raise ValueError("corrupt assessment transition event")
+        epoch = stored["epoch"]
+        _string(epoch, "stored transition epoch")
+        if epoch == track["epoch"]:
+            raise ValueError("assessment transition epoch is not fresh")
+        expected = self._transition_payload(
+            run["platform"], run["role"], run["tier"], selection["selected_step"],
+            track["models"], track["available_steps"], selection["reason"], track,
+            state["policy_version"], run.get("advice_level", "medium"), epoch)
+        if "policy_version" not in stored:
+            del expected["policy_version"]
+        if stored != expected:
+            raise ValueError("corrupt assessment transition payload")
+
+    def _ingest_assessment(self, state, data):
+        record = data["attribution"]
+        version = record["policy_version"]
+        ladders, _ = policy(version)
+        timestamp = _validate_fields(record, ladders)
+        lineage = policy_lineage(version, record["role"])
+        sequence = len(state["assessments"])
+        state["assessments"][record["run_id"]] = data
+        totals = state["lineage_totals"]
+        totals[lineage] = totals.get(lineage, 0) + 1
+        if record["verified"]:
+            key = (lineage, *(record[field] for field in _TRACK_FIELDS))
+            window = state["windows"].setdefault(key, {"count": 0, "records": []})
+            window["count"] += 1
+            window["records"].append((timestamp, sequence, record))
+            window["records"].sort(key=lambda item: (item[0], item[1]))
+            del window["records"][:-5]
+
     def _recommend(self, track, state, available=None, advice_level=None):
         version = track["policy_version"]
         lineage = policy_lineage(version, track["role"])
-        return recommend({"track": track, "policy_version": version,
-                          "advice_level": advice_level or track.get("advice_level", "medium"),
-                          "available_steps": track["available_steps"] if available is None else available,
-                          "assessments": [data["attribution"] for data in state["assessments"].values()
-                                          if policy_lineage(data["attribution"]["policy_version"],
-                                                            data["attribution"]["role"]) == lineage]})
+        key = (lineage, *(track[field] for field in _TRACK_FIELDS))
+        window = state["windows"].get(key, {"count": 0, "records": []})
+        result = recommend({"track": track, "policy_version": version,
+                            "advice_level": advice_level or track.get("advice_level", "medium"),
+                            "available_steps": track["available_steps"] if available is None else available,
+                            "assessments": [item[2] for item in window["records"]]})
+        result["eligible_count"] = window["count"]
+        result["excluded_count"] = state["lineage_totals"].get(lineage, 0) - window["count"]
+        return result
 
     def _status(self, session, state):
         tracks = []
@@ -358,16 +407,22 @@ class Engine:
                 result["orchestrator_suggestion"] = suggestions
             return result
 
-    def _transition(self, rows, platform, role, tier, step, models, available, reason, previous=None,
-                    policy_version=POLICY_VERSION, advice_level="medium"):
+    def _transition_payload(self, platform, role, tier, step, models, available, reason, previous,
+                            policy_version, advice_level, epoch):
         ladders, _ = policy(policy_version)
         family, effort = ladders[(platform, role)][step]
         track = dict(platform=platform, role=role, tier=tier, step=step, family=family,
-                     effort=effort, model_id=models[family], epoch=uuid.uuid4().hex,
+                     effort=effort, model_id=models[family], epoch=epoch,
                      models=models, available_steps=available, reason=reason,
                      previous_epoch=previous["epoch"] if previous else None, policy_version=policy_version)
         if role == "advisor" and policy_version == POLICY_VERSION:
             track.update(advice_level=advice_level, context_floor=ADVICE_FLOORS[advice_level])
+        return track
+
+    def _transition(self, rows, platform, role, tier, step, models, available, reason, previous=None,
+                    policy_version=POLICY_VERSION, advice_level="medium"):
+        track = self._transition_payload(platform, role, tier, step, models, available, reason,
+                                         previous, policy_version, advice_level, uuid.uuid4().hex)
         self._append(rows, "transition", track)
         return track
 
@@ -541,7 +596,7 @@ class Engine:
             result = dict(run_id=run_id, eligible=eligible, exclusions=exclusions, transition=None)
             data = dict(request=request, result=result, attribution=attribution)
             self._append(rows, "assessment", data)
-            state["assessments"][run_id] = data
+            self._ingest_assessment(state, data)
             track = state["tracks"].get(_key(run))
             if eligible and track is not None and track["epoch"] == run["epoch"]:
                 selection = self._recommend(track, state, advice_level=run.get("advice_level"))
