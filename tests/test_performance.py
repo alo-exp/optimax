@@ -674,6 +674,29 @@ class PerformanceTests(unittest.TestCase):
             self.prepare()
         self.assertEqual(self.engine.path.read_bytes(), before)
 
+    def test_replay_rejects_malformed_assessment_fields_without_mutation(self):
+        self.enable()
+        self.assess(self.prepare(), score=1)
+        original = self.engine.path.read_bytes()
+        cases = (
+            ("request verified string", "request", "verified", "false"),
+            ("request execution empty", "request", "execution_id", ""),
+            ("request score boolean", "request", "score", True),
+            ("attribution verified integer", "attribution", "verified", 1),
+            ("attribution score boolean", "attribution", "score", True),
+            ("result eligible integer", "result", "eligible", 1),
+        )
+        for label, section, field, value in cases:
+            with self.subTest(case=label):
+                self.engine.path.write_bytes(original)
+                rows = self.events()
+                rows[-1]["data"][section][field] = value
+                self.write_events(rows)
+                corrupted = self.engine.path.read_bytes()
+                with self.assertRaises(ValueError):
+                    self.engine.status(self.session)
+                self.assertEqual(self.engine.path.read_bytes(), corrupted)
+
     def test_model_rollover_resets_before_old_window_can_downshift(self):
         self.enable()
         for _ in range(5):

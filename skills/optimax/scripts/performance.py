@@ -58,6 +58,15 @@ def _string(value, label):
         raise ValueError(label + " must be a nonempty string of at most 4096 characters")
 
 
+def _validate_assessment_request(request):
+    for field in ("run_id", "effective_model_id", "effective_effort", "execution_id"):
+        _string(request[field], field)
+    if type(request["score"]) is not int or not 0 <= request["score"] <= 5:
+        raise ValueError("score must be an integer from 0 to 5")
+    if type(request["verified"]) is not bool:
+        raise ValueError("verified must be a boolean")
+
+
 def _json(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
@@ -282,10 +291,14 @@ class Engine:
                     track.update(models=data["models"], available_steps=data["available_steps"])
                 elif event == "assessment":
                     request = data["request"]
+                    _validate_assessment_request(request)
                     run_id = request["run_id"]
                     if run_id not in state["runs"] or run_id in state["assessments"]:
                         raise ValueError("invalid stored assessment run")
                     run = state["runs"][run_id]
+                    _validate_fields(data["attribution"], policy(run["policy_version"])[0])
+                    if type(data["result"]["eligible"]) is not bool:
+                        raise ValueError("invalid stored assessment eligibility")
                     expected = {field: run[field] for field in
                                 ("platform", "role", "tier", "step", "model_id", "epoch")}
                     expected.update(run_id=run_id, score=request["score"],
@@ -571,15 +584,9 @@ class Engine:
         cannot inspect. Substituted, unverified, disabled or cached executions
         remain historical outcomes and never enter performance windows.
         """
-        for value, label in ((run_id, "run_id"), (effective_model_id, "effective_model_id"),
-                             (effective_effort, "effective_effort"), (execution_id, "execution_id")):
-            _string(value, label)
-        if type(score) is not int or not 0 <= score <= 5:
-            raise ValueError("score must be an integer from 0 to 5")
-        if type(verified) is not bool:
-            raise ValueError("verified must be a boolean")
         request = dict(run_id=run_id, score=score, effective_model_id=effective_model_id,
                        effective_effort=effective_effort, execution_id=execution_id, verified=verified)
+        _validate_assessment_request(request)
         with self._locked():
             rows = self._load()
             state = self._state(rows)
