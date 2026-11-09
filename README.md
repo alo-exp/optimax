@@ -4,7 +4,7 @@ Optimax is a portable skill and thin plugin for choosing delegated Executor and 
 
 ## Install
 
-Optimax v0.1.1 is the current prerelease; see the [release notes](CHANGELOG.md). Install through the unified Ālo Labs [agent-plugins catalog](https://github.com/alo-labs/agent-plugins), with host-specific catalog entries. These commands require marketplace support in your client. The plugin contains the canonical skill at `skills/optimax/`; avoid loading a second standalone copy alongside it.
+Optimax v0.1.1 is the current prerelease; see the [release notes](CHANGELOG.md). Install through the unified Ālo Labs [agent-plugins catalog](https://github.com/alo-labs/agent-plugins), with host-specific catalog entries. These commands require marketplace support in your client. This source checkout bundles two skills in `optimax-plugin.zip`: the model-selection policy at `skills/optimax/` and the staged review workflow at `skills/review-ladder/`. The added review skill has not yet been qualified through published catalog installation or live host discovery. Avoid loading a second standalone copy of Optimax alongside the plugin.
 
 For Codex, register the catalog, install, and list installed plugins:
 
@@ -30,6 +30,12 @@ python3 skills/optimax/scripts/install_local.py --archive /path/to/optimax-skill
 ```
 
 The destination defaults to `~/.codex/skills/optimax` and must not exist; use `--dest` to choose another existing-parent destination. The installer checks the archive before creating the destination and does not replace an existing directory.
+
+## Run a review ladder
+
+Use [Review Ladder](skills/review-ladder/SKILL.md) for staged independent review, repair, and verification of a bounded scope. Once the host discovers the bundled skill, invoke `$review-ladder` in Codex or `/optimax:review-ladder` in Claude Code and supply the review scope. Short aliases depend on the host; use the discovered command name. Review Ladder follows its explicit, user-authorized model and effort sequence through the contracted rungs independently of whether Optimax's adaptive policy is on or off, subject to the host's model, effort, and delegation capabilities. Invoking it does not enable the adaptive policy or change the selected Orchestrator.
+
+The standalone `optimax-skill.zip` and its installer remain Optimax-only; they do not install Review Ladder. Use the plugin package for both skills.
 
 ## Control a session
 

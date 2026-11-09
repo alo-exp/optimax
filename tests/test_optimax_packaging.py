@@ -3,6 +3,8 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
+from unittest.mock import patch
 import subprocess
 import sys
 import tempfile
@@ -14,6 +16,82 @@ RUNTIME = ROOT / 'skills/optimax'
 
 
 class OptimaxPackagingTests(unittest.TestCase):
+    def release_fixture(self, root):
+        spec = importlib.util.spec_from_file_location('packaging_builder', ROOT / 'build_release.py')
+        builder = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(builder)
+        review_files = ('SKILL.md', 'agents/openai.yaml', 'references/report-template.md')
+        for relative in ('LICENSE', *builder.MANIFESTS,
+                         *('skills/optimax/' + name for name in builder.FILES),
+                         *('skills/review-ladder/' + name for name in review_files)):
+            destination = root / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / relative, destination)
+        return builder, review_files
+
+    def test_plugin_bundles_review_ladder_exactly_without_changing_standalone(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp).resolve() / 'source'
+            builder, review_files = self.release_fixture(root)
+            sentinels = ('model-perf/private.json', 'subagent-model-scores.csv',
+                         'skills/review-ladder/tests/test_private.py',
+                         'skills/review-ladder/__pycache__/secret.pyc',
+                         'skills/review-ladder/session-report.md',
+                         'skills/review-ladder/references/unlisted.md')
+            for relative in sentinels:
+                path = root / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'DISPOSABLE PRIVATE SENTINEL')
+            output = Path(tmp) / 'output'
+            with patch.object(builder, 'ROOT', root), patch.object(builder, 'RUNTIME', root / 'skills/optimax'):
+                builder.build(output)
+                original = {name: (output / name).read_bytes() for name in ('optimax-skill.zip', 'optimax-plugin.zip')}
+                builder.build(output)
+            self.assertEqual(original, {name: (output / name).read_bytes() for name in original})
+            with zipfile.ZipFile(output / 'optimax-plugin.zip') as plugin, zipfile.ZipFile(output / 'optimax-skill.zip') as standalone:
+                expected_review = {'skills/review-ladder/' + name for name in review_files}
+                self.assertEqual({name for name in plugin.namelist() if name.startswith('skills/review-ladder/')}, expected_review)
+                expected_plugin = {'LICENSE', *builder.MANIFESTS,
+                                   *('skills/optimax/' + name for name in builder.FILES), *expected_review}
+                self.assertEqual(set(plugin.namelist()), expected_plugin)
+                for relative in expected_review:
+                    self.assertEqual(plugin.read(relative), (root / relative).read_bytes())
+                self.assertEqual(json.loads(plugin.read('.codex-plugin/plugin.json'))['skills'], './skills/')
+                self.assertIn(b'name: review-ladder', plugin.read('skills/review-ladder/SKILL.md'))
+                self.assertEqual(set(standalone.namelist()), {'optimax/LICENSE', *('optimax/' + name for name in builder.FILES)})
+                self.assertFalse(any(b'DISPOSABLE PRIVATE SENTINEL' in plugin.read(name) for name in plugin.namelist()))
+
+    def test_review_ladder_unsafe_or_missing_sources_fail_before_publication(self):
+        for relative in ('skills/review-ladder/SKILL.md', 'skills/review-ladder/agents/openai.yaml',
+                         'skills/review-ladder/references/report-template.md', 'skills/review-ladder',
+                         'skills/review-ladder/agents', 'skills'):
+            with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp).resolve() / 'source'
+                builder, _ = self.release_fixture(root)
+                path = root / relative
+                target = Path(tmp) / 'foreign'
+                path.rename(target)
+                path.symlink_to(target, target_is_directory=target.is_dir())
+                output = Path(tmp) / 'output'
+                output.mkdir()
+                for name in ('optimax-skill.zip', 'optimax-plugin.zip'):
+                    (output / name).write_bytes(b'previous')
+                with patch.object(builder, 'ROOT', root), patch.object(builder, 'RUNTIME', root / 'skills/optimax'):
+                    with self.assertRaisesRegex(ValueError, 'symlink'):
+                        builder.build(output)
+                self.assertEqual([(output / name).read_bytes() for name in ('optimax-skill.zip', 'optimax-plugin.zip')], [b'previous', b'previous'])
+        for kind in ('missing', 'directory'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp).resolve() / 'source'
+                builder, _ = self.release_fixture(root)
+                path = root / 'skills/review-ladder/agents/openai.yaml'
+                path.unlink()
+                if kind == 'directory':
+                    path.mkdir()
+                with patch.object(builder, 'ROOT', root), patch.object(builder, 'RUNTIME', root / 'skills/optimax'):
+                    with self.assertRaisesRegex(ValueError, 'missing release file'):
+                        builder.build(Path(tmp) / 'output')
+
     def test_manifests_credit_author_and_alo_labs(self):
         for name in ('plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json'):
             with self.subTest(manifest=name):

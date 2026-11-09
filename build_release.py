@@ -18,6 +18,7 @@ FILES = (
     'scripts/install_local.py', 'scripts/ladder.py', 'scripts/performance.py',
     'scripts/session_policy.py', 'scripts/native_dispatch.py', 'scripts/work_breakdown.py',
 )
+REVIEW_LADDER_FILES = ('SKILL.md', 'agents/openai.yaml', 'references/report-template.md')
 MANIFESTS = ('plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json')
 
 
@@ -43,6 +44,8 @@ def build(output):
     runtime = {name: read_safe(RUNTIME, name) for name in FILES}
     if b'name: optimax\n' not in runtime['SKILL.md'].split(b'---', 2)[1]:
         raise ValueError('invalid skill name')
+    review_ladder = {'skills/review-ladder/' + name: read_safe(ROOT, 'skills/review-ladder/' + name)
+                     for name in REVIEW_LADDER_FILES}
     license_data = read_safe(ROOT, 'LICENSE')
     manifests = {name: read_safe(ROOT, name) for name in MANIFESTS}
     for data in manifests.values():
@@ -54,7 +57,7 @@ def build(output):
     try:
         for archive, entries in (
             ('optimax-skill.zip', {'optimax/LICENSE': license_data, **{'optimax/' + name: data for name, data in runtime.items()}}),
-            ('optimax-plugin.zip', {'LICENSE': license_data, **manifests, **{'skills/optimax/' + name: data for name, data in runtime.items()}}),
+            ('optimax-plugin.zip', {'LICENSE': license_data, **manifests, **review_ladder, **{'skills/optimax/' + name: data for name, data in runtime.items()}}),
         ):
             with zipfile.ZipFile(staging / archive, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
                 for name, data in sorted(entries.items()):

@@ -10,7 +10,7 @@ codex plugin add optimax@alo-labs-codex
 codex plugin list --json
 ```
 
-Then invoke `$optimax on`, `$optimax status`, or `$optimax off` in the Codex conversation.
+Then invoke `$optimax on`, `$optimax status`, or `$optimax off` in the Codex conversation. This source checkout's plugin archive also bundles Review Ladder at `skills/review-ladder/`; after host discovery, invoke `$review-ladder` with a bounded review scope. Publication and live discovery of the added skill remain unverified.
 
 ## Claude Code plugin
 
@@ -25,7 +25,11 @@ Run these commands in Claude Code:
 
 Use `/optimax:optimax off` to disable the policy. Claude live acceptance is deferred until Tuesday 10 November 2026 at 14:00 Australia/Sydney; these instructions are statically checked, not a live Claude result.
 
+After the host discovers the bundled review skill, invoke `/optimax:review-ladder` with a bounded review scope. Any shorter alias depends on the host. The plugin archive contains both Optimax and Review Ladder; adding source files or rebuilding an archive does not register the new skill in an existing session.
+
 ## Standalone skill fallback
+
+The `optimax-skill.zip` archive and the installer below remain Optimax-only. They do not include or install Review Ladder; use the plugin package for both skills.
 
 From a matching v0.1.1 Optimax source checkout, obtain the `optimax-skill.zip` asset from the [v0.1.1 prerelease](https://github.com/alo-exp/optimax/releases/tag/v0.1.1) and run:
 
