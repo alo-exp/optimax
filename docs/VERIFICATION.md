@@ -1,5 +1,20 @@
 # Optimax verification
 
+## 0.2.0 unpublished candidate — 9 November 2026
+
+This source candidate adds Review Ladder, the Opus Max policy and audit corrections. It is not a published release. No v0.2.0 tag, download digest, catalog update or live installed-host result is established by the local checks below. Historical v0.1.1 artifact hashes and v0.1.0 native Codex acceptance remain separate evidence.
+
+| Area | Observed candidate evidence | Scope |
+| --- | --- | --- |
+| Python suite | `python3 -B -m unittest discover -s tests`: 184 tests passed on macOS | Previous source baseline: 183 tests; one candidate-version packaging regression added |
+| Release metadata TDD | `python3 -m unittest discover -s tests -p test_optimax_packaging.py` first ran seven tests with four expected assertion failures: three emitted ZIP manifests identified 0.1.1 rather than 0.2.0, and the changelog lacked the candidate heading | Parent independently observed the red result before authorizing the version edits |
+| Packaging green | `python3 -B -m unittest discover -s tests -p test_optimax_packaging.py`: seven tests passed after the three manifest versions and changelog were updated | Checks actual emitted archives, source-byte agreement, changelog agreement, deterministic output, installation and exclusion of private state |
+| Review Ladder bundle | Packaging regressions require all three runtime assets: `SKILL.md`, `agents/openai.yaml` and `references/report-template.md` | Plugin archive includes both skills; standalone archive remains Optimax-only |
+| Review sequence acceptance | Complete eight-rung qualification remains pending | A prior Terra Low review of an earlier candidate does not establish qualification of this release candidate or later changes |
+| Native hosts and publication | New plugin-command discovery, published catalog resolution, Claude live acceptance and native Windows execution remain unverified | Instruction and portable regression coverage do not establish live host acceptance |
+
+Commands ran through RTK. The full suite emitted the expected duplicate-ZIP warning from the malformed-archive fixture. Local source tests cover the controller, policy contracts, review instructions and archive builder; static instruction checks do not prove a host executed the complete review ladder. No published artifact hashes are claimed for this candidate.
+
 ## 0.1.1 prerelease qualification — 9 November 2026
 
 This release includes [Windows support PR #1](https://github.com/alo-exp/optimax/pull/1) and its follow-up corrections: a stable per-project lock in the resolved user profile, contention-only retries, and propagation of permanent lock failures. Controllers must share the same resolved profile with a writable local `~/.optimax/locks` cache; network filesystems remain unsupported.

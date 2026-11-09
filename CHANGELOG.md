@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0 (prerelease)
+
+- Prepare an unpublished candidate bundling Review Ladder with Optimax in the plugin archive; the standalone archive remains Optimax-only.
+- Add the explicit review and repair ladder, Opus Max policy, and audit corrections to the skill instructions.
+- Qualify candidate release metadata and bundled runtime assets with local automated checks. Published catalog resolution, live discovery of the new command, complete ladder execution, Claude acceptance and native Windows execution remain separate pending gates.
+
 ## 0.1.1 (prerelease)
 
 - Add a Windows-compatible performance-controller lock path and filesystem handling while retaining POSIX directory locking.

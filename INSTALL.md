@@ -1,6 +1,6 @@
 # Install Optimax
 
-Use the unified Ālo Labs marketplace for a plugin installation. This checkout targets the v0.1.1 prerelease. Catalog publication and host installation are separate gates; see the [verification report](docs/VERIFICATION.md) for tested support.
+Use the unified Ālo Labs marketplace for a plugin installation. This checkout targets the unpublished v0.2.0 prerelease candidate. The commands below resolve the published catalog; candidate catalog publication remains pending. Catalog publication and host installation are separate gates; see the [verification report](docs/VERIFICATION.md) for tested support.
 
 ## Codex plugin
 
@@ -31,7 +31,7 @@ After the host discovers the bundled review skill, invoke `/optimax:review-ladde
 
 The `optimax-skill.zip` archive and the installer below remain Optimax-only. They do not include or install Review Ladder; use the plugin package for both skills.
 
-From a matching v0.1.1 Optimax source checkout, obtain the `optimax-skill.zip` asset from the [v0.1.1 prerelease](https://github.com/alo-exp/optimax/releases/tag/v0.1.1) and run:
+From this matching v0.2.0 candidate source checkout, build the archive with `python3 build_release.py --output dist`, then use `dist/optimax-skill.zip` as the archive path below. The v0.2.0 candidate has not been published; [v0.1.1 downloads](https://github.com/alo-exp/optimax/releases/tag/v0.1.1) belong to the historical release. Run:
 
 ```sh
 mkdir -p "$HOME/.codex/skills"

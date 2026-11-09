@@ -4,7 +4,7 @@ Optimax is a portable skill and thin plugin for choosing delegated Executor and 
 
 ## Install
 
-Optimax v0.1.1 is the current prerelease; see the [release notes](CHANGELOG.md). Install through the unified Ālo Labs [agent-plugins catalog](https://github.com/alo-labs/agent-plugins), with host-specific catalog entries. These commands require marketplace support in your client. This source checkout bundles two skills in `optimax-plugin.zip`: the model-selection policy at `skills/optimax/` and the staged review workflow at `skills/review-ladder/`. The added review skill has not yet been qualified through published catalog installation or live host discovery. Avoid loading a second standalone copy of Optimax alongside the plugin.
+This checkout prepares Optimax v0.2.0 as an unpublished prerelease candidate; see the [candidate release notes](CHANGELOG.md). The catalog commands below resolve the published catalog, whose update to this candidate remains pending. Install through the unified Ālo Labs [agent-plugins catalog](https://github.com/alo-labs/agent-plugins), with host-specific catalog entries. These commands require marketplace support in your client. This source checkout bundles two skills in `optimax-plugin.zip`: the model-selection policy at `skills/optimax/` and the staged review workflow at `skills/review-ladder/`. The added review skill has not yet been qualified through published catalog installation or live host discovery. Avoid loading a second standalone copy of Optimax alongside the plugin.
 
 For Codex, register the catalog, install, and list installed plugins:
 
@@ -21,9 +21,9 @@ In Claude Code, use:
 /plugin install optimax@alo-labs
 ```
 
-The Claude commands have been checked against documentation; live Claude acceptance is deferred. The v0.1.0 Codex plugin passed native installation, installed-skill discovery and session control checks on CLI 0.166.0-alpha.6; see the [historical native acceptance record](docs/CODEX-ACCEPTANCE.md) and the [current verification report](docs/VERIFICATION.md) for v0.1.1 coverage.
+The Claude commands have been checked against documentation; live Claude acceptance is deferred. The v0.1.0 Codex plugin passed native installation, installed-skill discovery and session control checks on CLI 0.166.0-alpha.6; see the [historical native acceptance record](docs/CODEX-ACCEPTANCE.md) and the [current verification report](docs/VERIFICATION.md) for candidate coverage and separate historical v0.1.1 evidence.
 
-For a standalone Codex skill, obtain a source checkout and the matching v0.1.1 release's `optimax-skill.zip`, then run from the checkout root:
+For a standalone Codex skill, build `optimax-skill.zip` from this matching v0.2.0 candidate checkout with `python3 build_release.py --output dist`, then run from the checkout root. Published v0.2.0 downloads are pending:
 
 ```sh
 python3 skills/optimax/scripts/install_local.py --archive /path/to/optimax-skill.zip

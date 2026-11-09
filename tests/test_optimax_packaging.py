@@ -99,6 +99,17 @@ class OptimaxPackagingTests(unittest.TestCase):
                 self.assertEqual(manifest['author']['name'], 'Shafqat Ullah')
                 self.assertIn('Ālo Labs', manifest['description'])
 
+    def test_candidate_release_archive_identifies_0_2_0(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            build = subprocess.run([sys.executable, str(ROOT / 'build_release.py'), '--output', str(output)], capture_output=True, text=True)
+            self.assertEqual(build.returncode, 0, build.stderr)
+            with zipfile.ZipFile(output / 'optimax-plugin.zip') as plugin:
+                for name in ('plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json'):
+                    with self.subTest(manifest=name):
+                        self.assertEqual(json.loads(plugin.read(name))['version'], '0.2.0')
+            self.assertRegex((ROOT / 'CHANGELOG.md').read_text(encoding='utf-8'), r'\A# Changelog\n\n## 0\.2\.0 \(prerelease\)')
+
     def test_release_archives_match_current_changelog_and_runtime_sources(self):
         release = re.search(r'^## (\d+\.\d+\.\d+)(?:\s|$)', (ROOT / 'CHANGELOG.md').read_text(encoding='utf-8'), re.MULTILINE)
         self.assertIsNotNone(release, 'changelog must identify the current release')
