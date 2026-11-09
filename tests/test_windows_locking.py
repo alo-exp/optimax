@@ -98,6 +98,75 @@ class WindowsLockingTests(unittest.TestCase):
         self.addCleanup(stack.close)
         return stack
 
+    def test_windows_root_guard_spans_validation_and_ledger_creation(self):
+        import ctypes
+        opened = []
+        closed = []
+        kernel = SimpleNamespace(CreateFileW=Mock(), GetFileInformationByHandleEx=Mock(),
+                                 CloseHandle=Mock(side_effect=closed.append))
+        def create(path, *args):
+            opened.append(path)
+            return len(opened) + 100
+        def attributes(handle, kind, info, size):
+            info._obj.FileAttributes = 0x10
+            return 1
+        kernel.CreateFileW.side_effect = create
+        kernel.GetFileInformationByHandleEx.side_effect = attributes
+        original_check = self.engine._safe_paths
+        def check():
+            self.assertIn(str(self.engine.root), opened, 'root must be pinned before path validation')
+            self.assertNotIn(101, closed, 'root guard released during transaction')
+            original_check()
+        adapter = SimpleNamespace(LK_NBLCK=1, LK_UNLCK=2, locking=Mock())
+        with self.windows(adapter), patch.object(sys, 'platform', 'win32'), \
+                patch.object(ctypes, 'WinDLL', return_value=kernel, create=True), \
+                patch.object(self.engine, '_safe_paths', side_effect=check):
+            self.engine.set_enabled('session', True)
+        self.assertEqual(opened[0], str(self.engine.root))
+        self.assertEqual(closed[-1], 101, 'root handle must outlive ledger handles')
+        self.assertEqual(len(closed), len(opened))
+        self.assertTrue(self.engine.path.exists())
+        for call in kernel.CreateFileW.call_args_list:
+            self.assertEqual(call.args[2] & 0x4, 0)
+            self.assertEqual(call.args[5] & 0x02200000, 0x02200000)
+
+    def test_windows_root_guard_rejects_reparse_before_creation_and_releases_lock(self):
+        import ctypes
+        kernel = SimpleNamespace(CreateFileW=Mock(return_value=123),
+                                 GetFileInformationByHandleEx=Mock(), CloseHandle=Mock())
+        def attributes(handle, kind, info, size):
+            info._obj.FileAttributes = 0x410
+            return 1
+        kernel.GetFileInformationByHandleEx.side_effect = attributes
+        adapter = SimpleNamespace(LK_NBLCK=1, LK_UNLCK=2, locking=Mock())
+        with self.windows(adapter), patch.object(sys, 'platform', 'win32'), \
+                patch.object(ctypes, 'WinDLL', return_value=kernel, create=True):
+            with self.assertRaisesRegex(ValueError, 'reparse'):
+                self.engine.set_enabled('session', True)
+        self.assertFalse(self.engine.directory.exists())
+        kernel.CreateFileW.assert_called_once()
+        self.assertEqual(kernel.CreateFileW.call_args.args[0], str(self.engine.root))
+        kernel.CloseHandle.assert_called_once_with(123)
+        self.assertEqual([call.args[1] for call in adapter.locking.call_args_list], [1, 2])
+
+    def test_windows_root_guard_closes_on_interruption_and_releases_lock(self):
+        import ctypes
+        kernel = SimpleNamespace(CreateFileW=Mock(return_value=123),
+                                 GetFileInformationByHandleEx=Mock(), CloseHandle=Mock())
+        def attributes(handle, kind, info, size):
+            info._obj.FileAttributes = 0x10
+            return 1
+        kernel.GetFileInformationByHandleEx.side_effect = attributes
+        adapter = SimpleNamespace(LK_NBLCK=1, LK_UNLCK=2, locking=Mock())
+        with self.windows(adapter), patch.object(sys, 'platform', 'win32'), \
+                patch.object(ctypes, 'WinDLL', return_value=kernel, create=True), \
+                patch.object(self.engine, '_safe_paths', side_effect=KeyboardInterrupt()):
+            with self.assertRaises(KeyboardInterrupt):
+                self.engine.set_enabled('session', True)
+        self.assertFalse(self.engine.directory.exists())
+        kernel.CloseHandle.assert_called_once_with(123)
+        self.assertEqual([call.args[1] for call in adapter.locking.call_args_list], [1, 2])
+
     def test_windows_directory_guard_denies_rename_and_closes_after_interruption(self):
         import ctypes
         self.engine.directory.mkdir()
@@ -129,19 +198,24 @@ class WindowsLockingTests(unittest.TestCase):
         for value in (0x410, 0x80):
             with self.subTest(attributes=value):
                 self.engine.directory.mkdir(exist_ok=True)
-                kernel = SimpleNamespace(CreateFileW=Mock(return_value=123),
+                kernel = SimpleNamespace(CreateFileW=Mock(side_effect=[101, 123]),
                                          GetFileInformationByHandleEx=Mock(),
                                          CloseHandle=Mock(return_value=1))
                 def attributes(handle, kind, info, size):
-                    info._obj.FileAttributes = value
+                    info._obj.FileAttributes = 0x10 if handle == 101 else value
                     return 1
                 kernel.GetFileInformationByHandleEx.side_effect = attributes
-                with patch.object(sys, 'platform', 'win32'), \
+                adapter = SimpleNamespace(LK_NBLCK=1, LK_UNLCK=2, locking=Mock())
+                with self.windows(adapter), patch.object(sys, 'platform', 'win32'), \
                         patch.object(ctypes, 'WinDLL', return_value=kernel, create=True):
-                    with self.assertRaises((ValueError, OSError)):
+                    with self.assertRaisesRegex(ValueError, 'reparse'):
                         self.engine.set_enabled('session', True)
                 self.assertEqual(list(self.engine.directory.iterdir()), [])
-                kernel.CloseHandle.assert_called_once_with(123)
+                self.assertEqual([call.args[0] for call in kernel.CreateFileW.call_args_list],
+                                 [str(self.engine.root), str(self.engine.directory)])
+                self.assertEqual([call.args[0] for call in kernel.CloseHandle.call_args_list],
+                                 [123, 101], 'child and root guards must both close')
+                self.assertEqual([call.args[1] for call in adapter.locking.call_args_list], [1, 2])
 
     def test_windows_directory_guard_api_failures_do_not_write_and_close_valid_handles(self):
         import ctypes
@@ -149,19 +223,28 @@ class WindowsLockingTests(unittest.TestCase):
         invalid = ctypes.c_void_p(-1).value
         for handle, query_result in ((invalid, 1), (123, 0)):
             with self.subTest(handle=handle, query_result=query_result):
-                kernel = SimpleNamespace(CreateFileW=Mock(return_value=handle),
-                                         GetFileInformationByHandleEx=Mock(return_value=query_result),
+                kernel = SimpleNamespace(CreateFileW=Mock(side_effect=[101, handle]),
+                                         GetFileInformationByHandleEx=Mock(),
                                          CloseHandle=Mock(return_value=1))
-                with patch.object(sys, 'platform', 'win32'), \
+                def attributes(current, kind, info, size):
+                    info._obj.FileAttributes = 0x10
+                    return 1 if current == 101 else query_result
+                kernel.GetFileInformationByHandleEx.side_effect = attributes
+                adapter = SimpleNamespace(LK_NBLCK=1, LK_UNLCK=2, locking=Mock())
+                with self.windows(adapter), patch.object(sys, 'platform', 'win32'), \
                         patch.object(ctypes, 'WinDLL', return_value=kernel, create=True):
                     with self.assertRaises(OSError):
                         self.engine.set_enabled('session', True)
                 self.assertEqual(list(self.engine.directory.iterdir()), [])
-                if handle == invalid:
-                    kernel.CloseHandle.assert_not_called()
-                    kernel.GetFileInformationByHandleEx.assert_not_called()
-                else:
-                    kernel.CloseHandle.assert_called_once_with(handle)
+                self.assertEqual([call.args[0] for call in kernel.CreateFileW.call_args_list],
+                                 [str(self.engine.root), str(self.engine.directory)])
+                expected_closed = [101] if handle == invalid else [handle, 101]
+                self.assertEqual([call.args[0] for call in kernel.CloseHandle.call_args_list],
+                                 expected_closed)
+                expected_queried = [101] if handle == invalid else [101, handle]
+                self.assertEqual([call.args[0] for call in kernel.GetFileInformationByHandleEx.call_args_list],
+                                 expected_queried)
+                self.assertEqual([call.args[1] for call in adapter.locking.call_args_list], [1, 2])
 
     def test_permanent_lock_errors_propagate_without_retry(self):
         for number in (errno.EINVAL, errno.EBADF):

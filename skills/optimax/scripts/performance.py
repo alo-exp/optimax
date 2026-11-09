@@ -18,7 +18,7 @@ levels, not complexity tiers. Assessments apply each prepared run's context floo
 Status never adopts. Explicit on returns unapplied orchestrator suggestions.
 """
 import argparse
-from contextlib import contextmanager
+from contextlib import contextmanager, ExitStack
 import csv
 from datetime import datetime, timezone
 import errno
@@ -140,18 +140,21 @@ class Engine:
         self.user = user
         self.directory = self.root / "model-perf"
         self.path = self.directory / (user + "-model-perf.csv")
+        self._root_identity = self.root.stat()
 
     @contextmanager
     def _locked(self):
         if fcntl is None:
             with self._locked_windows():
-                yield
+                yield None
             return
-        descriptor = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY)
+        descriptor = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         try:
             fcntl.flock(descriptor, fcntl.LOCK_EX)
+            self._check_root_identity(descriptor)
             self._safe_paths()
-            yield
+            self._check_root_identity(descriptor)
+            yield descriptor
         finally:
             fcntl.flock(descriptor, fcntl.LOCK_UN)
             os.close(descriptor)
@@ -177,8 +180,10 @@ class Engine:
                         raise
                     time.sleep(0.05)
             try:
-                self._safe_paths()
-                yield
+                with self._windows_directory_guard(self.root):
+                    self._check_root_identity()
+                    self._safe_paths()
+                    yield
             finally:
                 stream.seek(0)
                 msvcrt.locking(stream.fileno(), msvcrt.LK_UNLCK, 1)
@@ -192,16 +197,34 @@ class Engine:
         if self.path.exists() and not stat.S_ISREG(self.path.stat().st_mode):
             raise ValueError("ledger must be a regular file")
 
+    def _check_root_identity(self, root_fd=None):
+        current = self.root.stat(follow_symlinks=False)
+        if (not stat.S_ISDIR(current.st_mode)
+                or not os.path.samestat(current, self._root_identity)
+                or (root_fd is not None and not os.path.samestat(current, os.fstat(root_fd)))):
+            raise ValueError("project root changed during transaction")
+
     @contextmanager
-    def _directory_guard(self):
+    def _directory_guard(self, root_fd=None):
+        self._check_root_identity(root_fd)
         if sys.platform != "win32":
-            descriptor = os.open(self.directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+            directory = self.directory.name if root_fd is not None else self.directory
+            descriptor = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                                 dir_fd=root_fd)
             try:
                 yield descriptor
             finally:
                 os.close(descriptor)
             return
+        with self._windows_directory_guard(self.directory):
+            yield None
+
+    @contextmanager
+    def _windows_directory_guard(self, directory):
         # A no-delete-sharing handle pins the directory's name on Windows.
+        if sys.platform != "win32":
+            yield None
+            return
         import ctypes
         from ctypes import wintypes
         kernel = ctypes.WinDLL("kernel32", use_last_error=True)
@@ -218,7 +241,7 @@ class Engine:
         class AttributeTagInfo(ctypes.Structure):
             _fields_ = [("FileAttributes", wintypes.DWORD), ("ReparseTag", wintypes.DWORD)]
 
-        handle = kernel.CreateFileW(str(self.directory), 0x80, 0x3, None, 3, 0x02200000, None)
+        handle = kernel.CreateFileW(str(directory), 0x80, 0x3, None, 3, 0x02200000, None)
         if handle == ctypes.c_void_p(-1).value:
             raise OSError("cannot guard ledger directory")
         try:
@@ -231,20 +254,33 @@ class Engine:
         finally:
             kernel.CloseHandle(handle)
 
-    def _check_directory_identity(self, descriptor):
-        current = self.directory.stat(follow_symlinks=False)
+    def _check_directory_identity(self, descriptor, root_fd=None):
+        self._check_root_identity(root_fd)
+        directory = self.directory.name if root_fd is not None else self.directory
+        current = os.stat(directory, dir_fd=root_fd, follow_symlinks=False)
         if not stat.S_ISDIR(current.st_mode) or not os.path.samestat(current, os.fstat(descriptor)):
             raise ValueError("ledger directory changed during mutation")
 
-    def _load(self):
-        if not self.path.exists():
+    def _load(self, root_fd=None):
+        self._check_root_identity(root_fd)
+        if root_fd is None and not self.path.exists():
+            self._check_root_identity(root_fd)
             return []
-        with self._directory_guard() as directory_fd:
+        with ExitStack() as guards:
+            try:
+                directory_fd = guards.enter_context(self._directory_guard(root_fd))
+            except FileNotFoundError:
+                self._check_root_identity(root_fd)
+                return []
             flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
-            if directory_fd is None:
-                descriptor = os.open(self.path, flags)
-            else:
-                descriptor = os.open(self.path.name, flags, dir_fd=directory_fd)
+            try:
+                if directory_fd is None:
+                    descriptor = os.open(self.path, flags)
+                else:
+                    descriptor = os.open(self.path.name, flags, dir_fd=directory_fd)
+            except FileNotFoundError:
+                self._check_root_identity(root_fd)
+                return []
             with os.fdopen(descriptor, "r", newline="", encoding="utf-8") as stream:
                 if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
                     raise ValueError("ledger must be a regular file")
@@ -296,10 +332,17 @@ class Engine:
             self._append(rows, "metadata", {"root": str(self.root), "user_id": self.user,
                                             "policy_version": POLICY_VERSION})
 
-    def _commit(self, rows):
+    def _commit(self, rows, root_fd=None):
         self._safe_paths()
-        self.directory.mkdir(mode=0o700, exist_ok=True)
-        with self._directory_guard() as directory_fd:
+        self._check_root_identity(root_fd)
+        if root_fd is None:
+            self.directory.mkdir(mode=0o700, exist_ok=True)
+        else:
+            try:
+                os.mkdir(self.directory.name, mode=0o700, dir_fd=root_fd)
+            except FileExistsError:
+                pass
+        with self._directory_guard(root_fd) as directory_fd:
             if directory_fd is None:
                 descriptor, temporary = tempfile.mkstemp(prefix=".pending-", dir=self.directory)
             else:
@@ -316,7 +359,7 @@ class Engine:
                 if directory_fd is None:
                     os.replace(temporary, self.path)
                 else:
-                    self._check_directory_identity(directory_fd)
+                    self._check_directory_identity(directory_fd, root_fd)
                     os.replace(temporary, self.path.name,
                                src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
                     os.fsync(directory_fd)
@@ -585,8 +628,8 @@ class Engine:
 
     def status(self, session):
         _string(session, "session")
-        with self._locked():
-            return self._status(session, self._state(self._load()))
+        with self._locked() as root_fd:
+            return self._status(session, self._state(self._load(root_fd)))
 
     def set_enabled(self, session, enabled, platform=None, complexity=None, native_context=None, instruction_context=None):
         _string(session, "session")
@@ -602,13 +645,13 @@ class Engine:
             suggestions = dict(applied=False, recommendations=[dict(
                 platform=item, **orchestrator_recommendation(item, complexity, native_context)) for item in platforms])
             instruction_audit = audit_instructions(platform, instruction_context)
-        with self._locked():
-            rows = self._load()
+        with self._locked() as root_fd:
+            rows = self._load(root_fd)
             state = self._state(rows)
             if state["sessions"].get(session, {}).get("enabled") != enabled:
                 self._initialize(rows)
                 self._append(rows, "session", dict(session=session, enabled=enabled, generation=uuid.uuid4().hex))
-                self._commit(rows)
+                self._commit(rows, root_fd)
                 state = self._state(rows)
             result = self._status(session, state)
             if suggestions is not None:
@@ -649,13 +692,13 @@ class Engine:
 
     def adopt_policy(self):
         """Atomically adopt the current policy without inventing model IDs/runs."""
-        with self._locked():
-            rows = self._load()
+        with self._locked() as root_fd:
+            rows = self._load(root_fd)
             state = self._state(rows)
             changed = not rows or self._adopt_policy(rows, state)
             self._initialize(rows)
             if changed:
-                self._commit(rows)
+                self._commit(rows, root_fd)
             return dict(changed=changed, policy_version=POLICY_VERSION)
 
     def prepare(self, session, platform, role, tier=None, models=None, available_steps=None,
@@ -704,8 +747,8 @@ class Engine:
         _validate_capabilities(validation, models)
         models = json.loads(_json(models))
         available_steps = list(available_steps)
-        with self._locked():
-            rows = self._load()
+        with self._locked() as root_fd:
+            rows = self._load(root_fd)
             state = self._state(rows)
             session_state = state["sessions"].get(session, {})
             if not session_state.get("enabled", False):
@@ -745,7 +788,7 @@ class Engine:
             if consultation is not None:
                 run["consultation"] = consultation
             self._append(rows, "launch", run)
-            self._commit(rows)
+            self._commit(rows, root_fd)
             return run
 
     def _exclusions(self, run, request, state):
@@ -774,8 +817,8 @@ class Engine:
         request = dict(run_id=run_id, score=score, effective_model_id=effective_model_id,
                        effective_effort=effective_effort, execution_id=execution_id, verified=verified)
         _validate_assessment_request(request)
-        with self._locked():
-            rows = self._load()
+        with self._locked() as root_fd:
+            rows = self._load(root_fd)
             state = self._state(rows)
             if run_id not in state["runs"]:
                 raise ValueError("unknown run_id")
@@ -803,20 +846,20 @@ class Engine:
                         track["models"], track["available_steps"], selection["reason"], track,
                         policy_version=state["policy_version"],
                         advice_level=run.get("advice_level", "medium"))
-            self._commit(rows)
+            self._commit(rows, root_fd)
             return result
 
     def import_history(self, rows):
         """Preserve legacy rows losslessly without inventing live attribution."""
         payload, digest = _legacy_payload(rows)
-        with self._locked():
-            events = self._load()
+        with self._locked() as root_fd:
+            events = self._load(root_fd)
             state = self._state(events)
             duplicate = digest in state["imports"]
             if not duplicate:
                 self._initialize(events)
                 self._append(events, "legacy_import", dict(digest=digest, rows=json.loads(payload)))
-                self._commit(events)
+                self._commit(events, root_fd)
             return dict(imported_count=0 if duplicate else len(rows), duplicate=duplicate, eligible=False)
 
 

@@ -743,6 +743,142 @@ class PerformanceTests(unittest.TestCase):
             self.enable()
         self.assertEqual(target.read_text(), "untouched")
 
+    def test_project_root_replaced_before_lock_preserves_both_ledgers(self):
+        self.enable()
+        original = self.engine.path.read_bytes()
+        with tempfile.TemporaryDirectory() as retained_name:
+            retained = Path(retained_name) / 'project'
+            self.root.rename(retained)
+            self.root.mkdir()
+            self.engine.directory.mkdir()
+            self.engine.path.write_bytes(original)
+            try:
+                with self.assertRaisesRegex(ValueError, 'project root'):
+                    self.engine.set_enabled(self.session, False)
+                self.assertEqual(self.engine.path.read_bytes(), original)
+                self.assertEqual((retained / 'model-perf' / self.engine.path.name).read_bytes(), original)
+            finally:
+                self.engine.path.unlink()
+                self.engine.directory.rmdir()
+                self.root.rmdir()
+                retained.rename(self.root)
+
+    @unittest.skipUnless(__import__('os').name == 'posix', 'requires POSIX directory descriptors')
+    def test_status_rejects_root_removed_between_load_and_directory_checks(self):
+        self.enable()
+        original = self.engine.path.read_bytes()
+        with tempfile.TemporaryDirectory() as retained_name:
+            retained = Path(retained_name) / 'project'
+            check = self.engine._check_root_identity
+            checks = 0
+            swapped = False
+            def remove_after_load_check(root_fd=None):
+                nonlocal checks, swapped
+                check(root_fd)
+                checks += 1
+                if checks == 3:
+                    self.root.rename(retained)
+                    swapped = True
+            error = None
+            try:
+                with patch.object(self.engine, '_check_root_identity',
+                                  side_effect=remove_after_load_check):
+                    try:
+                        self.engine.status(self.session)
+                    except (ValueError, OSError) as caught:
+                        error = caught
+                self.assertTrue(swapped, 'root removal between load checks was not exercised')
+                self.assertEqual((retained / 'model-perf' / self.engine.path.name).read_bytes(), original)
+                self.assertIsNotNone(error, 'missing project root must not become an empty ledger')
+            finally:
+                if swapped:
+                    retained.rename(self.root)
+
+    @unittest.skipUnless(__import__('os').name == 'posix', 'requires POSIX directory symlinks')
+    def test_project_root_swapped_after_pending_sync_preserves_ledgers_and_cleans_temp(self):
+        import os
+        self.enable()
+        original = self.engine.path.read_bytes()
+        with tempfile.TemporaryDirectory() as attack_name:
+            attack = Path(attack_name)
+            retained = attack / 'retained'
+            outside = attack / 'outside'
+            (outside / 'model-perf').mkdir(parents=True)
+            external_ledger = outside / 'model-perf' / self.engine.path.name
+            external_ledger.write_bytes(b'outside sentinel')
+            real_sync = os.fsync
+            swapped = False
+            def swap(descriptor):
+                nonlocal swapped
+                real_sync(descriptor)
+                if not swapped:
+                    self.root.rename(retained)
+                    self.root.symlink_to(outside, target_is_directory=True)
+                    swapped = True
+            try:
+                with patch('performance.os.fsync', side_effect=swap):
+                    with self.assertRaisesRegex(ValueError, 'project root'):
+                        self.engine.set_enabled(self.session, False)
+                self.assertTrue(swapped, 'pending sync substitution was not exercised')
+                self.assertEqual(external_ledger.read_bytes(), b'outside sentinel')
+                ledger_directory = retained / 'model-perf'
+                self.assertEqual((ledger_directory / self.engine.path.name).read_bytes(), original)
+                self.assertEqual([path.name for path in ledger_directory.iterdir()],
+                                 [self.engine.path.name], 'pending file leaked in original project')
+                self.assertEqual([path.name for path in (outside / 'model-perf').iterdir()],
+                                 [self.engine.path.name], 'pending file escaped to outside project')
+            finally:
+                if swapped:
+                    self.root.unlink()
+                    retained.rename(self.root)
+
+    @unittest.skipUnless(__import__('os').name == 'posix', 'requires POSIX directory symlinks')
+    def test_project_root_swapped_after_lock_validation_cannot_write_outside_project(self):
+        self.enable()
+        original_ledger = self.engine.path.read_bytes()
+        with tempfile.TemporaryDirectory() as attack_name:
+            attack = Path(attack_name)
+            retained = attack / 'retained-project'
+            outside = attack / 'outside'
+            outside_directory = outside / 'model-perf'
+            outside_directory.mkdir(parents=True)
+            outside_ledger = outside_directory / self.engine.path.name
+            outside_ledger.write_bytes(original_ledger)
+            sentinel = outside / 'sentinel'
+            sentinel.write_bytes(b'outside sentinel must remain untouched')
+            before = {str(path.relative_to(outside)): path.read_bytes()
+                      for path in outside.rglob('*') if path.is_file()}
+            original_check = self.engine._safe_paths
+            swapped = False
+
+            def swap_after_lock_validation():
+                nonlocal swapped
+                original_check()
+                if not swapped:
+                    self.root.rename(retained)
+                    self.root.symlink_to(outside, target_is_directory=True)
+                    swapped = True
+
+            error = None
+            try:
+                with patch.object(self.engine, '_safe_paths', side_effect=swap_after_lock_validation):
+                    try:
+                        self.engine.set_enabled(self.session, False)
+                    except (ValueError, OSError) as caught:
+                        error = caught
+                self.assertTrue(swapped, 'project-root substitution was not exercised')
+                self.assertEqual((retained / 'model-perf' / self.engine.path.name).read_bytes(),
+                                 original_ledger, 'original project ledger was changed')
+                self.assertEqual(
+                    {str(path.relative_to(outside)): path.read_bytes()
+                     for path in outside.rglob('*') if path.is_file()}, before,
+                    'mutation followed a project root replaced by an outside symlink')
+                self.assertIsNotNone(error, 'project-root substitution must reject the mutation')
+            finally:
+                if swapped:
+                    self.root.unlink()
+                    retained.rename(self.root)
+
     @unittest.skipUnless(__import__('os').name == 'posix', 'requires POSIX directory symlinks')
     def test_directory_swapped_after_commit_validation_cannot_write_outside_project(self):
         self.enable()
@@ -844,7 +980,8 @@ class PerformanceTests(unittest.TestCase):
                 real_open = os.open
                 def opened(*args, **kwargs):
                     descriptor = real_open(*args, **kwargs)
-                    if args[0] == self.engine.directory:
+                    if (args[0] == self.engine.directory.name
+                            and kwargs.get('dir_fd') is not None):
                         descriptors.append(descriptor)
                     return descriptor
                 with patch('performance.os.open', side_effect=opened), \
