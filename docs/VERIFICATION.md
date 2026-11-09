@@ -1,4 +1,28 @@
-# Optimax 0.1.0 verification
+# Optimax verification
+
+## 0.1.1 prerelease qualification — 9 November 2026
+
+This release includes [Windows support PR #1](https://github.com/alo-exp/optimax/pull/1) and its follow-up corrections: a stable per-project lock in the resolved user profile, contention-only retries, and propagation of permanent lock failures. Controllers must share the same resolved profile with a writable local `~/.optimax/locks` cache; network filesystems remain unsupported.
+
+| Area | Observed evidence | Scope |
+| --- | --- | --- |
+| Python runtime and release builder | 133 tests passed on macOS with Python 3.15.0 | Includes seven portable Windows-lock regressions; native Windows was not available |
+| Release metadata | All three emitted plugin manifests identify 0.1.1 and match canonical source bytes | Checked against the current changelog release |
+| Archive integrity and contents | Both ZIPs pass CRC checks; 14 skill files and 17 plugin files match canonical source | Deterministic allowlist excludes private ledgers, caches and tests |
+| Fresh standalone installation | Emitted skill installs into a disposable directory, installed bytes match the archive, and controller status exits successfully with `enabled: false` | Package installation and controller smoke; not a new native Codex frontend qualification |
+| Windows locking | Portable regressions cover real process exclusion across different temporary environments, permanent errors, contention, retained cache locks, unavailable-cache failure and cleanup | Uses a real POSIX lock adapter; native `msvcrt`, Windows ACL and rename behavior remain untested |
+| Native host acceptance | The recorded Codex frontend evidence below remains specific to v0.1.0; Claude live acceptance remains deferred to Tuesday 10 November 2026, 14:00 Australia/Sydney | No new native frontend acceptance is claimed for this release |
+
+The packaging integration regression was added before the version changes. The focused command `python3 -B -m unittest discover -s tests -p test_optimax_packaging.py -k test_release_archives_match_current_changelog_and_runtime_sources -v` first failed with three expected emitted-manifest version mismatches (`0.1.0` versus `0.1.1`), then passed after the manifest bump. The primary agent independently observed both phases and ran `python3 -B -m unittest discover -s tests`: 133 passed. Commands ran through RTK with bytecode writing disabled. The existing duplicate-ZIP fixture emits an expected warning while testing malformed archives.
+
+| 0.1.1 artifact | Bytes | SHA-256 |
+| --- | --- | --- |
+| optimax-skill.zip | 50,686 | 44a208e8f18e6adfc479b68a89002467455d9303a2124cf76721837169f14412 |
+| optimax-plugin.zip | 51,853 | 7b0ea27b07a823829fed1a341604f26cc38c93de9e6155bc0f21c94c3b85c4d5 |
+
+The [v0.1.1 release](https://github.com/alo-exp/optimax/releases/tag/v0.1.1) identifies the delivered tag and assets. Both host catalogs in [alo-labs/agent-plugins](https://github.com/alo-labs/agent-plugins) must pin that tag and its exact commit; catalog publication and installed-host updates are separate checks. Website source is unchanged by the 0.1.1 packaging update, so its dated acceptance records below remain historical.
+
+## Historical 0.1.0 verification
 
 Website qualification updated 2026-11-08 Australia/Sydney. The selected Circuit production homepage and CMF copy passed 123 Node tests, the static build and 138 isolated Chromium cases across root-domain and GitHub project-prefix builds. Original plugin v0.1.0 evidence is retained for the unchanged runtime. Local rendered acceptance, CI publication and post-deployment HTTP verification are distinct gates; no universal native integration or measured savings are claimed.
 

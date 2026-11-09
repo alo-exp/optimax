@@ -4,7 +4,7 @@ Optimax is a portable skill and thin plugin for choosing delegated Executor and 
 
 ## Install
 
-Optimax v0.1.0 is published in the unified Ālo Labs [agent-plugins catalog](https://github.com/alo-labs/agent-plugins), with host-specific catalog entries. These commands require marketplace support in your client. The plugin contains the canonical skill at `skills/optimax/`; avoid loading a second standalone copy alongside it.
+Optimax v0.1.1 is the current prerelease; see the [release notes](CHANGELOG.md). Install through the unified Ālo Labs [agent-plugins catalog](https://github.com/alo-labs/agent-plugins), with host-specific catalog entries. These commands require marketplace support in your client. The plugin contains the canonical skill at `skills/optimax/`; avoid loading a second standalone copy alongside it.
 
 For Codex, register the catalog, install, and list installed plugins:
 
@@ -21,9 +21,9 @@ In Claude Code, use:
 /plugin install optimax@alo-labs
 ```
 
-The Claude commands have been checked against documentation; live Claude acceptance is deferred. The published Codex plugin passed native installation, installed-skill discovery and session control checks on CLI 0.166.0-alpha.6; see the [native acceptance record](docs/CODEX-ACCEPTANCE.md).
+The Claude commands have been checked against documentation; live Claude acceptance is deferred. The v0.1.0 Codex plugin passed native installation, installed-skill discovery and session control checks on CLI 0.166.0-alpha.6; see the [historical native acceptance record](docs/CODEX-ACCEPTANCE.md) and the [current verification report](docs/VERIFICATION.md) for v0.1.1 coverage.
 
-For a standalone Codex skill, obtain a source checkout and the release's `optimax-skill.zip`, then run from the checkout root:
+For a standalone Codex skill, obtain a source checkout and the matching v0.1.1 release's `optimax-skill.zip`, then run from the checkout root:
 
 ```sh
 python3 skills/optimax/scripts/install_local.py --archive /path/to/optimax-skill.zip
@@ -33,9 +33,11 @@ The destination defaults to `~/.codex/skills/optimax` and must not exist; use `-
 
 ## Control a session
 
-In Claude Code use `/optimax:optimax on`, `/optimax:optimax off`, or `/optimax:optimax status` to control or inspect the session. In Codex, invoke `$optimax` and supply the same options. Native Codex installation, discovery and session controls passed on the tested client; Claude live acceptance is deferred. Installation alone does not enable the policy.
+In Claude Code use `/optimax:optimax on`, `/optimax:optimax off`, or `/optimax:optimax status` to control or inspect the session. In Codex, invoke `$optimax` and supply the same options. Native Codex installation, discovery and session controls passed for v0.1.0 on the tested client; Claude live acceptance is deferred. Installation alone does not enable the policy.
 
 The controller uses `PROJECTROOT/model-perf/<actual-user-id>-model-perf.csv`, where the project root is the canonical primary checkout and the user ID is a stable, verified identity. The rename does not reset or migrate learning: the historical `optimal-ultra-ladder-v1`, `v2`, and `v3` identifiers, lineage, events, and epochs remain intact. Keep project ledgers private.
+
+Version 0.1.1 adds Windows-compatible controller locking and filesystem handling. Windows controllers sharing a project must use the same resolved user profile with a writable `~/.optimax/locks` cache; the shared profile location keeps lock coordination independent of temporary-directory settings. Permanent lock errors fail promptly. Portable regression tests cover these paths on POSIX; native Windows execution remains untested.
 
 ## Limits and verification
 
@@ -43,7 +45,7 @@ Optimax provides instructions and a deterministic controller; it cannot guarante
 
 Run `python3 -m unittest discover -s tests` for the local suite. Build allowlisted, deterministic skill and plugin archives with `python3 build_release.py --output dist`. The archives exclude project ledgers, caches, tests, and session reports. Live host discovery, control behavior, and published catalog resolution are separate acceptance gates.
 
-The current [verification report](docs/VERIFICATION.md) separates passing core, artifact, native Codex and public deployment checks from outstanding rendered-browser, custom-domain and native Ultra/compaction coverage. Claude execution is deferred until Tuesday 10 November 2026 at 14:00 Australia/Sydney; a one-occurrence automation is saved to run the [acceptance runbook](docs/CLAUDE-ACCEPTANCE.md). It has not executed yet.
+The [verification report](docs/VERIFICATION.md) records checked revisions, artifact digests, the scope of native Codex and website qualification, and remaining coverage. Claude execution is deferred until Tuesday 10 November 2026 at 14:00 Australia/Sydney; a one-occurrence automation is saved to run the [acceptance runbook](docs/CLAUDE-ACCEPTANCE.md). It has not executed yet.
 
 The website source is in [site/](site/) and its design system is documented in [site/DESIGN-SYSTEM.md](site/DESIGN-SYSTEM.md). From `site/`, run `npm ci`, `npm test`, and `npm run build` to install the locked dependencies, test, and build the site.
 

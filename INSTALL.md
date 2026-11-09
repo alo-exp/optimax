@@ -1,6 +1,6 @@
 # Install Optimax
 
-Use the unified Ālo Labs marketplace for a plugin installation. Catalog publication and host installation are separate gates; see the release's verification report for tested support.
+Use the unified Ālo Labs marketplace for a plugin installation. This checkout targets the v0.1.1 prerelease. Catalog publication and host installation are separate gates; see the [verification report](docs/VERIFICATION.md) for tested support.
 
 ## Codex plugin
 
@@ -27,7 +27,7 @@ Use `/optimax:optimax off` to disable the policy. Claude live acceptance is defe
 
 ## Standalone skill fallback
 
-From an Optimax source checkout, obtain the matching `optimax-skill.zip` release asset and run:
+From a matching v0.1.1 Optimax source checkout, obtain the `optimax-skill.zip` asset from the [v0.1.1 prerelease](https://github.com/alo-exp/optimax/releases/tag/v0.1.1) and run:
 
 ```sh
 mkdir -p "$HOME/.codex/skills"
@@ -44,3 +44,5 @@ python3 skills/optimax/scripts/install_local.py --archive /path/to/optimax-skill
 The installer validates the archive, requires an existing parent, refuses existing destinations and installs runtime files only. It does not overwrite a previous installation. Inspect an existing destination before updating. Refresh the host's discovery after installation. Avoid simultaneously loading standalone and packaged copies as separate orchestrators.
 
 Installation does not enable the session policy. Establish your actual stable user ID and canonical project root on first use; private learning stays under that project's `model-perf/` directory. Skill off does not uninstall the plugin or change native mode settings. A sandbox that cannot write your host configuration or skill directory cannot complete a global installation; run the appropriate command in an authorized host session.
+
+On Windows, use an available Python 3 interpreter for the installer and controller. Controllers for the same project must share the same resolved user profile and be able to write its `~/.optimax/locks` cache. Network filesystems remain unsupported. Windows compatibility has portable regression coverage on POSIX; native Windows installation and execution remain untested.

@@ -2,6 +2,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,36 @@ class OptimaxPackagingTests(unittest.TestCase):
                 manifest = json.loads((ROOT / name).read_text(encoding='utf-8'))
                 self.assertEqual(manifest['author']['name'], 'Shafqat Ullah')
                 self.assertIn('Ālo Labs', manifest['description'])
+
+    def test_release_archives_match_current_changelog_and_runtime_sources(self):
+        release = re.search(r'^## (\d+\.\d+\.\d+)(?:\s|$)', (ROOT / 'CHANGELOG.md').read_text(encoding='utf-8'), re.MULTILINE)
+        self.assertIsNotNone(release, 'changelog must identify the current release')
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            build = subprocess.run([sys.executable, str(ROOT / 'build_release.py'), '--output', str(out)], capture_output=True, text=True)
+            self.assertEqual(build.returncode, 0, build.stderr)
+            with zipfile.ZipFile(out / 'optimax-plugin.zip') as plugin, zipfile.ZipFile(out / 'optimax-skill.zip') as skill:
+                for name in ('plugin.json', '.codex-plugin/plugin.json', '.claude-plugin/plugin.json'):
+                    with self.subTest(manifest=name):
+                        archived = plugin.read(name)
+                        self.assertEqual(archived, (ROOT / name).read_bytes())
+                        self.assertEqual(json.loads(archived)['version'], release.group(1), 'archive manifest must identify the current changelog release')
+                for name in skill.namelist():
+                    relative = name.removeprefix('optimax/')
+                    source = ROOT / 'LICENSE' if relative == 'LICENSE' else RUNTIME / relative
+                    with self.subTest(runtime=relative):
+                        self.assertEqual(skill.read(name), source.read_bytes())
+                        plugin_name = 'LICENSE' if relative == 'LICENSE' else 'skills/optimax/' + relative
+                        self.assertEqual(plugin.read(plugin_name), skill.read(name))
+                installed = out / 'installed'
+                install = subprocess.run([sys.executable, str(RUNTIME / 'scripts/install_local.py'), '--archive', str(out / 'optimax-skill.zip'), '--dest', str(installed)], capture_output=True, text=True)
+                self.assertEqual(install.returncode, 0, install.stderr)
+                for name in skill.namelist():
+                    with self.subTest(installed=name):
+                        self.assertEqual((installed / name.removeprefix('optimax/')).read_bytes(), skill.read(name))
+            status = subprocess.run([sys.executable, str(installed / 'scripts/performance.py'), '--root', str(out), '--user', 'release-test', '--session', 'release-test', 'status'], capture_output=True, text=True)
+            self.assertEqual(status.returncode, 0, status.stderr)
+            self.assertIs(json.loads(status.stdout)['enabled'], False)
 
     def test_installer_accepts_optimax_archive_and_default_destination(self):
         spec = importlib.util.spec_from_file_location('installer', RUNTIME / 'scripts/install_local.py')
