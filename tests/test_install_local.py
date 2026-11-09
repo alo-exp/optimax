@@ -121,6 +121,45 @@ class InstallTests(unittest.TestCase):
         installer.install(self.zip, self.dest)
         self.assertTrue((self.dest / 'SKILL.md').is_file())
 
+    def test_interrupt_during_root_identity_reports_unknown_ownership(self):
+        with mock.patch.object(installer, '_identity', side_effect=KeyboardInterrupt('identity cancelled')):
+            with self.assertRaisesRegex(OSError, 'incomplete cleanup') as caught:
+                installer.install(self.zip, self.dest)
+        self.assertIsInstance(caught.exception.__cause__, KeyboardInterrupt)
+        self.assertTrue(self.dest.is_dir())
+        self.assertEqual(list(self.dest.iterdir()), [])
+
+    def test_interrupt_during_root_identity_preserves_replacement(self):
+        displaced = self.base / 'displaced'
+        def replace_then_interrupt(path):
+            path.rename(displaced)
+            path.mkdir()
+            (path / 'foreign').write_text('safe')
+            raise KeyboardInterrupt('identity cancelled')
+        with mock.patch.object(installer, '_identity', side_effect=replace_then_interrupt):
+            with self.assertRaisesRegex(OSError, 'incomplete cleanup') as caught:
+                installer.install(self.zip, self.dest)
+        self.assertIsInstance(caught.exception.__cause__, KeyboardInterrupt)
+        self.assertEqual((self.dest / 'foreign').read_text(), 'safe')
+        self.assertTrue(displaced.is_dir())
+
+    def test_interrupt_after_root_mkdir_reports_unknown_ownership(self):
+        original = Path.mkdir
+        def create_then_interrupt(path, *args, **kwargs):
+            original(path, *args, **kwargs)
+            raise KeyboardInterrupt('mkdir cancelled')
+        with mock.patch.object(Path, 'mkdir', create_then_interrupt):
+            with self.assertRaisesRegex(OSError, 'incomplete cleanup') as caught:
+                installer.install(self.zip, self.dest)
+        self.assertIsInstance(caught.exception.__cause__, KeyboardInterrupt)
+        self.assertTrue(self.dest.is_dir())
+
+    def test_interrupt_before_root_mkdir_preserves_original_cancellation(self):
+        with mock.patch.object(Path, 'mkdir', side_effect=KeyboardInterrupt('mkdir cancelled')):
+            with self.assertRaisesRegex(KeyboardInterrupt, 'mkdir cancelled'):
+                installer.install(self.zip, self.dest)
+        self.assertFalse(self.dest.exists())
+
     def test_keyboard_interrupt_reports_incomplete_cleanup_and_preserves_foreign(self):
         def interrupt(source, output):
             output.write(b'partial')

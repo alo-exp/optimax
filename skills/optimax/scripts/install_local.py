@@ -70,10 +70,14 @@ def install(archive, dest):
     dest = Path(dest)
     with zipfile.ZipFile(archive) as z:
         files = _manifest(z)
-        owned = []
-        dest.mkdir()  # Exclusive: never replace a pre-existing destination.
-        owned.append((dest, _identity(dest), True))
+        owned = [(dest, None, True)]  # Creation is pending until identity is captured.
         try:
+            try:
+                dest.mkdir()  # Exclusive: never replace a pre-existing destination.
+            except FileExistsError:
+                owned.clear()
+                raise
+            owned[0] = (dest, _identity(dest), True)
             for directory in ('agents', 'references', 'scripts'):
                 path = dest / directory
                 path.mkdir()
@@ -88,7 +92,10 @@ def install(archive, dest):
             incomplete = False
             for path, identity, is_dir in reversed(owned):
                 try:
-                    if _identity(path) != identity:
+                    if identity is None:
+                        path.lstat()  # Existence only; ownership remains unknown.
+                        incomplete = True
+                    elif _identity(path) != identity:
                         incomplete = True
                     elif is_dir:
                         path.rmdir()
