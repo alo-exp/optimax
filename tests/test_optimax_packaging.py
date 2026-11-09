@@ -29,6 +29,28 @@ class OptimaxPackagingTests(unittest.TestCase):
             shutil.copyfile(ROOT / relative, destination)
         return builder, review_files
 
+    def test_invalid_optimax_frontmatter_preserves_published_archives(self):
+        headers = (
+            '---\nname: optimax\n---\n# No description\n',
+            '---\nname: optimax\ndescription: \n---\n',
+            '---\nname: optimax\ndescription: [invalid]\n---\n',
+            '---\nname: optimax\ndescription: valid\n',
+        )
+        for header in headers:
+            with self.subTest(header=header), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp).resolve() / 'source'
+                builder, _ = self.release_fixture(root)
+                output = Path(tmp) / 'output'
+                with patch.object(builder, 'ROOT', root), patch.object(builder, 'RUNTIME', root / 'skills/optimax'):
+                    builder.build(output)
+                    names = ('optimax-skill.zip', 'optimax-plugin.zip')
+                    previous = {name: (output / name).read_bytes() for name in names}
+                    (root / 'skills/optimax/SKILL.md').write_text(header)
+                    with self.assertRaises(ValueError):
+                        builder.build(output)
+                self.assertEqual({name: (output / name).read_bytes() for name in names}, previous)
+                self.assertEqual(sorted(path.name for path in output.iterdir()), sorted(names))
+
     def test_plugin_bundles_review_ladder_exactly_without_changing_standalone(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp).resolve() / 'source'

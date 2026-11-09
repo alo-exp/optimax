@@ -9,6 +9,8 @@ import stat
 import tempfile
 import zipfile
 
+from skills.optimax.scripts.install_local import _validate_skill_frontmatter
+
 ROOT = Path(__file__).resolve().parent
 RUNTIME = ROOT / 'skills' / 'optimax'
 FILES = (
@@ -43,8 +45,7 @@ def build(output):
         if destination.is_symlink() or (destination.exists() and not stat.S_ISREG(destination.stat().st_mode)):
             raise ValueError(f'output destination is not a regular file: {destination}')
     runtime = {name: read_safe(RUNTIME, name) for name in FILES}
-    if b'name: optimax\n' not in runtime['SKILL.md'].split(b'---', 2)[1]:
-        raise ValueError('invalid skill name')
+    _validate_skill_frontmatter(runtime['SKILL.md'].decode('utf-8'))
     review_ladder = {'skills/review-ladder/' + name: read_safe(ROOT, 'skills/review-ladder/' + name)
                      for name in REVIEW_LADDER_FILES}
     license_data = read_safe(ROOT, 'LICENSE')
