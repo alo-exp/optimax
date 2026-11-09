@@ -1,11 +1,13 @@
 # Install a packaged optimax skill locally.
 import argparse
+import lzma
 from pathlib import Path, PurePosixPath
 import re
 import shutil
 import stat
 import sys
 import zipfile
+import zlib
 
 REQUIRED = {
     'SKILL.md', 'agents/openai.yaml',
@@ -173,7 +175,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         install(args.archive, args.dest)
-    except (OSError, ValueError, UnicodeError, zipfile.BadZipFile) as exc:
+    except (OSError, ValueError, UnicodeError, zipfile.BadZipFile, zlib.error, lzma.LZMAError) as exc:
         print(f'installation failed: {exc}', file=sys.stderr)
         return 1
     print(f'Installed optimax to {args.dest}')

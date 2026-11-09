@@ -1,4 +1,5 @@
 import importlib.util
+import lzma
 from pathlib import Path
 import struct
 import subprocess
@@ -7,6 +8,7 @@ import tempfile
 import unittest
 from unittest import mock
 import zipfile
+import zlib
 
 ROOT = Path(__file__).resolve().parents[1] / 'skills/optimax'
 SPEC = importlib.util.spec_from_file_location('install_local', ROOT / 'scripts/install_local.py')
@@ -14,8 +16,8 @@ installer = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(installer)
 
 
-def archive(path, extras=(), omit=()):
-    with zipfile.ZipFile(path, 'w') as z:
+def archive(path, extras=(), omit=(), compression=zipfile.ZIP_STORED):
+    with zipfile.ZipFile(path, 'w', compression=compression) as z:
         for name in ('SKILL.md', 'agents/openai.yaml'):
             if name not in omit:
                 z.write(ROOT / name, 'optimax/' + name)
@@ -292,6 +294,35 @@ class InstallTests(unittest.TestCase):
         run = subprocess.run([sys.executable, str(ROOT / 'scripts/install_local.py'), '--archive', str(self.zip), '--dest', str(self.dest)], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertTrue((self.dest / 'SKILL.md').is_file())
+
+    def test_cli_reports_corrupt_compressed_members_without_traceback(self):
+        cases = ((zipfile.ZIP_DEFLATED, 0, zlib.error),
+                 (zipfile.ZIP_LZMA, 9, lzma.LZMAError))
+        for compression, offset, error in cases:
+            for member in ('SKILL.md', 'scripts/ladder.py'):
+                with self.subTest(compression=compression, member=member):
+                    self._assert_corrupt_member_failure(compression, offset, error, member)
+
+    def _assert_corrupt_member_failure(self, compression, offset, error, member):
+        archive(self.zip, compression=compression)
+        with zipfile.ZipFile(self.zip) as z:
+            self.assertIsNone(z.testzip())
+            info = z.getinfo('optimax/' + member)
+        data = bytearray(self.zip.read_bytes())
+        name_length, extra_length = struct.unpack_from('<HH', data, info.header_offset + 26)
+        payload_offset = info.header_offset + 30 + name_length + extra_length
+        # Invalidate the DEFLATE block type or LZMA range-coded data.
+        data[payload_offset + offset] = 0xff
+        self.zip.write_bytes(data)
+        with zipfile.ZipFile(self.zip) as z:
+            with self.assertRaises(error):
+                z.read(info.filename)
+        run = subprocess.run([sys.executable, str(ROOT / 'scripts/install_local.py'), '--archive', str(self.zip), '--dest', str(self.dest)], capture_output=True, text=True)
+        self.assertEqual(run.returncode, 1)
+        self.assertFalse(self.dest.exists())
+        self.assertTrue(run.stderr.startswith('installation failed:'), run.stderr)
+        self.assertNotIn('Traceback', run.stderr)
+        self.assertEqual(run.stdout, '')
 
     def test_cli_reports_unreadable_required_skill_without_traceback(self):
         for kind in ('encrypted', 'unsupported compression'):
