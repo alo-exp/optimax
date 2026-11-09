@@ -1,10 +1,11 @@
 """Stdlib controller for one canonical project and explicit user.
 
 All durable state is one versioned CSV. flock on the project directory (POSIX)
-or msvcrt locking on a per-project file in the temp directory (Windows)
+or msvcrt locking on a per-project file in the user profile cache (Windows)
 serializes cooperating controllers; fsync and atomic rename publish updates
 without lock or state sidecars in the project. Requires a local filesystem;
-network filesystems are unsupported. The trusted host resolves exact model IDs, discovers supported
+Windows controllers must share the same resolved profile with a writable cache.
+Network filesystems are unsupported. The trusted host resolves exact model IDs, discovers supported
 rungs, dispatches natively, and independently reviews actual execution receipts.
 This engine never launches agents or changes native/global model settings.
 
@@ -19,9 +20,10 @@ import argparse
 from contextlib import contextmanager
 import csv
 from datetime import datetime, timezone
+import errno
 try:
     import fcntl
-except ImportError:  # Windows: lock a per-project file in the temp dir instead
+except ImportError:  # Windows: lock a per-project file in the profile cache
     fcntl = None
     import msvcrt
     import time
@@ -107,14 +109,20 @@ class Engine:
         # Directories cannot be opened or locked on Windows, and a sidecar in the
         # project would alter the ledger directory, so lock outside the project.
         digest = hashlib.sha256(str(self.root).lower().encode("utf-8")).hexdigest()[:32]
-        lock_path = Path(tempfile.gettempdir()) / ("optimax-" + digest + ".lock")
+        # Keep one namespace across processes with different temp environments.
+        # Retain lock files: unlinking can split active locks across file objects.
+        lock_directory = Path.home() / ".optimax" / "locks"
+        lock_directory.mkdir(parents=True, exist_ok=True)
+        lock_path = lock_directory / (digest + ".lock")
         with open(lock_path, "a+b") as stream:
             while True:
                 try:
                     stream.seek(0)
                     msvcrt.locking(stream.fileno(), msvcrt.LK_NBLCK, 1)
                     break
-                except OSError:
+                except OSError as error:
+                    if error.errno != errno.EACCES:  # CRT lock contention
+                        raise
                     time.sleep(0.05)
             try:
                 self._safe_paths()
