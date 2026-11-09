@@ -299,7 +299,7 @@
         {
           "heading": "Visible and opaque work",
           "paragraphs": [
-            "Use one execution owner for each bounded stage. Do not duplicate a native subtree with competing direct assignments. Controllable stages can be prepared and assessed when their effective model and effort are verified.",
+            "Use one execution owner for each bounded stage. Do not duplicate a native subtree with competing direct assignments. Supported requested model and effort controls permit preparation and dispatch. Model-specific learned assessment requires a host receipt verifying the effective model and effort; a missing receipt does not block dispatch.",
             "Opaque native workers cannot be individually scored as though their identities and outputs were known. In that case optimization is partial, and the Orchestrator still checks the resulting work and acceptance evidence."
           ]
         }
