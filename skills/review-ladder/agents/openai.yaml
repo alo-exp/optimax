@@ -1,0 +1,4 @@
+interface:
+  display_name: "Review Ladder"
+  short_description: "Review and repair through the Optimax model ladder"
+  default_prompt: "Use $review-ladder to review and repair the authorized scope through every agreed rung."
