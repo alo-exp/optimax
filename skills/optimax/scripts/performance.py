@@ -9,11 +9,12 @@ Network filesystems are unsupported. The trusted host resolves exact model IDs, 
 rungs, dispatches natively, and independently reviews actual execution receipts.
 This engine never launches agents or changes native/global model settings.
 
-adopt_policy() or the first successful prepare appends ordered v1-to-v2-to-v3
+adopt_policy() or the first successful prepare appends ordered v1-to-v2-to-v3-to-v4
 policy events. Historical rows retain their original ordinal semantics. V2
-retires old Executor tracks; v3 preserves their compatible epochs/windows and
-retires old Advisor tracks. New Advisors carry per-consultation advice levels,
-not complexity tiers. Assessments apply each prepared run's contextual floor.
+retires old Executor tracks; v3 preserves compatible Executor epochs/windows
+and retires old Advisor tracks. V4 preserves Executor and Codex Advisor tracks
+and retires Claude Advisor tracks. New Advisors carry per-consultation advice
+levels, not complexity tiers. Assessments apply each prepared run's context floor.
 Status never adopts. Explicit on returns unapplied orchestrator suggestions.
 """
 import argparse
@@ -228,7 +229,7 @@ class Engine:
     def _state(self, rows):
         active = rows[0]["data"]["policy_version"] if rows else POLICY_VERSION
         state = dict(sessions={}, tracks={}, runs={}, assessments={}, executions=set(),
-                     imports=set(), policy_version=active, windows={}, lineage_totals={})
+                     imports=set(), policy_version=active, windows={}, lineage_totals={}, epochs={})
         try:
             for index, row in enumerate(rows[1:], 1):
                 data, event = row["data"], row["event_type"]
@@ -258,14 +259,16 @@ class Engine:
                                "assessments": [], "policy_version": version,
                                "advice_level": data.get("advice_level", "medium")})
                     if data["role"] == "advisor" and version in (THIRD_POLICY_VERSION, POLICY_VERSION):
-                        if data["context_floor"] != ADVICE_FLOORS[data["advice_level"]] or data["step"] < data["context_floor"]:
+                        if type(data["context_floor"]) is not int or data["context_floor"] != ADVICE_FLOORS[data["advice_level"]] or data["step"] < data["context_floor"]:
                             raise ValueError("invalid stored Advisor context floor")
                     if ladders[(data["platform"], data["role"])][data["step"]] != (data["family"], data["effort"]):
                         raise ValueError("invalid stored transition rung")
+                    self._validate_transition(rows, index, data, state, version, ladders)
                     state["tracks"][_key(data)] = dict(data, policy_version=version)
                 elif event == "advisor_context":
                     track = state["tracks"][_key(data)]
                     if (track["role"] != "advisor" or track["epoch"] != data["epoch"]
+                            or type(data["context_floor"]) is not int
                             or data["context_floor"] != ADVICE_FLOORS[data["advice_level"]]
                             or track["step"] < data["context_floor"]):
                         raise ValueError("invalid Advisor context update")
@@ -277,13 +280,13 @@ class Engine:
                     track = state["tracks"][_key(data)]
                     if track["epoch"] != data["epoch"]:
                         raise ValueError("launch without current epoch")
-                    if any(data[field] != track[field] for field in ("step", "family", "effort", "model_id")):
+                    if type(data["step"]) is not int or any(data[field] != track[field] for field in ("step", "family", "effort", "model_id")):
                         raise ValueError("launch settings differ from epoch")
                     run_policy = data.get("policy_version", track["policy_version"])
                     if policy_lineage(run_policy, data["role"], data["platform"]) != policy_lineage(track["policy_version"], track["role"], track["platform"]):
                         raise ValueError("launch policy differs from epoch")
                     if data["role"] == "advisor" and run_policy in (THIRD_POLICY_VERSION, POLICY_VERSION):
-                        if (data["context_floor"] != ADVICE_FLOORS[data["advice_level"]]
+                        if (type(data["context_floor"]) is not int or data["context_floor"] != ADVICE_FLOORS[data["advice_level"]]
                                 or data["context_floor"] != track["context_floor"]
                                 or data["advice_level"] != track["advice_level"]):
                             raise ValueError("launch Advisor context differs from prepared context")
@@ -324,6 +327,59 @@ class Engine:
             raise ValueError("corrupt ledger event structure") from None
         return state
 
+    def _validate_transition(self, rows, index, data, state, version, ladders):
+        key = _key(data)
+        previous = state["tracks"].get(key)
+        epoch = data["epoch"]
+        _string(epoch, "stored transition epoch")
+        epochs = state["epochs"].setdefault(key, set())
+        if epoch in epochs:
+            raise ValueError("transition epoch is not fresh")
+        epochs.add(epoch)
+
+        models, available = data["models"], data["available_steps"]
+        if not isinstance(models, dict):
+            raise ValueError("invalid stored models")
+        for step in available:
+            family = ladders[(data["platform"], data["role"])][step][0]
+            _string(models[family], "stored exact model ID")
+        if data["model_id"] != models[data["family"]]:
+            raise ValueError("stored model does not match resolved family")
+
+        # Assessment transitions were checked against the immediately preceding
+        # assessment, including its run-specific Advisor floor.
+        prior = rows[index - 1] if index else None
+        if prior and prior["event_type"] == "assessment" and prior["data"]["result"]["transition"] is not None:
+            return
+
+        role, platform, tier = data["role"], data["platform"], data["tier"]
+        advice_level = data.get("advice_level", "medium")
+        _, floors = policy(version)
+        floor = (ADVICE_FLOORS[advice_level] if role == "advisor" else floors[platform][tier])
+        provisional = dict(platform=platform, role=role, tier=tier, step=floor,
+                           model_id="validation", epoch="validation")
+        validation = dict(track=provisional, available_steps=available, assessments=[],
+                          policy_version=version, advice_level=advice_level)
+        if previous is None:
+            selection = recommend(validation)
+            step, reason = selection["selected_step"], "initial"
+        elif role == "advisor" and previous["step"] < floor:
+            selection = recommend(dict(validation, track=previous))
+            step, reason = selection["selected_step"], "context_floor_raised"
+        elif previous["step"] in available and models[previous["family"]] != previous["model_id"]:
+            step, reason = previous["step"], "model_version_changed"
+        else:
+            selection = self._recommend(previous, state, available, advice_level)
+            if not selection["reset_required"]:
+                raise ValueError("unexpected standalone transition")
+            step, reason = selection["selected_step"], selection["reason"]
+        expected = self._transition_payload(platform, role, tier, step, models, available,
+                                            reason, previous, version, advice_level, epoch)
+        if "policy_version" not in data:
+            del expected["policy_version"]
+        if _json(data) != _json(expected):
+            raise ValueError("corrupt standalone transition payload")
+
     def _validate_assessment_transition(self, rows, index, data, run, state, eligible):
         track = state["tracks"].get(_key(run))
         selection = None
@@ -336,7 +392,7 @@ class Engine:
             return
         following = rows[index + 1] if index + 1 < len(rows) else None
         if (not isinstance(stored, dict) or following is None
-                or following["event_type"] != "transition" or stored != following["data"]):
+                or following["event_type"] != "transition" or _json(stored) != _json(following["data"])):
             raise ValueError("corrupt assessment transition event")
         epoch = stored["epoch"]
         _string(epoch, "stored transition epoch")
@@ -348,7 +404,7 @@ class Engine:
             state["policy_version"], run.get("advice_level", "medium"), epoch)
         if "policy_version" not in stored:
             del expected["policy_version"]
-        if stored != expected:
+        if _json(stored) != _json(expected):
             raise ValueError("corrupt assessment transition payload")
 
     def _ingest_assessment(self, state, data):

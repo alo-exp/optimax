@@ -115,7 +115,7 @@ class PerformanceTests(unittest.TestCase):
         rows = self.events()
         self.engine._append(rows, "policy_adoption", {"from_policy_version": "optimal-ultra-ladder-v2", "to_policy_version": "optimal-ultra-ladder-v3"})
         old_runs = {}
-        for platform, family, effort, models in (("codex", "sol", "xhigh", {"sol": "sol-old"}),
+        for platform, family, effort, models in (("codex", "sol", "xhigh", {"sol": "sol-old", "astra": "astra-old"}),
                                                   ("claude", "opus", "medium", {"opus": "opus-old"})):
             track = dict(platform=platform, role="advisor", tier=None, step=0, family=family,
                          effort=effort, model_id=models[family], epoch=platform + "-v3-epoch",
@@ -403,6 +403,87 @@ class PerformanceTests(unittest.TestCase):
                     self.assess(runs[-1])
                 self.assertEqual(self.engine.path.read_bytes(), corrupted)
         self.engine.path.write_bytes(original)
+
+    def test_replay_rejects_boolean_nested_assessment_transition_step(self):
+        self.enable()
+        runs = [self.prepare() for _ in range(5)]
+        for run in runs:
+            self.assess(run)
+        rows = self.events()
+        assessment = next(row for row in rows if row["event_type"] == "assessment"
+                          and row["data"]["request"]["run_id"] == runs[-1]["run_id"])
+        assessment["data"]["result"]["transition"]["step"] = True
+        self.write_events(rows)
+        corrupted = self.engine.path.read_bytes()
+        with self.assertRaises(ValueError):
+            Engine(self.root, "actual-user").status(self.session)
+        self.assertEqual(self.engine.path.read_bytes(), corrupted)
+
+    def test_replay_rejects_forged_standalone_transitions_without_mutation(self):
+        self.enable()
+        first = self.prepare()
+        self.prepare(models={"terra": "terra-v2", "sol": "sol-v1"})
+        self.prepare(models={"terra": "terra-v3", "sol": "sol-v1"})
+        original = self.engine.path.read_bytes()
+        for case in ("reason", "predecessor", "impossible_movement", "model_map", "reused_epoch"):
+            with self.subTest(case=case):
+                self.engine.path.write_bytes(original)
+                rows = self.events()
+                transitions = [index for index, row in enumerate(rows) if row["event_type"] == "transition"]
+                index = transitions[-1]
+                rows = rows[:index + 1]
+                data = rows[-1]["data"]
+                if case == "reason":
+                    data["reason"] = "fabricated"
+                elif case == "predecessor":
+                    data["previous_epoch"] = "fabricated"
+                elif case == "impossible_movement":
+                    data.update(step=6, family="sol", effort="max", model_id="sol-v1")
+                elif case == "model_map":
+                    data["model_id"] = "unresolved-model"
+                else:
+                    data["epoch"] = first["epoch"]
+                    rows[-1]["epoch"] = first["epoch"]
+                self.write_events(rows)
+                corrupted = self.engine.path.read_bytes()
+                with self.assertRaises(ValueError):
+                    Engine(self.root, "actual-user").status(self.session)
+                self.assertEqual(self.engine.path.read_bytes(), corrupted)
+                with self.assertRaises(ValueError):
+                    self.prepare()
+                self.assertEqual(self.engine.path.read_bytes(), corrupted)
+
+    def test_replay_accepts_initial_capability_fallback_to_last_step(self):
+        self.enable()
+        run = self.prepare(available_steps=[6])
+        self.assertEqual(run["step"], 6)
+        self.assertEqual(Engine(self.root, "actual-user").status(self.session)["tracks"][0]["step"], 6)
+
+    def test_replay_rejects_boolean_launch_step_without_mutation(self):
+        self.enable()
+        self.prepare()
+        rows = self.events()
+        next(row for row in rows if row["event_type"] == "launch")["data"]["step"] = False
+        self.write_events(rows)
+        corrupted = self.engine.path.read_bytes()
+        with self.assertRaises(ValueError):
+            Engine(self.root, "actual-user").status(self.session)
+        self.assertEqual(self.engine.path.read_bytes(), corrupted)
+
+    def test_replay_rejects_boolean_advisor_context_floor_without_mutation(self):
+        self.enable()
+        models = {"sol": "sol-v1", "astra": "astra-v1"}
+        self.engine.prepare(self.session, "codex", "advisor", models=models,
+                            available_steps=[0, 1, 2], advice_level="high")
+        self.engine.prepare(self.session, "codex", "advisor", models=models,
+                            available_steps=[0, 1, 2], advice_level="medium")
+        rows = self.events()
+        next(row for row in rows if row["event_type"] == "advisor_context")["data"]["context_floor"] = False
+        self.write_events(rows)
+        corrupted = self.engine.path.read_bytes()
+        with self.assertRaises(ValueError):
+            Engine(self.root, "actual-user").status(self.session)
+        self.assertEqual(self.engine.path.read_bytes(), corrupted)
 
     def test_valid_transition_retries_survive_restart_and_later_advances(self):
         self.enable()
