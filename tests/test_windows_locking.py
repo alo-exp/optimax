@@ -130,6 +130,38 @@ class WindowsLockingTests(unittest.TestCase):
             self.assertEqual(call.args[2] & 0x4, 0)
             self.assertEqual(call.args[5] & 0x02200000, 0x02200000)
 
+    def test_windows_child_guard_is_retained_from_read_through_commit(self):
+        import ctypes
+        self.engine.set_enabled('session', True)
+        closed = []
+        kernel = SimpleNamespace(CreateFileW=Mock(side_effect=[101, 102]),
+                                 GetFileInformationByHandleEx=Mock(),
+                                 CloseHandle=Mock(side_effect=closed.append))
+        def attributes(handle, kind, info, size):
+            info._obj.FileAttributes = 0x10
+            return 1
+        kernel.GetFileInformationByHandleEx.side_effect = attributes
+        load = self.engine._load
+        loaded = False
+        def observe_load(access):
+            nonlocal loaded
+            rows = load(access)
+            loaded = True
+            self.assertEqual(kernel.CreateFileW.call_count, 2)
+            self.assertEqual(closed, [], 'root and child must both remain pinned after ledger read')
+            return rows
+        adapter = SimpleNamespace(LK_NBLCK=1, LK_UNLCK=2, locking=Mock())
+        with self.windows(adapter), patch.object(sys, 'platform', 'win32'), \
+                patch.object(ctypes, 'WinDLL', return_value=kernel, create=True), \
+                patch.object(self.engine, '_load', side_effect=observe_load):
+            self.engine.set_enabled('session', False)
+        self.assertTrue(loaded)
+        self.assertEqual([call.args[0] for call in kernel.CreateFileW.call_args_list],
+                         [str(self.engine.root), str(self.engine.directory)],
+                         'commit must reuse the child guard acquired before load')
+        self.assertEqual(closed, [102, 101])
+        self.assertFalse(self.engine.status('session')['enabled'])
+
     def test_windows_root_guard_rejects_reparse_before_creation_and_releases_lock(self):
         import ctypes
         kernel = SimpleNamespace(CreateFileW=Mock(return_value=123),

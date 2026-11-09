@@ -743,6 +743,85 @@ class PerformanceTests(unittest.TestCase):
             self.enable()
         self.assertEqual(target.read_text(), "untouched")
 
+    def test_ledger_appearing_after_initial_directory_creation_is_not_overwritten(self):
+        import os
+        sentinel = b'ledger appeared before newly created directory was bound'
+        mkdir = os.mkdir
+        appeared = False
+        def appear_after_mkdir(path, *args, **kwargs):
+            nonlocal appeared
+            result = mkdir(path, *args, **kwargs)
+            if Path(path).name == self.engine.directory.name:
+                self.engine.path.write_bytes(sentinel)
+                appeared = True
+            return result
+        error = None
+        with patch('performance.os.mkdir', side_effect=appear_after_mkdir):
+            try:
+                self.engine.set_enabled(self.session, True)
+            except (ValueError, OSError) as caught:
+                error = caught
+        self.assertTrue(appeared, 'ledger appearance after initial mkdir was not exercised')
+        self.assertEqual(self.engine.path.read_bytes(), sentinel,
+                         'transaction overwrote a ledger that appeared before directory binding')
+        self.assertEqual(list(self.engine.directory.iterdir()), [self.engine.path])
+        self.assertIsNotNone(error, 'unexpected initial ledger must reject mutation')
+
+    def test_ledger_directory_appearing_after_absent_load_is_not_overwritten(self):
+        self.assertFalse(self.engine.status(self.session)['enabled'])
+        self.assertFalse(self.engine.directory.exists(), 'status must preserve absent directory')
+        sentinel = b'concurrently appeared ledger must remain untouched'
+        load = self.engine._load
+        appeared = False
+        def appear_after_load(root_fd=None):
+            nonlocal appeared
+            rows = load(root_fd)
+            self.engine.directory.mkdir()
+            self.engine.path.write_bytes(sentinel)
+            appeared = True
+            return rows
+        error = None
+        with patch.object(self.engine, '_load', side_effect=appear_after_load):
+            try:
+                self.engine.set_enabled(self.session, True)
+            except (ValueError, OSError) as caught:
+                error = caught
+        self.assertTrue(appeared, 'directory appearance after absent load was not exercised')
+        self.assertEqual(self.engine.path.read_bytes(), sentinel,
+                         'transaction overwrote a directory that appeared after its absent read')
+        self.assertEqual(list(self.engine.directory.iterdir()), [self.engine.path])
+        self.assertIsNotNone(error, 'concurrent directory appearance must reject mutation')
+
+    @unittest.skipUnless(__import__('os').name == 'posix', 'requires POSIX directory rename while open')
+    def test_ledger_directory_replaced_after_load_cannot_receive_stale_commit(self):
+        self.enable()
+        original = self.engine.path.read_bytes()
+        retained = self.root / 'retained-model-perf'
+        sentinel = b'replacement ledger must remain untouched'
+        load = self.engine._load
+        swapped = False
+        def replace_after_load(root_fd=None):
+            nonlocal swapped
+            rows = load(root_fd)
+            self.engine.directory.rename(retained)
+            self.engine.directory.mkdir()
+            self.engine.path.write_bytes(sentinel)
+            swapped = True
+            return rows
+        error = None
+        with patch.object(self.engine, '_load', side_effect=replace_after_load):
+            try:
+                self.engine.set_enabled(self.session, False)
+            except (ValueError, OSError) as caught:
+                error = caught
+        self.assertTrue(swapped, 'replacement between load and commit was not exercised')
+        self.assertEqual((retained / self.engine.path.name).read_bytes(), original)
+        self.assertEqual(self.engine.path.read_bytes(), sentinel,
+                         'stale transaction replaced a ledger in a substituted directory')
+        self.assertEqual([path.name for path in self.engine.directory.iterdir()],
+                         [self.engine.path.name], 'pending file leaked in replacement directory')
+        self.assertIsNotNone(error, 'directory replacement must reject the stale mutation')
+
     def test_project_root_replaced_before_lock_preserves_both_ledgers(self):
         self.enable()
         original = self.engine.path.read_bytes()

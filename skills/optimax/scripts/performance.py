@@ -18,7 +18,7 @@ levels, not complexity tiers. Assessments apply each prepared run's context floo
 Status never adopts. Explicit on returns unapplied orchestrator suggestions.
 """
 import argparse
-from contextlib import contextmanager, ExitStack
+from contextlib import contextmanager, ExitStack, nullcontext
 import csv
 from datetime import datetime, timezone
 import errno
@@ -128,6 +128,17 @@ def _projection(data):
             for field in PROJECTIONS}
 
 
+class _Access:
+    """Directory bindings owned by one locked transaction."""
+
+    def __init__(self, root_fd, guards):
+        self.root_fd = root_fd
+        self.guards = guards
+        self.directory_present = False
+        self.directory_fd = None
+        self.directory_identity = None
+
+
 class Engine:
     """Reserve settings and record independently reviewed execution receipts."""
 
@@ -146,7 +157,8 @@ class Engine:
     def _locked(self):
         if fcntl is None:
             with self._locked_windows():
-                yield None
+                with self._transaction(None) as access:
+                    yield access
             return
         descriptor = os.open(self.root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
         try:
@@ -154,7 +166,8 @@ class Engine:
             self._check_root_identity(descriptor)
             self._safe_paths()
             self._check_root_identity(descriptor)
-            yield descriptor
+            with self._transaction(descriptor) as access:
+                yield access
         finally:
             fcntl.flock(descriptor, fcntl.LOCK_UN)
             os.close(descriptor)
@@ -198,11 +211,40 @@ class Engine:
             raise ValueError("ledger must be a regular file")
 
     def _check_root_identity(self, root_fd=None):
+        if isinstance(root_fd, _Access):
+            root_fd = root_fd.root_fd
         current = self.root.stat(follow_symlinks=False)
         if (not stat.S_ISDIR(current.st_mode)
                 or not os.path.samestat(current, self._root_identity)
                 or (root_fd is not None and not os.path.samestat(current, os.fstat(root_fd)))):
             raise ValueError("project root changed during transaction")
+
+    @contextmanager
+    def _transaction(self, root_fd):
+        with ExitStack() as guards:
+            access = _Access(root_fd, guards)
+            self._check_root_identity(root_fd)
+            if sys.platform != "win32" or self.directory.exists():
+                try:
+                    self._bind_directory(access)
+                except FileNotFoundError:
+                    self._check_root_identity(root_fd)
+            yield access
+
+    def _bind_directory(self, access):
+        access.directory_fd = access.guards.enter_context(self._directory_guard(access.root_fd))
+        access.directory_identity = (os.fstat(access.directory_fd) if access.directory_fd is not None
+                                     else self.directory.stat(follow_symlinks=False))
+        access.directory_present = True
+
+    def _check_access(self, access):
+        self._check_root_identity(access.root_fd)
+        if access.directory_present:
+            directory = self.directory.name if access.root_fd is not None else self.directory
+            current = os.stat(directory, dir_fd=access.root_fd, follow_symlinks=False)
+            if (not stat.S_ISDIR(current.st_mode)
+                    or not os.path.samestat(current, access.directory_identity)):
+                raise ValueError("ledger directory changed during transaction")
 
     @contextmanager
     def _directory_guard(self, root_fd=None):
@@ -262,16 +304,14 @@ class Engine:
             raise ValueError("ledger directory changed during mutation")
 
     def _load(self, root_fd=None):
-        self._check_root_identity(root_fd)
-        if root_fd is None and not self.path.exists():
-            self._check_root_identity(root_fd)
+        if not isinstance(root_fd, _Access):
+            with self._transaction(root_fd) as access:
+                return self._load(access)
+        access = root_fd
+        self._check_access(access)
+        if not access.directory_present:
             return []
-        with ExitStack() as guards:
-            try:
-                directory_fd = guards.enter_context(self._directory_guard(root_fd))
-            except FileNotFoundError:
-                self._check_root_identity(root_fd)
-                return []
+        with nullcontext(access.directory_fd) as directory_fd:
             flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0)
             try:
                 if directory_fd is None:
@@ -333,16 +373,28 @@ class Engine:
                                             "policy_version": POLICY_VERSION})
 
     def _commit(self, rows, root_fd=None):
+        if not isinstance(root_fd, _Access):
+            with self._transaction(root_fd) as access:
+                return self._commit(rows, access)
+        access = root_fd
         self._safe_paths()
-        self._check_root_identity(root_fd)
-        if root_fd is None:
-            self.directory.mkdir(mode=0o700, exist_ok=True)
-        else:
+        self._check_access(access)
+        if not access.directory_present:
+            directory = self.directory.name if access.root_fd is not None else self.directory
             try:
-                os.mkdir(self.directory.name, mode=0o700, dir_fd=root_fd)
+                os.mkdir(directory, mode=0o700, dir_fd=access.root_fd)
             except FileExistsError:
+                raise ValueError("ledger directory appeared during transaction") from None
+            self._bind_directory(access)
+            try:
+                ledger = self.path.name if access.directory_fd is not None else self.path
+                os.stat(ledger, dir_fd=access.directory_fd, follow_symlinks=False)
+            except FileNotFoundError:
                 pass
-        with self._directory_guard(root_fd) as directory_fd:
+            else:
+                raise ValueError("ledger appeared before initial directory binding")
+        self._check_access(access)
+        with nullcontext(access.directory_fd) as directory_fd:
             if directory_fd is None:
                 descriptor, temporary = tempfile.mkstemp(prefix=".pending-", dir=self.directory)
             else:
@@ -357,9 +409,10 @@ class Engine:
                     stream.flush()
                     os.fsync(stream.fileno())
                 if directory_fd is None:
+                    self._check_access(access)
                     os.replace(temporary, self.path)
                 else:
-                    self._check_directory_identity(directory_fd, root_fd)
+                    self._check_access(access)
                     os.replace(temporary, self.path.name,
                                src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
                     os.fsync(directory_fd)
