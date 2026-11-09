@@ -16,7 +16,7 @@
     "assets/style.css": "edd12e6c11bb667d171655200ad3fa3f5ae1dbfd69e888012ae9d9a0da68464b",
     "assets/theme.js": "ffad2636c85ff8f235ef6bc8d34d462f9a36b34d5537a661b3819dfe6b114268",
     "favicon.svg": "02b1dbae84e3cbd45a293e616e7919b2387c480bbee40d7283937bf90628f6ab",
-    "help/advisor-ladder/index.html": "95920a2788374616bb66109ef3ec18e3ff15fefc5b36b8883d4deda77469a959",
+    "help/advisor-ladder/index.html": "4345fde7d5dc9337c4611126c5ac9324654782336d7b8f8785b401756c6b743b",
     "help/control-orchestrator/index.html": "a35c75d8254bfed0aed00b1ca9ec5bc12b0f820c80d6ddbb35099e6739bfdeeb",
     "help/executor-ladders/index.html": "710c9dec1b660c894e746cf02b385e3938f072c47926580902b01426b07d668e",
     "help/first-session/index.html": "a8b19c7a9be8b852bb1e2c75d7c0de6ce1c63e1333f9a63b0ffaec24489a4d63",
@@ -32,11 +32,11 @@
     "help/planning-and-advice/index.html": "e161cca6d5170dfd189b6d962b4c00aec69ca36771087f4832fdef14fed0090d",
     "help/roles-and-responsibilities/index.html": "c19e5ea1bda1e7e6fe40a77073c671dd6cf9cf45f18021bd60aa361fa74af137",
     "help/session-controls/index.html": "ada7c6e7f2c0491b50aac86a5fd51edceaae8df12a4833dac0b5d7a9bc51ca12",
-    "help/upgrades-and-safety/index.html": "1c583f5fbcf329db2340a96c3e0a224bcd8b51232487b5a5f6bd414ccda4c8f3",
+    "help/upgrades-and-safety/index.html": "cafd512b8af355c9fcab8ea4469040e420549e426903a2918f02856f5164a2bf",
     "help/what-is-optimax/index.html": "371a8a5d0eb1ef5d3ec9c98f6fdacd6e29b81a497e66178ba313c7e30d99e7c4",
     "index.html": "9d3b6ce188e9f3741030ce9ad5addce1f57ced1f86993d48f46f45eef6807aa3",
     "robots.txt": "c0dac49c50d42bbe67c13da3c47262f8cb124e8886cc3f21336a8e57c7d80c3e",
-    "search-index.json": "fcb33dfb26752adca283abd7a16848f1179ce7ba05fc4b046861cbc635d62002",
+    "search-index.json": "276583aaa185845174b64ae00d3053b289f3f66df865204a589c83226e3e22f9",
     "sitemap.xml": "aa11e1c74fa2b9b3a178f818d3e8f2b787ddeb9e0f9ad5dee46cf13036884496"
   },
   "https://alo-exp.github.io/optimax/": {
@@ -56,7 +56,7 @@
     "assets/style.css": "edd12e6c11bb667d171655200ad3fa3f5ae1dbfd69e888012ae9d9a0da68464b",
     "assets/theme.js": "ffad2636c85ff8f235ef6bc8d34d462f9a36b34d5537a661b3819dfe6b114268",
     "favicon.svg": "02b1dbae84e3cbd45a293e616e7919b2387c480bbee40d7283937bf90628f6ab",
-    "help/advisor-ladder/index.html": "608cf636d098b72d5dfaf24a7dba4ece944617d4c166f02a2008770d3ae17c9c",
+    "help/advisor-ladder/index.html": "918587d09c2413fdb38915ff37323a5df5c0e903feb84e0c4281adcff38de3ac",
     "help/control-orchestrator/index.html": "a6881b092e33fedf7afb3042df514f7830a2c162892fadf6c83de4d5acbbfeaf",
     "help/executor-ladders/index.html": "9e0cf50970394603f33adf5aee5e52b8e8eda8206668fa964862476a40a38023",
     "help/first-session/index.html": "3b51997f0d6ef6f354b1c2df92edea12f1fcd3a2292b4cc99a55cba05bf9a0fd",
@@ -72,11 +72,11 @@
     "help/planning-and-advice/index.html": "4fec8743245d65cd5279e3274a731cebce29ac57ce106c8f6f7a504554f43b75",
     "help/roles-and-responsibilities/index.html": "60c134f82dd4f51a73b1a886b5bda9cea08bcd4c9381418d9a947803f77cd270",
     "help/session-controls/index.html": "a47773391e7043efc417f450bf837d82ce37e62c75ab326fe79c5e24fca8eb9c",
-    "help/upgrades-and-safety/index.html": "9efabcfeeb28a78202eb6891ad854d2a9654ee20ef68ab67134a2bd5632a0cf0",
+    "help/upgrades-and-safety/index.html": "457bb73c1e7f49c58c43e81e531f1f0dcff960847076838063994a91e3abbd26",
     "help/what-is-optimax/index.html": "a0b10cb9838d5dde70691970c71a26d82824101a387f6324bd7359dee67e0628",
     "index.html": "6b603682b36d490095f7bbefddb73e27702e7b0bbfbc414f439c3e48e3cece14",
     "robots.txt": "eaff3bd8728527f27b0472490da464e4d3f6aa4ddadc7c2425876ffe4715faac",
-    "search-index.json": "fcb33dfb26752adca283abd7a16848f1179ce7ba05fc4b046861cbc635d62002",
+    "search-index.json": "276583aaa185845174b64ae00d3053b289f3f66df865204a589c83226e3e22f9",
     "sitemap.xml": "967930623d38cb0d7dab4a2fc6d8f223058d073e56682b22188f09498c6af53d"
   }
 }

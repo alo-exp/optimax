@@ -231,7 +231,7 @@
           "heading": "One track per host",
           "paragraphs": [
             "The Advisor has one performance track per host, with no complexity tier. The consultation context establishes a minimum rung: Medium is rung 0, High is rung 1, and Super High is rung 2.",
-            "For Claude the ladder is Opus Medium → Opus High → Opus XHigh → Opus Max. For Codex it is Sol XHigh → Sol Max → Astra Max. The selected Advisor can move with independent assessments, subject to the current consultation floor. Claude Opus Max is an escalation rung, not a fourth context level; availability must be verified on the host."
+            "Optimax 0.2.0 introduces policy v4 with the Claude Advisor ladder Opus Medium → Opus High → Opus XHigh → Opus Max. Optimax 0.1.1 retains policy v3 and its three-rung Claude ladder, ending at Opus XHigh. For Codex both policies use Sol XHigh → Sol Max → Astra Max. The selected Advisor can move with independent assessments, subject to the current consultation floor. In v4, Claude Opus Max is an escalation rung, not a fourth context level; availability must be verified on the host. Confirm your installed version and its release notes before relying on a rung described here."
           ]
         },
         {
@@ -492,7 +492,7 @@
           "heading": "Before and after an update",
           "paragraphs": [
             "Use your host's supported plugin update process, then refresh discovery and check $optimax status or /optimax:optimax status. Confirm the expected project root and stable user identity before relying on learned routing.",
-            "Keep PROJECTROOT/model-perf/<actual-user-id>-model-perf.csv and any historical evidence. An upgrade, reinstall, or off command must not delete the ledger. In policy v4, Executor and Codex Advisor history continues while Claude Advisor begins a fresh selection and epoch at the next consultation floor. Earlier events remain auditable, and late v3 Claude Advisor receipts do not enter the v4 lineage."
+            "Keep PROJECTROOT/model-perf/<actual-user-id>-model-perf.csv and any historical evidence. An upgrade, reinstall, or off command must not delete the ledger. Optimax 0.1.1 uses policy v3. Updating to Optimax 0.2.0 introduces policy v4: Executor and Codex Advisor history continues while Claude Advisor begins a fresh selection and epoch at the next consultation floor. Earlier events remain auditable, and late v3 Claude Advisor receipts do not enter the v4 lineage. After updating, the controller adopts v4 through explicit adopt-policy or the next successful prepare operation. Status is read-only, and updating the software alone does not rewrite the ledger. Reading this website does not update your installed policy; confirm the installed version after updating."
           ]
         },
         {
