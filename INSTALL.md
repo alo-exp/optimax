@@ -43,6 +43,8 @@ python3 skills/optimax/scripts/install_local.py --archive /path/to/optimax-skill
 
 The installer validates the archive, requires an existing parent, refuses existing destinations and installs runtime files only. It does not overwrite a previous installation. Inspect an existing destination before updating. Refresh the host's discovery after installation. Avoid simultaneously loading standalone and packaged copies as separate orchestrators.
 
+Keep the destination parent and new installation tree under exclusive control until installation finishes. Concurrent replacement of directories is unsupported; pathname checks do not provide confinement against another actor mutating the tree.
+
 Installation does not enable the session policy. Establish your actual stable user ID and canonical project root on first use; private learning stays under that project's `model-perf/` directory. Skill off does not uninstall the plugin or change native mode settings. A sandbox that cannot write your host configuration or skill directory cannot complete a global installation; run the appropriate command in an authorized host session.
 
 On Windows, use an available Python 3 interpreter for the installer and controller. Controllers for the same project must share the same resolved user profile and be able to write its `~/.optimax/locks` cache. Network filesystems remain unsupported. Windows compatibility has portable regression coverage on POSIX; native Windows installation and execution remain untested.

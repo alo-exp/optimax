@@ -17,6 +17,57 @@ REQUIRED = {
 }
 EXCLUDED = {'tests', 'model-perf', '.git', '__pycache__'}
 
+# Reject common YAML implicit non-string scalars in the supported plain subset.
+NONSTRING_SCALAR = re.compile(
+    r'''(?:[+-]?(?:[0-9][0-9_]*(?::[0-9_]+)*(?:\.[0-9_]*)?(?:[eE][+-]?[0-9]+)?
+        |\.[0-9_]+(?:[eE][+-]?[0-9]+)?|0[xX][0-9a-fA-F_]+|0[bB][01_]+|\.inf)
+        |\.nan|[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}(?:[Tt \t].*)?)''',
+    re.IGNORECASE | re.VERBOSE,
+)
+
+
+# This is the installer's supported single-line plain scalar subset, not a YAML parser.
+def _supported_plain_scalar(value):
+    return (bool(value)
+            and value[0] not in "\"'|>!&*{}[],#%@`"
+            and not (value[0] in '-?:' and (len(value) == 1 or value[1] == ' '))
+            and not re.search(r':(?: |$)| #', value)
+            and value not in ('=', '<<'))
+
+
+def _supported_header_character(ch):
+    code = ord(ch)
+    return (code >= 0x20 and not 0x7f <= code <= 0x9f
+            and not 0xd800 <= code <= 0xdfff
+            and not 0xfdd0 <= code <= 0xfdef
+            and code & 0xffff not in (0xfffe, 0xffff)
+            and code not in (0x2028, 0x2029))
+
+
+def _validate_skill_frontmatter(skill):
+    raw_lines = skill.split('\n')
+    lines = [line[:-1] if line.endswith('\r') and i < len(raw_lines) - 1 else line
+             for i, line in enumerate(raw_lines)]
+    if not lines or lines[0] != '---':
+        raise ValueError('SKILL.md must start with frontmatter')
+    try:
+        end = lines.index('---', 1)
+    except ValueError:
+        raise ValueError('SKILL.md frontmatter must be closed') from None
+    fields = {}
+    for line in lines[1:end]:
+        if not all(_supported_header_character(ch) for ch in line):
+            raise ValueError('SKILL.md frontmatter contains unsupported characters')
+        match = re.fullmatch(r'(name|description): +(.*)', line)
+        if not match or match.group(1) in fields:
+            raise ValueError('SKILL.md frontmatter must use unique plain name and description fields')
+        fields[match.group(1)] = match.group(2).strip(' ')
+    description = fields.get('description', '')
+    if (fields.get('name') != 'optimax' or not _supported_plain_scalar(description)
+            or description.casefold() in ('null', 'true', 'false', 'yes', 'no', 'on', 'off', '~')
+            or NONSTRING_SCALAR.fullmatch(description)):
+        raise ValueError('SKILL.md must name optimax and have a nonempty plain description')
+
 
 def _manifest(z):
     files = {}
@@ -56,9 +107,7 @@ def _manifest(z):
         skill_bytes = z.read(files['SKILL.md'])
     except (RuntimeError, NotImplementedError) as exc:
         raise ValueError(f'unreadable archive entry SKILL.md: {exc}') from exc
-    skill = skill_bytes.decode('utf-8')
-    if not re.match(r'\A---\s*\n(?:(?!---\s*$).*\n)*?name:\s*optimax\s*$', skill, re.MULTILINE):
-        raise ValueError('SKILL.md must name optimax')
+    _validate_skill_frontmatter(skill_bytes.decode('utf-8'))
     for info in files.values():
         try:
             with z.open(info) as stream:

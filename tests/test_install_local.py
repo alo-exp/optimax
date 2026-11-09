@@ -78,6 +78,121 @@ class InstallTests(unittest.TestCase):
             installer.install(self.zip, self.dest)
         self.assertFalse(self.dest.exists())
 
+    def test_invalid_skill_frontmatter_is_rejected_before_destination_creation(self):
+        cases = {
+            'unclosed': '---\nname: optimax\ndescription: Useful skill\n',
+            'missing description': '---\nname: optimax\n---\nBody\n',
+            'blank description': '---\nname: optimax\ndescription:   \n---\nBody\n',
+            'name in body': '---\ndescription: Useful skill\n---\nname: optimax\n',
+            'description in body': '---\nname: optimax\n---\ndescription: Useful skill\n',
+            'quoted empty': '---\nname: optimax\ndescription: ""\n---\n',
+            'null': '---\nname: optimax\ndescription: null\n---\n',
+            'boolean': '---\nname: optimax\ndescription: true\n---\n',
+            'block': '---\nname: optimax\ndescription: >\n  Useful skill\n---\n',
+            'duplicate name': '---\nname: optimax\nname: optimax\ndescription: Useful skill\n---\n',
+            'duplicate description': '---\nname: optimax\ndescription: One\ndescription: Two\n---\n',
+        }
+        for index, (case, skill) in enumerate(cases.items()):
+            with self.subTest(case=case):
+                dest = self.base / f'invalid-{index}'
+                archive(self.zip, omit=('SKILL.md',), extras=(('optimax/SKILL.md', skill),))
+                with self.assertRaises(ValueError):
+                    installer.install(self.zip, dest)
+                self.assertFalse(dest.exists())
+
+    def test_canonical_skill_frontmatter_accepts_lf_and_crlf(self):
+        skill = (ROOT / 'SKILL.md').read_text(encoding='utf-8')
+        for newline in ('\n', '\r\n'):
+            with self.subTest(newline=repr(newline)):
+                dest = self.base / ('lf' if newline == '\n' else 'crlf')
+                archive(self.zip, omit=('SKILL.md',), extras=(('optimax/SKILL.md', skill.replace('\n', newline)),))
+                installer.install(self.zip, dest)
+                self.assertTrue((dest / 'SKILL.md').is_file())
+
+    def test_plain_description_must_be_a_string(self):
+        for index, value in enumerate(('yes', 'NO', 'on', 'Off', '123', '-1.5', '0xFF', '.nan', '.Inf', '2026-11-09', '*alias')):
+            with self.subTest(value=value):
+                dest = self.base / f'nonstring-{index}'
+                skill = f'---\nname: optimax\ndescription: {value}\n---\n'
+                archive(self.zip, omit=('SKILL.md',), extras=(('optimax/SKILL.md', skill),))
+                with self.assertRaises(ValueError):
+                    installer.install(self.zip, dest)
+                self.assertFalse(dest.exists())
+
+    def test_plain_description_accepts_ordinary_text(self):
+        for index, value in enumerate(('Café & tea.', '123 useful tools!', 'yes, a useful skill', 'v1.2', '日本語の説明')):
+            with self.subTest(value=value):
+                dest = self.base / f'text-{index}'
+                skill = f'---\nname: optimax\ndescription: {value}\n---\n'
+                archive(self.zip, omit=('SKILL.md',), extras=(('optimax/SKILL.md', skill),))
+                installer.install(self.zip, dest)
+                self.assertTrue((dest / 'SKILL.md').is_file())
+
+    def test_plain_description_rejects_yaml_syntax_before_destination_creation(self):
+        values = ('-', '?', ':', '=', '<<', '- item', '? item',
+                  'foo:\tbar', 'foo:', 'foo\t# note', 'nul\x00text')
+        for index, value in enumerate(values):
+            with self.subTest(value=repr(value)):
+                dest = self.base / f'bad-plain-{index}'
+                skill = f'---\nname: optimax\ndescription: {value}\n---\n'
+                archive(self.zip, omit=('SKILL.md',), extras=(('optimax/SKILL.md', skill),))
+                with self.assertRaises(ValueError):
+                    installer.install(self.zip, dest)
+                self.assertFalse(dest.exists())
+
+    def test_plain_description_accepts_yaml_safe_punctuation(self):
+        for index, value in enumerate(('-fast', '?question', 'x:y', 'a#b', '日本語', '123 useful')):
+            with self.subTest(value=value):
+                dest = self.base / f'safe-plain-{index}'
+                skill = f'---\nname: optimax\ndescription: {value}\n---\n'
+                archive(self.zip, omit=('SKILL.md',), extras=(('optimax/SKILL.md', skill),))
+                installer.install(self.zip, dest)
+                self.assertTrue((dest / 'SKILL.md').is_file())
+
+    def test_raw_frontmatter_rejects_tabs_and_controls_before_install(self):
+        headers = ('name:\toptimax\ndescription: Useful',
+                   'name: optimax\tdescription\ndescription: Useful',
+                   'name: optimax\ndescription:\tUseful',
+                   'name: optimax\ndescription: Useful\ttool',
+                   'name: optimax\ndescription: Useful\x1f')
+        for index, header in enumerate(headers):
+            with self.subTest(header=repr(header)):
+                dest = self.base / f'bad-control-{index}'
+                archive(self.zip, omit=('SKILL.md',), extras=(('optimax/SKILL.md', f'---\n{header}\n---\n'),))
+                with self.assertRaises(ValueError):
+                    installer.install(self.zip, dest)
+                self.assertFalse(dest.exists())
+
+    def test_frontmatter_requires_space_after_field_colon(self):
+        headers = ('name:optimax\ndescription: Useful',
+                   'name: optimax\ndescription:Useful')
+        for index, header in enumerate(headers):
+            with self.subTest(header=header):
+                dest = self.base / f'no-separator-{index}'
+                archive(self.zip, omit=('SKILL.md',), extras=(('optimax/SKILL.md', f'---\n{header}\n---\n'),))
+                with self.assertRaises(ValueError):
+                    installer.install(self.zip, dest)
+                self.assertFalse(dest.exists())
+
+    def test_plain_description_preserves_non_ascii_space(self):
+        for index, value in enumerate(('a:\u00a0b', 'a\u00a0#b', '-\u00a0word', '日本語', '\u00a0null', 'null\u00a0')):
+            with self.subTest(value=value):
+                dest = self.base / f'non-ascii-space-{index}'
+                skill = f'---\nname: optimax\ndescription: {value}\n---\n'
+                archive(self.zip, omit=('SKILL.md',), extras=(('optimax/SKILL.md', skill),))
+                installer.install(self.zip, dest)
+                self.assertEqual((dest / 'SKILL.md').read_text(encoding='utf-8'), skill)
+
+    def test_name_with_non_ascii_space_is_not_optimax(self):
+        for index, name in enumerate(('\u00a0optimax', 'optimax\u00a0')):
+            with self.subTest(name=name):
+                dest = self.base / f'bad-name-space-{index}'
+                skill = f'---\nname: {name}\ndescription: Useful\n---\n'
+                archive(self.zip, omit=('SKILL.md',), extras=(('optimax/SKILL.md', skill),))
+                with self.assertRaises(ValueError):
+                    installer.install(self.zip, dest)
+                self.assertFalse(dest.exists())
+
     def test_malformed_missing_wrong_name_and_unsafe_archives_fail(self):
         for kind in ('malformed', 'missing', 'name', 'traversal', 'symlink', 'duplicate', 'unexpected'):
             with self.subTest(kind=kind):
