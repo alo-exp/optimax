@@ -1,0 +1,78 @@
+# Review Ladder: independent baseline and reference comparison
+
+Compared on 2026-11-09. This document recommends bounded refinements to the portable Optimax review skill; it does not activate either workflow or change its policy.
+
+## Sources and independence
+
+The Optimax skill was created and committed before the Silver Bullet reference was read for this comparison. Preserve that baseline and distinguish later adaptations from independently present design.
+
+| Source | Exact version | Scope examined |
+| --- | --- | --- |
+| Optimax [Review Ladder](../skills/review-ladder/SKILL.md) | Baseline commit `1aea5d76c9eca13de47c4a4ad6315323bc6c53b1`, committed 2026-11-09; SHA-256 `5b9d37965cd9e62d526dfc44559f2d0ce42c2970bfc20b9ec921d42d800f015e` | Entire 91-line file, including front matter; final newline present |
+| Installed Silver Bullet `silver:review-fix-ladder` skill (“SB” below) | SHA-256 `77ad2996cf0b3772e426c92d55f48590635081c28604e00fe96c8e3013fa088c`, observed 2026-11-09 | Entire 620-line file: Policies A–G, state machine, recovery, host routing, quota handling, and all prompt templates |
+
+The installed SB file has no discoverable Git revision in its containing directory. Its content hash identifies the comparison snapshot; the observation date is not a claimed publication date. SB line references below refer to that exact snapshot. Optimax links resolve within this repository, and Optimax line references refer to the independent baseline above. No SB helpers, hooks, resolver, approval gate, PM integration, or review loop were executed. This comparison evaluates instructions, not the runtime correctness of SB's supporting implementation.
+
+## Keep the independently established core
+
+These mechanisms were already in the Optimax baseline. Their overlap with SB is corroborating design evidence, not a reason to attribute them as borrowed.
+
+| Mechanism | Optimax baseline evidence | SB reference evidence | Decision |
+| --- | --- | --- | --- |
+| Explicit contract, scope, exclusions, candidate and acceptance criteria | Establish the contract, lines 14–26 | Resolve Scope / Derive Review Charter, lines 212–255 | Keep. Optimax also captures delivery, budget and runtime capability limits. |
+| Read-only reviewers; independent orchestrator triage and acceptance | Partition and launch / Triage, lines 28–54 | Policies A–B, lines 32–64; Templates A/A2, lines 498–558 | Keep role separation. Do not import SB's parent-only repair exception. |
+| Every rung uses two consecutive clean passes; a confirmed issue resets the current rung | Two-clean-pass progression, lines 56–67 | Policy F, lines 154–176 | Keep the exact Optimax `0/2 → 1/2 → 2/2` rule. A pass containing an accepted fix never counts clean. |
+| Fresh invocations and complete coverage, with incomplete work excluded from clean evidence | Partition and launch, lines 30–44; progression, lines 58–63 | Separate verify invocations / anti-skip rules, lines 284, 343–364 | Keep. SB's review streak and extra verify overlay are separate mechanisms; do not confuse either with Optimax's two full clean passes. |
+| Candidate identity, change invalidation and honest coverage | Lines 18, 38, 65–67, 71–77 | Unchanged-SHA Policy F, line 29; current-freeze ledger, lines 190–202 | Keep Optimax's explicit dependency-based revisit policy. SB does not supply an equivalent explicit affected-earlier-rung invalidation rule in the inspected skill. |
+| Run required checks and independently inspect evidence | Repair checks / final candidate, lines 50–77 | Orchestrator signals and close-out, lines 285, 403–415, 611–620 | Keep. Exact automated behavior tests and required checks remain stronger evidence than pattern checks alone. |
+| Runtime model/effort discovery and honest incomplete-rung reporting | Lines 20–26, 40–44 | Resolver/model lock, lines 257–269, 368; host notes, lines 419–493 | Keep the portable rule, with no copied model catalog or unverified runtime setting. |
+| Meaningful updates, finding disposition, coverage and limitations | Evidence and updates, lines 80–91 | Policies C–D, lines 74–131; close-out, lines 403–415 | Keep existing reporting obligations; make the useful additions below compact. |
+
+Optimax additionally already requires behavioral TDD with observed red/green evidence, diagnosis after two unsuccessful repair cycles, a fresh highest-rung full-scope review of the exact final candidate, and verification of already authorized delivery. These are explicit baseline requirements, not additions derived from SB. The inspected SB skill does not explicitly specify that same final-candidate review-and-delivery sequence.
+
+## Borrow or adapt narrowly
+
+The reference supplies useful operational detail in five areas. Add these as short instructions and ordinary report fields, subject to the existing contract and governing host policy. They do not justify a new subsystem.
+
+| Recommendation | Source evidence | Actual baseline gap and proposed adaptation | Acceptance criterion |
+| --- | --- | --- | --- |
+| Make the charter's requirement sources and locked decisions explicit | SB Derive Review Charter, lines 237–255; Policy A allowed rejection reasons, lines 40–49; Policy E bullets, lines 139–146 | Optimax already asks for raw requirements and exclusions but does not explicitly tell reviewers to preserve accepted decisions. Add a short charter statement naming authoritative requirements, locked decisions and their evidence; note assumptions when context is thin. Use whatever project artifacts exist. | A reviewer can distinguish a defect from an intentional, authorized decision without reopening settled choices. A lock cannot excuse behavior that violates a newer governing requirement. |
+| Give findings stable identities and carry their dispositions forward | SB Policy G, lines 186–204; Template A, lines 514–531 | Optimax requests run IDs and finding dispositions, but no stable finding identifier. Assign a stable ID when first triaged and carry the trigger, location, disposition, candidate and resolution evidence into subsequent briefs through the ordinary report. | Duplicate reports map to the existing finding; changed or recurring defects can reopen with evidence. IDs identify issues, not reviewer invocations. No assessment sidecar or second score ledger is created. |
+| Request all residual findings in the assigned scope, without anchoring away regressions | SB Policy G, lines 188–204; Template A, lines 517–531 | Optimax's full-scope pass already rules out a deliberately partial pass, but an explicit all-residual instruction prevents one-finding-per-round churn. Ask for every actionable finding discovered within the work limit, across severities. Carry prior dispositions for deduplication while requiring reviewers to verify claimed fixes and inspect the full assigned scope afresh. | No one-finding cap; no severity-only omission of a confirmed contract defect; no blanket “do not inspect previous findings” rule. Incomplete review is reported, not counted clean. |
+| Expand repeated-defect diagnosis into a bounded class-wide check | SB Policy B, lines 68–71; between-verify instructions, line 620 | Optimax already diagnoses after two unsuccessful repair cycles. Make the next step explicit when the evidence shows recurrence: search the authorized scope for the same root-cause class and repair the relevant live instances in a bounded batch, with dependent changes ordered and disjoint ownership where possible. | The diagnosis explains the shared cause and searched boundary. Behavior changes still satisfy TDD before production edits. Do not sweep unrelated files or broaden authorization by implication. |
+| Use compact completion and coverage matrices | SB Policy D, lines 119–131; close-out, lines 407–415 | Optimax already lists the necessary evidence but leaves presentation open. Add a compact rung table and goal-to-evidence table to the ordinary task report when they aid review. Suggested rung fields: actual model/effort, candidate, covered scope, streak, findings reported/confirmed/closed, blocker. | Counts state whether they count unique finding IDs or review observations; totals do not double-count recurring IDs. Scoped revisits stay visibly scoped. Evidence gaps and remaining delivery work remain explicit. |
+
+Batching confirmed repairs should follow dependency and ownership boundaries. SB's “pack APPLY” idea (lines 190–204, 570–579) helps prevent serial one-line churn, but does not justify one large unreviewable patch, concurrent conflicting writes, or bypassing the smallest meaningful red/green cycle.
+
+## Decline incompatible machinery and policy
+
+| SB mechanism | Exact reference | Why it should not enter portable Optimax |
+| --- | --- | --- |
+| Mandatory new user approval before launching, persisted in a dedicated approval artifact | Policy E, lines 133–152; state-machine gate, lines 290, 376, 382 | Optimax already requires explicit invocation and an authorized scope. Requiring an additional approval for every new ladder or materially changed brief would override its instruction to ask only for genuinely missing authority or scope. Summarize the contract and continue within existing authorization. |
+| Launcher personally applies all fixes | Policy B, lines 55–64; lines 374, 560–579 | Governing policy assigns substantive work to bounded helpers and retains independent orchestrator acceptance. Keep reviewers read-only and delegate repairs under implementation policy; do not import a framework-specific exception. |
+| Exactly one Task per turn, no reviewer subdelegation or parallel work | Lines 345, 386–392, 535, 608 | The host policy calls for maximum useful independent parallelism. Keep ordered rung progression, frozen review candidates, and serialized conflicting writes. Within each rung, retain independent parallel partitions and cross-boundary coverage. |
+| Hardcoded fallback family, retry-then-skip advancement and automatic scheduled retries | Lines 72, 296, 368; host/quota notes, lines 419–493 | A different family or effort does not establish coverage of the contracted rung. Optimax reports inaccessible or unverifiable rungs as incomplete and allows useful independent work; a revised contract requires real authorization. Timers, external-host installs, quota fallbacks and reset redemption are separate capabilities and authority, not automatic review side effects. |
+| Copying host-specific model slugs, subscription routes or product names as effort settings | Lines 421–474, 478–480 | Resolve the current Optimax ladder and actual supported runtime settings. SB itself warns that OpenCode “Max” product names are not effort tiers. A caller label, alias or requested setting cannot establish provider execution settings. |
+| Encoder-only briefs, mandatory JSON/Markdown report pairs, hooks, `.planning` state and PM filing | Policies C/G, lines 76–116, 195–204; gates, lines 273–290; PM integration, lines 282, 350, 388 | These depend on SB code and workspace conventions and add a framework dependency to a portable skill. Use ordinary task evidence and existing artifacts. Under this host, maintain only the canonical five-column `subagent-model-scores.csv` for assessment; do not create competing assessment sidecars. Review evidence may live in an ordinary task report and must not become a second scoring store. |
+| Additional verify-overlay invocations after review passes | Lines 178–184, 284, 297–298, 347–357 | SB explicitly combines two clean review outcomes with a separate verify overlay. Optimax's agreed contract is two complete clean passes per rung, required checks, and an additional fresh highest-rung review of the exact final candidate. Importing the overlay increases cost and changes that contract without a demonstrated evidence gap. Add a targeted check only when a concrete unresolved risk requires it. |
+| Absolute prohibition on reads and tests outside scoped file paths | Scope Lock, lines 231–235; lines 286, 366 | Scope should bound the authorized review and edits while allowing necessary governing instructions, dependency inspection and required integration checks. If a check requires genuinely unauthorized access or scope expansion, report the need. Do not adopt a rule that makes the already required integrated checks impossible. |
+| “Every finding that is not wrong” as an unlimited improvement mandate | Policy A, lines 34–51; lines 64, 359, 571–579 | A review must use agreed requirements and measurable acceptance criteria. A valid observation may describe an optional preference or an out-of-scope improvement. Record and explain that disposition; do not silently turn it into a defect, expand the contract, or suppress a real in-scope defect because its severity is low. Unresolved in-scope defects still prevent clean completion. |
+| Fixed five-cycle halt and mandatory user escalation | Lines 70–71, 319, 620 | SB already requires a class-wide sweep after the same defect class fails verification more than twice; its five-cycle halt is a separate escalation cap, not permission for five blind retries. Keep Optimax's diagnosis after two unsuccessful repair-and-verification cycles and adapt the class-wide search when justified. A fixed five-cycle user halt is unnecessary for the portable skill: honor the agreed stop/report conditions, revise the approach based on evidence, and escalate when a real blocker or missing authority requires it. |
+
+## Preserve the progression and final-candidate contract
+
+The comparison should not change these agreed rules:
+
+1. A confirmed finding resets the **current rung** to `0/2`; ordinary repairs continue at that rung.
+2. A later change invalidates only the earlier coverage its behavior/dependency impact affects. Re-establish two clean passes for those affected scopes/rungs; preserve unrelated evidence and disclose each reviewed revision.
+3. Restart the whole sweep only when broad changes make most prior evidence unreliable, with an explanation.
+4. Finish with the full required checks and an additional fresh highest-contracted-rung review of the exact unchanged final candidate. A new finding repeats repair, affected coverage, checks and final review.
+5. An inaccessible rung, unknown runtime setting, budget stop, incomplete partition or unresolved required check yields an incomplete sweep. Publication remains governed by the user's actual authority and must be verified when required.
+
+These rules already appear in Optimax lines 56–77. SB Policy F supports the current-rung reset; its extra verify overlay, skipped-rung path and supporting artifacts should not replace the agreed Optimax semantics.
+
+## Recommended implementation boundary
+
+Prefer one small documentation revision to the skill: explicit locked-decision inputs, stable finding IDs with deduplication and reopening, all-residual reporting, class-wide diagnosis when justified, and a compact optional report matrix. Retain existing candidate, runtime, TDD, invalidation, assessment and delivery rules. No controller mode, new ledger, script, hook, scheduled job, host remapping, model catalog or approval artifact is needed for those refinements.
+
+This comparison is documentation-only. Validate source hashes, line references, relative links, table structure, whitespace and absence of private machine paths. A subsequent change to executable behavior requires its own red → green → refactor evidence; no executable TDD cycle is claimed for this document.
