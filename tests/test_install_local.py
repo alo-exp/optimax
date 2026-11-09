@@ -1,5 +1,6 @@
 import importlib.util
 from pathlib import Path
+import struct
 import subprocess
 import sys
 import tempfile
@@ -176,6 +177,26 @@ class InstallTests(unittest.TestCase):
         run = subprocess.run([sys.executable, str(ROOT / 'scripts/install_local.py'), '--archive', str(self.zip), '--dest', str(self.dest)], capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertTrue((self.dest / 'SKILL.md').is_file())
+
+    def test_cli_reports_unreadable_required_skill_without_traceback(self):
+        for kind in ('encrypted', 'unsupported compression'):
+            with self.subTest(kind=kind):
+                archive(self.zip)
+                data = bytearray(self.zip.read_bytes())
+                central = data.index(b'PK\x01\x02')
+                # SKILL.md is the first entry: alter its local and central headers.
+                if kind == 'encrypted':
+                    struct.pack_into('<H', data, 6, 1)
+                    struct.pack_into('<H', data, central + 8, 1)
+                else:
+                    struct.pack_into('<H', data, 8, 99)
+                    struct.pack_into('<H', data, central + 10, 99)
+                self.zip.write_bytes(data)
+                run = subprocess.run([sys.executable, str(ROOT / 'scripts/install_local.py'), '--archive', str(self.zip), '--dest', str(self.dest)], capture_output=True, text=True)
+                self.assertEqual(run.returncode, 1)
+                self.assertTrue(run.stderr.startswith('installation failed:'), run.stderr)
+                self.assertNotIn('Traceback', run.stderr)
+                self.assertFalse(self.dest.exists())
 
 
 if __name__ == '__main__': unittest.main()

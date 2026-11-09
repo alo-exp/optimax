@@ -52,12 +52,19 @@ def _manifest(z):
         files[rel] = info
     missing = REQUIRED - files.keys()
     if missing: raise ValueError(f'missing required runtime files: {sorted(missing)}')
-    skill = z.read(files['SKILL.md']).decode('utf-8')
+    try:
+        skill_bytes = z.read(files['SKILL.md'])
+    except (RuntimeError, NotImplementedError) as exc:
+        raise ValueError(f'unreadable archive entry SKILL.md: {exc}') from exc
+    skill = skill_bytes.decode('utf-8')
     if not re.match(r'\A---\s*\n(?:(?!---\s*$).*\n)*?name:\s*optimax\s*$', skill, re.MULTILINE):
         raise ValueError('SKILL.md must name optimax')
     for info in files.values():
-        with z.open(info) as stream:
-            while stream.read(65536): pass
+        try:
+            with z.open(info) as stream:
+                while stream.read(65536): pass
+        except (RuntimeError, NotImplementedError) as exc:
+            raise ValueError(f'unreadable archive entry {info.filename}: {exc}') from exc
     return files
 
 
