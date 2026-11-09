@@ -58,6 +58,28 @@ def _string(value, label):
     if not isinstance(value, str) or not value.strip() or len(value) > 4096:
         raise ValueError(label + " must be a nonempty string of at most 4096 characters")
 
+def _validate_mode(platform, mode):
+    if mode not in ("direct", "codex-ultra", "claude-ultracode"):
+        raise ValueError("invalid mode")
+    if mode != "direct" and not mode.startswith(platform + "-"):
+        raise ValueError("mode must match platform")
+
+
+def _validate_capabilities(validation, models):
+    selection = recommend(validation)
+    if not isinstance(models, dict):
+        raise ValueError("models must map logical family to resolved exact model ID")
+    track = validation["track"]
+    ladders, _ = policy(validation.get("policy_version", POLICY_VERSION))
+    ladder = ladders[(track["platform"], track["role"])]
+    for step in validation["available_steps"]:
+        family = ladder[step][0]
+        if family not in models:
+            raise ValueError("models must resolve every available family")
+        _string(models[family], "exact model ID")
+    return selection
+
+
 
 def _validate_assessment_request(request):
     for field in ("run_id", "effective_model_id", "effective_effort", "execution_id"):
@@ -290,6 +312,7 @@ class Engine:
                                 or data["context_floor"] != track["context_floor"]
                                 or data["advice_level"] != track["advice_level"]):
                             raise ValueError("launch Advisor context differs from prepared context")
+                    self._validate_launch(data, state, run_policy)
                     state["runs"][run_id] = dict(data, policy_version=run_policy)
                     track.update(models=data["models"], available_steps=data["available_steps"])
                 elif event == "assessment":
@@ -326,6 +349,22 @@ class Engine:
         except (KeyError, TypeError, IndexError):
             raise ValueError("corrupt ledger event structure") from None
         return state
+
+    def _validate_launch(self, data, state, run_policy):
+        for field in ("run_id", "session", "user_id", "session_generation"):
+            _string(data[field], "stored " + field)
+        session = state["sessions"].get(data["session"], {})
+        if (data["user_id"] != self.user or not session.get("enabled", False)
+                or data["session_generation"] != session.get("generation")):
+            raise ValueError("invalid stored launch provenance")
+        _validate_mode(data["platform"], data["mode"])
+        validation = dict(track=data, available_steps=data["available_steps"],
+                          assessments=[], policy_version=run_policy,
+                          advice_level=data.get("advice_level", "medium"))
+        _validate_capabilities(validation, data["models"])
+        if (data["step"] not in data["available_steps"]
+                or data["models"][data["family"]] != data["model_id"]):
+            raise ValueError("stored launch does not match capabilities")
 
     def _validate_transition(self, rows, index, data, state, version, ladders):
         key = _key(data)
@@ -552,10 +591,7 @@ class Engine:
                 raise ValueError("invalid executor tier")
             if advice_level is not None or purpose is not None or complexity is not None or needed:
                 raise ValueError("consultation context is Advisor-only")
-        if mode not in ("direct", "codex-ultra", "claude-ultracode"):
-            raise ValueError("invalid mode")
-        if mode != "direct" and not mode.startswith(platform + "-"):
-            raise ValueError("mode must match platform")
+        _validate_mode(platform, mode)
         ladder = _LADDERS[(platform, role)]
         floor = ADVICE_FLOORS[advice_level] if role == "advisor" else _FLOORS[platform][tier]
         provisional = dict(platform=platform, role=role, tier=tier, step=floor,
@@ -563,14 +599,7 @@ class Engine:
         validation = dict(track=provisional, available_steps=available_steps, assessments=[])
         if role == "advisor":
             validation["advice_level"] = advice_level
-        recommend(validation)
-        if not isinstance(models, dict):
-            raise ValueError("models must map logical family to resolved exact model ID")
-        for step in available_steps:
-            family = ladder[step][0]
-            if family not in models:
-                raise ValueError("models must resolve every available family")
-            _string(models[family], "exact model ID")
+        _validate_capabilities(validation, models)
         models = json.loads(_json(models))
         available_steps = list(available_steps)
         with self._locked():

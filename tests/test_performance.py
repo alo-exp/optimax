@@ -485,6 +485,60 @@ class PerformanceTests(unittest.TestCase):
             Engine(self.root, "actual-user").status(self.session)
         self.assertEqual(self.engine.path.read_bytes(), corrupted)
 
+    def test_replay_rejects_corrupt_launch_snapshots_before_read_or_mutation(self):
+        self.enable()
+        self.prepare()
+        original = self.engine.path.read_bytes()
+        cases = {
+            "empty_available": ("available_steps", []),
+            "duplicate_available": ("available_steps", [0, 0]),
+            "boolean_available": ("available_steps", [0, True]),
+            "out_of_range_available": ("available_steps", [0, 7]),
+            "current_step_unavailable": ("available_steps", [1, 2]),
+            "empty_models": ("models", {}),
+            "missing_available_family": ("models", {"terra": "terra-v1"}),
+            "nonstring_model": ("models", {"terra": "terra-v1", "sol": 123}),
+            "selected_model_mismatch": ("models", {"terra": "different", "sol": "sol-v1"}),
+            "invalid_mode": ("mode", "fabricated"),
+            "cross_platform_mode": ("mode", "claude-ultracode"),
+            "empty_run": ("run_id", ""),
+            "empty_session": ("session", ""),
+            "empty_user": ("user_id", ""),
+            "foreign_user": ("user_id", "different-user"),
+            "empty_generation": ("session_generation", ""),
+            "stale_generation": ("session_generation", "old-generation"),
+            "disabled_session": (None, None),
+        }
+        for case, (field, value) in cases.items():
+            for operation in ("status", "disable"):
+                with self.subTest(case=case, operation=operation):
+                    self.engine.path.write_bytes(original)
+                    rows = self.events()
+                    launch = next(row for row in rows if row["event_type"] == "launch")
+                    if case == "disabled_session":
+                        next(row for row in rows if row["event_type"] == "session")["data"]["enabled"] = False
+                    else:
+                        launch["data"][field] = value
+                        if field == "run_id":
+                            launch["run_id"] = value
+                    self.write_events(rows)
+                    corrupted = self.engine.path.read_bytes()
+                    with self.assertRaises(ValueError):
+                        if operation == "status":
+                            Engine(self.root, "actual-user").status(self.session)
+                        else:
+                            self.engine.set_enabled(self.session, False)
+                    self.assertEqual(self.engine.path.read_bytes(), corrupted)
+
+    def test_replay_accepts_changed_launch_capabilities_at_same_rung(self):
+        self.enable()
+        first = self.prepare()
+        second = self.prepare(models={"terra": "terra-v1", "sol": "sol-v2"},
+                              available_steps=[0, 3, 6])
+        self.assertEqual(first["epoch"], second["epoch"])
+        self.assertEqual(Engine(self.root, "actual-user").status(self.session)["tracks"][0]["available_steps"],
+                         [0, 3, 6])
+
     def test_valid_transition_retries_survive_restart_and_later_advances(self):
         self.enable()
         first_runs = [self.prepare() for _ in range(5)]
