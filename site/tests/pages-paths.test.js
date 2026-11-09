@@ -93,7 +93,7 @@ test('article links respect the deployment boundary and leave external URLs and 
   assert.throws(()=>buildContent(bad,{basePath:'/optimax/'}),/Invalid link/);
  }
 });
-test('search keeps logical URLs strict while mouse and Enter links use the trusted base',()=>{
+test('search keeps logical URLs strict and focuses a link using the trusted base',()=>{
  const {document,Event}=parseHTML('<input><button></button><p></p><ul></ul>');
  const input=document.querySelector('input'),results=document.querySelector('ul'),status=document.querySelector('p'),clear=document.querySelector('button');
  const row={page:'Guide',title:'Install',text:'install',url:'/help/guide/',anchor:'start'};
@@ -101,9 +101,10 @@ test('search keeps logical URLs strict while mouse and Enter links use the trust
  assert.equal(searchIndex([row,...unsafe.map(url=>({...row,url}))],'install').length,1);
  attachSearch({input,results,status,clear,document,index:[row],basePath:'/optimax/'});
  input.value='install';input.dispatchEvent(new Event('input'));
- assert.equal(results.querySelector('a').getAttribute('href'),'/optimax/help/guide/#start');
- for(const key of ['ArrowDown','Enter']){const event=new Event('keydown');Object.defineProperty(event,'key',{value:key});input.dispatchEvent(event)}
- assert.equal(document.location,'/optimax/help/guide/#start');
+ const link=results.querySelector('a');assert.equal(link.getAttribute('href'),'/optimax/help/guide/#start');
+ let focused=false;link.focus=()=>{focused=true};
+ const event=new Event('keydown');Object.defineProperty(event,'key',{value:'ArrowDown'});input.dispatchEvent(event);
+ assert.equal(focused,true);
  for(const basePath of ['//evil.example/','/../','/optimax//','/optimax/%2f/']){
   assert.throws(()=>attachSearch({input,results,status,clear,document,index:[row],basePath}),/base path/i);
  }
@@ -123,9 +124,10 @@ test('actual client fetches index from configured root and renders prefixed navi
    await new Promise(resolve=>setImmediate(resolve));
    assert.deepEqual(requested,[base+'search-index.json']);
    const input=document.querySelector('input');input.value='install';input.dispatchEvent(new Event('input'));
-   assert.equal(document.querySelector('#search-results a').getAttribute('href'),base+'help/guide/#start');
-   for(const key of ['ArrowDown','Enter']){const event=new Event('keydown');Object.defineProperty(event,'key',{value:key});input.dispatchEvent(event)}
-   assert.equal(document.location,base+'help/guide/#start');
+   const link=document.querySelector('#search-results a');assert.equal(link.getAttribute('href'),base+'help/guide/#start');
+   let focused=false;link.focus=()=>{focused=true};
+   const event=new Event('keydown');Object.defineProperty(event,'key',{value:'ArrowDown'});input.dispatchEvent(event);
+   assert.equal(focused,true);
    globalThis.document=parseHTML(html).document;
    globalThis.fetch=async()=>({ok:false});
    await import(pathToFileURL(join(root,'dist/assets/client.js')).href+'?unavailable='+encodeURIComponent(base));

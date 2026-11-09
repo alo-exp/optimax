@@ -40,7 +40,7 @@ try{
   const searchPage=await searchContext.newPage();const indexLoaded=searchPage.waitForResponse(response=>response.url().endsWith('/search-index.json'));
   await searchPage.goto(new URL('help/',baseURL).href);await indexLoaded;await searchPage.evaluate(()=>document.fonts.ready);
   const input=searchPage.locator('#help-search');await input.fill('install');await searchPage.locator('#search-results a').first().waitFor();await input.press('ArrowDown');
-  if(!(await input.getAttribute('aria-activedescendant')))throw new Error('Search keyboard result is inactive');
+  if(!(await searchPage.locator('#search-results a').first().evaluate(element=>element===document.activeElement)))throw new Error('Search keyboard result is not focused');
   await searchPage.screenshot({path:join(directory,'search-active.png'),fullPage:false});count++;await searchContext.close();
  }
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}

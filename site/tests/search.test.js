@@ -31,10 +31,9 @@ test('typeahead renders safely, supports keyboard navigation, no results and cle
   input.value='install'; input.dispatch('input');
   assert.equal(results.children.length,2); assert.match(status.textContent,/2/);
   assert.equal(results.children[0].children[0].textContent,'Install Optimax');
-  input.dispatch('keydown',{key:'ArrowDown'}); assert.equal(input.attrs['aria-activedescendant'],'search-result-0');
-  input.value='plugin'; input.dispatch('input'); assert.equal(input.attrs['aria-activedescendant'],'');
-  input.value='install'; input.dispatch('input'); input.dispatch('keydown',{key:'ArrowDown'}); input.dispatch('keydown',{key:'Enter'});
-  assert.equal(document.location,'/help/install/#start');
+  input.dispatch('keydown',{key:'ArrowDown'}); assert.equal(results.children[0].children[0].focused,true);
+  assert.equal(input.attrs['aria-activedescendant'],undefined);
+  input.value='plugin'; input.dispatch('input'); assert.equal(results.children.length,1);
   input.value='nonexistent'; input.dispatch('input'); assert.match(status.textContent,/no results/i);
   input.value='<img src=x onerror=alert(1)>'; input.dispatch('input');
   assert.equal(results.children.length,0);

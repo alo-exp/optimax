@@ -59,12 +59,15 @@ test('search supports typing, clear, escape and keyboard navigation to a real fr
  const input=page.locator('#help-search');await input.fill('install');
  await expect(page.locator('#search-results a').first()).toBeVisible();
  await page.locator('#search-clear').click();await expect(input).toHaveValue('');await expect(input).toBeFocused();
- await input.fill('install');await expect(page.locator('#search-results a').first()).toBeVisible();await input.press('Escape');await expect(input).toHaveAttribute('aria-expanded','false');await expect(input).toBeFocused();
- await input.fill('installation');await expect(page.locator('#search-results a').first()).toBeVisible();
- const target=await page.locator('#search-results a').first().getAttribute('href');
- await input.press('ArrowDown');await input.press('Enter');await expect(page).toHaveURL(new URL(target,page.url()).href);
+ await input.fill('install');const links=page.locator('#search-results a');await expect(links.first()).toBeVisible();
+ await expect(input).toHaveAccessibleName('Search the help center');await expect(input).not.toHaveAttribute('role','combobox');await expect(input).not.toHaveAttribute('aria-activedescendant',/.+/);await expect(page.locator('#search-results')).not.toHaveAttribute('role','listbox');await expect(page.locator('#search-results li').first()).not.toHaveAttribute('role','option');
+ await input.press('Tab');await expect(page.locator('#search-clear')).toBeFocused();await page.keyboard.press('Tab');await expect(links.first()).toBeFocused();await input.focus();
+ await input.press('ArrowUp');await expect(links.last()).toBeFocused();await page.keyboard.press('ArrowDown');await expect(links.first()).toBeFocused();await page.keyboard.press('ArrowUp');await expect(links.last()).toBeFocused();await page.keyboard.press('Escape');await expect(input).toHaveValue('');await expect(input).toBeFocused();await expect(links).toHaveCount(0);
+ await input.fill('installation');await expect(links.first()).toBeVisible();
+ const target=await links.first().getAttribute('href');await input.press('ArrowDown');await expect(links.first()).toBeFocused();await page.keyboard.press('Enter');await expect(page).toHaveURL(new URL(target,page.url()).href);
  const anchor=new URL(page.url()).hash;expect(anchor.length).toBeGreaterThan(1);await expect(page.locator(anchor)).toBeVisible();
  expect(await page.locator(anchor).evaluate(element=>element.getBoundingClientRect().top)).toBeGreaterThanOrEqual(0);
+ await page.goto('help/');await input.fill('install');await expect(links.first()).toBeVisible();const mouseURL=new URL(await links.first().getAttribute('href'),page.url()).href;await links.first().click();await expect(page).toHaveURL(mouseURL);
 });
 
 test('unavailable search index presents a useful browse fallback',async({page})=>{

@@ -55,7 +55,7 @@ test('a single acceptance emphasis respects reduced motion without hiding conten
 test('read surfaces and search states retain visible text and a calm measure',()=>{
  assert.match(block('.article'),/max-width:\s*72ch/);
  assert.match(block('.search input'),/color:\s*var\(--ink\)/);
- assert.match(block('.search li[aria-selected="true"]'),/background:\s*var\(--selected\)/);
+ assert.match(css,/a:focus-visible[^{}]*\{[^}]*outline:\s*3px solid var\(--focus\)/);
  assert.match(css,/caret-color:\s*var\(--accent\)/);assert.match(css,/::selection/);assert.match(css,/scrollbar-color:/);
 });
 test('the approved world uses flat color and self-hosted Mona Sans without legacy styling',()=>{
