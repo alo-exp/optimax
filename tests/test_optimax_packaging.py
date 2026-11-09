@@ -51,6 +51,29 @@ class OptimaxPackagingTests(unittest.TestCase):
                 self.assertEqual({name: (output / name).read_bytes() for name in names}, previous)
                 self.assertEqual(sorted(path.name for path in output.iterdir()), sorted(names))
 
+    def test_invalid_review_ladder_frontmatter_preserves_published_archives(self):
+        headers = (
+            'broken frontmatter\n',
+            '---\nname: optimax\ndescription: valid\n---\n',
+            '---\nname: review-ladder\n---\n',
+            '---\nname: review-ladder\ndescription: [invalid]\n---\n',
+            '---\nname: review-ladder\ndescription: valid\n',
+        )
+        for header in headers:
+            with self.subTest(header=header), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp).resolve() / 'source'
+                builder, _ = self.release_fixture(root)
+                output = Path(tmp) / 'output'
+                with patch.object(builder, 'ROOT', root), patch.object(builder, 'RUNTIME', root / 'skills/optimax'):
+                    builder.build(output)
+                    names = ('optimax-skill.zip', 'optimax-plugin.zip')
+                    previous = {name: (output / name).read_bytes() for name in names}
+                    (root / 'skills/review-ladder/SKILL.md').write_text(header)
+                    with self.assertRaises(ValueError):
+                        builder.build(output)
+                self.assertEqual({name: (output / name).read_bytes() for name in names}, previous)
+                self.assertEqual(sorted(path.name for path in output.iterdir()), sorted(names))
+
     def test_plugin_bundles_review_ladder_exactly_without_changing_standalone(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp).resolve() / 'source'

@@ -47,7 +47,7 @@ def _supported_header_character(ch):
             and code not in (0x2028, 0x2029))
 
 
-def _validate_skill_frontmatter(skill):
+def _validate_skill_frontmatter(skill, expected_name='optimax'):
     raw_lines = skill.split('\n')
     lines = [line[:-1] if line.endswith('\r') and i < len(raw_lines) - 1 else line
              for i, line in enumerate(raw_lines)]
@@ -66,10 +66,10 @@ def _validate_skill_frontmatter(skill):
             raise ValueError('SKILL.md frontmatter must use unique plain name and description fields')
         fields[match.group(1)] = match.group(2).strip(' ')
     description = fields.get('description', '')
-    if (fields.get('name') != 'optimax' or not _supported_plain_scalar(description)
+    if (fields.get('name') != expected_name or not _supported_plain_scalar(description)
             or description.casefold() in ('null', 'true', 'false', 'yes', 'no', 'on', 'off', '~')
             or NONSTRING_SCALAR.fullmatch(description)):
-        raise ValueError('SKILL.md must name optimax and have a nonempty plain description')
+        raise ValueError(f'SKILL.md must name {expected_name} and have a nonempty plain description')
 
 
 def _manifest(z):

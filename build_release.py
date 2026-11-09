@@ -48,6 +48,7 @@ def build(output):
     _validate_skill_frontmatter(runtime['SKILL.md'].decode('utf-8'))
     review_ladder = {'skills/review-ladder/' + name: read_safe(ROOT, 'skills/review-ladder/' + name)
                      for name in REVIEW_LADDER_FILES}
+    _validate_skill_frontmatter(review_ladder['skills/review-ladder/SKILL.md'].decode('utf-8'), 'review-ladder')
     license_data = read_safe(ROOT, 'LICENSE')
     manifests = {name: read_safe(ROOT, name) for name in MANIFESTS}
     for data in manifests.values():
