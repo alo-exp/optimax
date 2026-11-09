@@ -21,7 +21,7 @@
     "help/executor-ladders/index.html": "710c9dec1b660c894e746cf02b385e3938f072c47926580902b01426b07d668e",
     "help/first-session/index.html": "a8b19c7a9be8b852bb1e2c75d7c0de6ce1c63e1333f9a63b0ffaec24489a4d63",
     "help/index.html": "bb33e6d715824b16acd73f0d9f058e0d2aae456b77e8f5371e0e487bb01fb83b",
-    "help/install-optimax/index.html": "734a8253b32971cf9b3e730b4f962261faec4b2019a352514748e3e51a2d7fbe",
+    "help/install-optimax/index.html": "f0c14f9c6c0f3789c5db0da33c88ef390784f22d47b447e8c4247632ffb4ee2d",
     "help/learning-not-changing/index.html": "9c3bb99d9139e4d37daa41f1f236dc09e3e07887cdce109b0af92316a64f1b1e",
     "help/missing-models/index.html": "127a38ec3e20ec95dd45a3150bc1865516214f5a65ec191435c7b04c4b2ad243",
     "help/native-capabilities/index.html": "6f3b8d26a85441bac63491db8306128dc8dafc1ffe17e8690f3e0c236d91ee03",
@@ -36,7 +36,7 @@
     "help/what-is-optimax/index.html": "371a8a5d0eb1ef5d3ec9c98f6fdacd6e29b81a497e66178ba313c7e30d99e7c4",
     "index.html": "9d3b6ce188e9f3741030ce9ad5addce1f57ced1f86993d48f46f45eef6807aa3",
     "robots.txt": "c0dac49c50d42bbe67c13da3c47262f8cb124e8886cc3f21336a8e57c7d80c3e",
-    "search-index.json": "791fb4c72290c1af42cc4ccce0e2e2c9aaf57fcb1dfefa9cab7c4d5374207c43",
+    "search-index.json": "fcb33dfb26752adca283abd7a16848f1179ce7ba05fc4b046861cbc635d62002",
     "sitemap.xml": "aa11e1c74fa2b9b3a178f818d3e8f2b787ddeb9e0f9ad5dee46cf13036884496"
   },
   "https://alo-exp.github.io/optimax/": {
@@ -61,7 +61,7 @@
     "help/executor-ladders/index.html": "9e0cf50970394603f33adf5aee5e52b8e8eda8206668fa964862476a40a38023",
     "help/first-session/index.html": "3b51997f0d6ef6f354b1c2df92edea12f1fcd3a2292b4cc99a55cba05bf9a0fd",
     "help/index.html": "683e7f6255e468bfe6d801b5c17993472c6f8b7c1f0ecd3c6c1cd735b0441af8",
-    "help/install-optimax/index.html": "729fb796f686f05dbb342d323f2501724e5c2e4af4fd5b7d65686c274c828595",
+    "help/install-optimax/index.html": "76897a5e78c56adaafb78e2674a2ba22e6170d2d4b96c8fb1b0e90801d0daca3",
     "help/learning-not-changing/index.html": "534d3b815d4c426e4b3560c35a387a08d5a069ae0ac7c6790793b5e490b39cd6",
     "help/missing-models/index.html": "6af638a85f51e9d8ad34e0ecbd4806c369883e79cd1bf3e094823bd3aa91787a",
     "help/native-capabilities/index.html": "18ca2d0eb1b5fc9917367c8866d1d7a75d6c128c541e9e148c548aa7c4acde13",
@@ -76,7 +76,7 @@
     "help/what-is-optimax/index.html": "a0b10cb9838d5dde70691970c71a26d82824101a387f6324bd7359dee67e0628",
     "index.html": "6b603682b36d490095f7bbefddb73e27702e7b0bbfbc414f439c3e48e3cece14",
     "robots.txt": "eaff3bd8728527f27b0472490da464e4d3f6aa4ddadc7c2425876ffe4715faac",
-    "search-index.json": "791fb4c72290c1af42cc4ccce0e2e2c9aaf57fcb1dfefa9cab7c4d5374207c43",
+    "search-index.json": "fcb33dfb26752adca283abd7a16848f1179ce7ba05fc4b046861cbc635d62002",
     "sitemap.xml": "967930623d38cb0d7dab4a2fc6d8f223058d073e56682b22188f09498c6af53d"
   }
 }

@@ -43,7 +43,7 @@
         {
           "heading": "Before you install",
           "paragraphs": [
-            "Optimax 0.1.0 is published in the unified Ālo Labs plugin catalog. The Claude and Codex entries pin the tested release; use the commands below in your chosen host.",
+            "Install Optimax from the unified Ālo Labs plugin catalog. The Claude and Codex entries pin a release tag and commit; the commands below resolve the published catalog. Check your installed version, the catalog entry and its release notes to see what is available. A source checkout may contain an unpublished candidate.",
             "Installation makes Optimax available but does not enable its session policy. The canonical skill directory in the source repository is skills/optimax."
           ],
           "links": [
