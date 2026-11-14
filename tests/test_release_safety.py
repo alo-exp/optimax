@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location('release_safety_builder', ROOT / 'build_release.py')
 builder = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(builder)
-NAMES = ('optimax-skill.zip', 'optimax-plugin.zip')
+NAMES = ('optimax-plugin.zip',)
 
 
 class ReleaseSafetyTests(unittest.TestCase):
@@ -27,7 +27,33 @@ class ReleaseSafetyTests(unittest.TestCase):
                 archive.writestr('previous-version.txt', b'previous release')
         return self.snapshot(output)
 
-    def test_oversized_runtime_preserves_previous_pair_and_foreign_file(self):
+    def test_legacy_asset_blocks_build_and_preserves_output(self):
+        for kind in ('file', 'directory', 'broken_symlink'):
+            with self.subTest(kind=kind), tempfile.TemporaryDirectory() as tmp:
+                output = Path(tmp).resolve()
+                previous = self.previous_release(output)
+                foreign = output / 'foreign'
+                foreign.write_bytes(b'keep')
+                legacy = output / 'optimax-skill.zip'
+                if kind == 'file':
+                    legacy.write_bytes(b'legacy')
+                elif kind == 'directory':
+                    legacy.mkdir()
+                else:
+                    legacy.symlink_to(output / 'missing')
+                with self.assertRaisesRegex(ValueError, r'optimax-skill\.zip.*remove'):
+                    builder.build(output)
+                self.assertEqual(self.snapshot(output), previous)
+                self.assertEqual(foreign.read_bytes(), b'keep')
+                if kind == 'file':
+                    self.assertEqual(legacy.read_bytes(), b'legacy')
+                elif kind == 'directory':
+                    self.assertTrue(legacy.is_dir())
+                else:
+                    self.assertTrue(legacy.is_symlink())
+                self.assertFalse(list(output.glob('.optimax-release-*')))
+
+    def test_oversized_runtime_preserves_previous_archive_and_foreign_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp).resolve()
             previous = self.previous_release(output)
@@ -47,16 +73,17 @@ class ReleaseSafetyTests(unittest.TestCase):
             self.assertEqual(foreign.read_bytes(), b'keep')
             self.assertFalse(list(output.glob('.optimax-release-*')))
 
-    def test_existing_destination_directory_preserves_previous_archive(self):
+    def test_existing_destination_directory_preserves_foreign_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp).resolve()
-            skill = output / NAMES[0]
-            skill.write_bytes(b'previous release')
-            (output / NAMES[1]).mkdir()
+            foreign = output / 'foreign'
+            foreign.write_bytes(b'keep')
+            (output / NAMES[0]).mkdir()
             with self.assertRaises((ValueError, OSError)):
                 builder.build(output)
-            self.assertEqual(skill.read_bytes(), b'previous release')
-            self.assertEqual(sorted(p.name for p in output.iterdir()), sorted(NAMES))
+            self.assertEqual(foreign.read_bytes(), b'keep')
+            self.assertTrue((output / NAMES[0]).is_dir())
+            self.assertEqual(sorted(p.name for p in output.iterdir()), sorted((*NAMES, 'foreign')))
 
     def test_destination_symlink_is_rejected_without_following_it(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -64,12 +91,11 @@ class ReleaseSafetyTests(unittest.TestCase):
             output.mkdir()
             target = Path(tmp) / 'foreign'
             target.write_bytes(b'foreign data')
-            (output / NAMES[1]).symlink_to(target)
+            (output / NAMES[0]).symlink_to(target)
             with self.assertRaises((ValueError, OSError)):
                 builder.build(output)
             self.assertEqual(target.read_bytes(), b'foreign data')
-            self.assertTrue((output / NAMES[1]).is_symlink())
-            self.assertFalse((output / NAMES[0]).exists())
+            self.assertTrue((output / NAMES[0]).is_symlink())
 
     def test_output_parent_alias_is_canonicalized(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -88,21 +114,21 @@ class ReleaseSafetyTests(unittest.TestCase):
                 builder.build(root / 'link')
             self.assertEqual(list((root / 'real').iterdir()), [])
 
-    def test_staged_archive_write_failure_preserves_existing_pair(self):
+    def test_staged_archive_write_failure_preserves_existing_archive(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp).resolve()
             previous = self.previous_release(output)
             original = zipfile.ZipFile.writestr
             writes = 0
 
-            def fail_during_second_archive(archive, *args, **kwargs):
+            def fail_during_archive(archive, *args, **kwargs):
                 nonlocal writes
                 writes += 1
                 if writes == len(builder.FILES) + 3:
                     raise OSError('injected staged write failure')
                 return original(archive, *args, **kwargs)
 
-            with patch.object(zipfile.ZipFile, 'writestr', fail_during_second_archive):
+            with patch.object(zipfile.ZipFile, 'writestr', fail_during_archive):
                 with self.assertRaisesRegex(OSError, 'injected staged write failure'):
                     builder.build(output)
             self.assertEqual(self.snapshot(output), previous)
@@ -120,7 +146,7 @@ class ReleaseSafetyTests(unittest.TestCase):
             def corrupt_after_close(archive):
                 nonlocal injected
                 path = Path(archive.filename) if archive.filename else None
-                should_corrupt = archive.mode == 'w' and path is not None and path.name == NAMES[1] and archive.fp is not None
+                should_corrupt = archive.mode == 'w' and path is not None and path.name == NAMES[0] and archive.fp is not None
                 original_close(archive)
                 if should_corrupt:
                     with path.open('r+b') as staged:
@@ -155,7 +181,7 @@ class ReleaseSafetyTests(unittest.TestCase):
                 def alter_after_close(archive):
                     nonlocal injected
                     path = Path(archive.filename) if archive.filename else None
-                    should_alter = archive.mode == 'w' and path is not None and path.name == NAMES[1] and archive.fp is not None
+                    should_alter = archive.mode == 'w' and path is not None and path.name == NAMES[0] and archive.fp is not None
                     original_close(archive)
                     if not should_alter:
                         return
@@ -187,26 +213,26 @@ class ReleaseSafetyTests(unittest.TestCase):
                     except (ValueError, OSError, zipfile.BadZipFile) as exc:
                         error = exc
                 self.assertTrue(injected, 'fault must be injected after plugin write closes')
-                self.assertTrue(self.snapshot(output) == previous, 'previous pair changed')
+                self.assertTrue(self.snapshot(output) == previous, 'previous archive changed')
                 self.assertEqual(foreign.read_bytes(), b'keep')
                 self.assertFalse(list(output.glob('.optimax-release-*')))
                 self.assertIsNotNone(error, f'{fault} staged plugin must be rejected')
 
-    def test_second_promotion_failure_restores_previous_pair(self):
+    def test_promotion_failure_restores_previous_archive(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp).resolve()
             previous = self.previous_release(output)
             original = os.replace
             failed = False
 
-            def fail_second_promotion(source, destination):
+            def fail_promotion(source, destination):
                 nonlocal failed
-                if Path(destination) == output / NAMES[1] and not failed:
+                if Path(destination) == output / NAMES[0] and not failed:
                     failed = True
                     raise OSError('injected promotion failure')
                 return original(source, destination)
 
-            with patch.object(os, 'replace', fail_second_promotion):
+            with patch.object(os, 'replace', fail_promotion):
                 with self.assertRaisesRegex(OSError, 'injected promotion failure'):
                     builder.build(output)
             self.assertTrue(failed)
@@ -220,7 +246,10 @@ class ReleaseSafetyTests(unittest.TestCase):
             original = os.replace
 
             def fail_promotion_and_restore(source, destination):
-                if Path(destination) == output / NAMES[1] or str(source).endswith('.previous'):
+                if str(source).endswith('.previous'):
+                    raise OSError('injected persistent filesystem failure')
+                if Path(destination) == output / NAMES[0]:
+                    original(source, destination)
                     raise OSError('injected persistent filesystem failure')
                 return original(source, destination)
 
@@ -229,26 +258,25 @@ class ReleaseSafetyTests(unittest.TestCase):
                     builder.build(output)
             recovery, = output.glob('.optimax-release-*')
             self.assertEqual({name: (recovery / (name + '.previous')).read_bytes() for name in NAMES}, previous)
-            self.assertEqual((output / NAMES[1]).read_bytes(), previous[NAMES[1]])
 
-    def test_failed_initial_promotion_leaves_no_partial_pair(self):
+    def test_failed_initial_promotion_leaves_no_partial_archive(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp).resolve()
             original = os.replace
 
-            def fail_second_promotion(source, destination):
-                if Path(destination) == output / NAMES[1]:
+            def fail_promotion(source, destination):
+                if Path(destination) == output / NAMES[0]:
                     raise OSError('injected promotion failure')
                 return original(source, destination)
 
-            with patch.object(os, 'replace', fail_second_promotion):
+            with patch.object(os, 'replace', fail_promotion):
                 with self.assertRaisesRegex(OSError, 'injected promotion failure'):
                     builder.build(output)
             self.assertEqual(list(output.iterdir()), [])
 
-    def test_interruption_after_promotion_restores_existing_or_absent_pair(self):
+    def test_interruption_after_promotion_restores_existing_or_absent_archive(self):
         for existing in (False, True):
-            for interrupted_index in (0, 1):
+            for interrupted_index in range(len(NAMES)):
                 with self.subTest(existing=existing, interrupted_index=interrupted_index):
                     with tempfile.TemporaryDirectory() as tmp:
                         output = Path(tmp).resolve()
@@ -271,7 +299,7 @@ class ReleaseSafetyTests(unittest.TestCase):
                             self.assertEqual(list(output.iterdir()), [])
                         self.assertEqual(sorted(p.name for p in output.iterdir()), sorted(previous))
 
-    def test_interruption_before_promotion_preserves_existing_or_absent_pair(self):
+    def test_interruption_before_promotion_preserves_existing_or_absent_archive(self):
         for existing in (False, True):
             with self.subTest(existing=existing), tempfile.TemporaryDirectory() as tmp:
                 output = Path(tmp).resolve()
@@ -320,7 +348,8 @@ class ReleaseSafetyTests(unittest.TestCase):
             original = os.replace
 
             def interrupt_promotion_and_rollback(source, destination):
-                if Path(destination) == output / NAMES[1] and Path(source).name == NAMES[1]:
+                if Path(destination) == output / NAMES[0] and Path(source).name == NAMES[0]:
+                    original(source, destination)
                     raise OSError('injected promotion failure')
                 if str(source).endswith('.previous'):
                     raise KeyboardInterrupt('injected rollback interruption')
@@ -333,22 +362,22 @@ class ReleaseSafetyTests(unittest.TestCase):
             recovery, = output.glob('.optimax-release-*')
             self.assertEqual((recovery / (NAMES[0] + '.previous')).read_bytes(), previous[NAMES[0]])
 
-    def test_interrupted_promotion_restores_mixed_prior_state(self):
-        for existing_index in (0, 1):
+    def test_interrupted_promotion_restores_prior_archive_bytes(self):
+        for existing_index in range(len(NAMES)):
             with self.subTest(existing_index=existing_index), tempfile.TemporaryDirectory() as tmp:
                 output = Path(tmp).resolve()
                 destination = output / NAMES[existing_index]
                 destination.write_bytes(b'previous archive')
                 original = os.replace
 
-                def interrupt_second(source, target):
+                def interrupt_promotion(source, target):
                     result = original(source, target)
-                    if Path(target) == output / NAMES[1] and Path(source).name == NAMES[1]:
-                        raise KeyboardInterrupt('interrupted mixed promotion')
+                    if Path(target) == output / NAMES[0] and Path(source).name == NAMES[0]:
+                        raise KeyboardInterrupt('interrupted promotion')
                     return result
 
-                with patch.object(os, 'replace', interrupt_second):
-                    with self.assertRaisesRegex(KeyboardInterrupt, 'interrupted mixed promotion'):
+                with patch.object(os, 'replace', interrupt_promotion):
+                    with self.assertRaisesRegex(KeyboardInterrupt, 'interrupted promotion'):
                         builder.build(output)
                 self.assertEqual(destination.read_bytes(), b'previous archive')
                 self.assertEqual(sorted(p.name for p in output.iterdir()), [NAMES[existing_index]])
@@ -360,7 +389,8 @@ class ReleaseSafetyTests(unittest.TestCase):
             original = os.replace
 
             def interrupt_after_restore(source, destination):
-                if Path(destination) == output / NAMES[1] and Path(source).name == NAMES[1]:
+                if Path(destination) == output / NAMES[0] and Path(source).name == NAMES[0]:
+                    original(source, destination)
                     raise OSError('injected promotion failure')
                 result = original(source, destination)
                 if str(source).endswith('.previous'):
@@ -372,9 +402,9 @@ class ReleaseSafetyTests(unittest.TestCase):
                     builder.build(output)
             self.assertEqual((output / NAMES[0]).read_bytes(), previous[NAMES[0]])
             recovery, = output.glob('.optimax-release-*')
-            self.assertEqual((recovery / (NAMES[1] + '.previous')).read_bytes(), previous[NAMES[1]])
+            self.assertEqual(list(recovery.glob('*.previous')), [])
 
-    def test_invalid_input_preserves_previous_pair_and_foreign_file(self):
+    def test_invalid_input_preserves_previous_archive_and_foreign_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp).resolve()
             previous = self.previous_release(output)

@@ -26,6 +26,22 @@ for(const deployed of ['https://optimax.alolabs.dev/','https://alo-exp.github.io
   assert.equal(document.querySelector('.hero-deck').textContent,'The right models. Independent tasks. Reviewed results.');
   assert.equal(document.querySelectorAll('.parallel-tasks > li').length,3);assert.equal(document.querySelectorAll('.acceptance-boundary').length,1);
   assert.equal(document.querySelectorAll('[data-install-tab]').length,2);assert.equal(document.querySelectorAll('[data-install-panel]').length,2);assert.ok(document.querySelector('#copy-status[role="status"]'));
+  const staticTabs=[...document.querySelectorAll('[data-install-tab]')],staticPanels=[...document.querySelectorAll('[data-install-panel]')];
+  assert.ok(staticTabs.every(tab=>tab.hasAttribute('disabled')),'platform controls must be disabled before JavaScript loads');
+  assert.ok(document.querySelector('#copy-install').hasAttribute('disabled'),'copy must be disabled before JavaScript loads');
+  assert.ok(staticPanels.every(panel=>!panel.hasAttribute('hidden')),'both installation commands must be visible without JavaScript');
+  assert.deepEqual(staticTabs.map(tab=>tab.getAttribute('aria-pressed')),['false','false'],'no platform is selected before JavaScript loads');
+  for(const [index,name] of ['Codex','Claude'].entries()){
+   const panel=staticPanels[index], label=panel.previousElementSibling;
+   assert.ok(label?.hasAttribute('data-install-label') && !label.hasAttribute('hidden'),'each command has a visible platform label even if the client module fails');
+   assert.equal(label.textContent.trim(),name);
+   assert.equal(panel.hasAttribute('aria-label'),false,'code must not have a prohibited accessible name');
+   assert.equal(panel.hasAttribute('aria-labelledby'),false,'code must not have a prohibited accessible name');
+   const group=panel.parentElement;
+   assert.equal(group.getAttribute('role'),'group');
+   assert.ok(label.id && group.getAttribute('aria-labelledby')===label.id,'each command group must be associated with its visible platform label');
+  }
+  const installGuide=document.querySelector('.terminal-note a');assert.equal(installGuide.textContent,'Read the installation guide');assert.equal(installGuide.getAttribute('href'),base+'help/install-optimax/','installation guide link must lead to the actual guide');
   assert.ok(document.querySelector('a[href="'+base+'help/session-controls/"]'));assert.match(document.querySelector('#questions').textContent,/\$optimax off/);
   assert.equal(document.querySelectorAll('a[href*="/versions/"]').length,0,'production funnel must not contain preview comparison navigation');
   assert.doesNotMatch(html,/\{\{[^}]+\}\}|CMF|\.impeccable|\/Users\//);
@@ -53,6 +69,10 @@ for(const deployed of ['https://optimax.alolabs.dev/','https://alo-exp.github.io
   for(const [,raw]of css.matchAll(/url\(\s*['"]?([^)'"\s]+)['"]?\s*\)/g)){const target=new URL(raw,deployed+'assets/homepage.css');assert.equal(target.origin,new URL(deployed).origin);assert.ok(target.pathname.startsWith(base));assert.ok(existsSync(join(output,target.pathname.slice(base.length))),'homepage font missing: '+raw);}
   const help=parseHTML(await readFile(join(output,'help/index.html'),'utf8')).document;
   assert.ok(help.querySelector('link[href="'+base+'assets/style.css"]'));assert.ok(help.querySelector('script[src="'+base+'assets/theme.js"]'));
+  assert.ok(help.querySelector('#help-search').hasAttribute('disabled'),'uninitialized search must not accept input');
+  assert.ok(help.querySelector('#search-clear').hasAttribute('disabled'),'uninitialized clear must not act like a working control');
+  assert.match(help.querySelector('#search-status').textContent,/browse the articles below/i);
+  assert.ok(help.querySelector('.help-library a[href]'),'browsable articles must remain available without the client');
   assert.equal(await readFile(join(output,'assets/style.css'),'utf8'),await readFile(join(site,'src/style.css'),'utf8'));
   assert.equal(await readFile(join(output,'assets/theme.js'),'utf8'),await readFile(join(site,'src/theme.js'),'utf8'));
  }finally{await rm(root,{recursive:true,force:true});}

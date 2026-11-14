@@ -31,9 +31,9 @@ try{
   const focusContext=await browser.newContext({viewport:{width:1440,height:1000},colorScheme:'dark',reducedMotion:'reduce'});
   await focusContext.addInitScript(()=>localStorage.setItem('optimax-theme','dark'));
   const focusPage=await focusContext.newPage();await focusPage.goto(baseURL);await focusPage.evaluate(()=>document.fonts.ready);
-  const nav=focusPage.getByRole('banner').getByRole('link',{name:'Get started',exact:true});
+  const nav=focusPage.getByRole('banner').getByRole('link',{name:'Install Optimax',exact:true});
   for(let i=0;i<12&&!(await nav.evaluate(element=>element===document.activeElement));i++)await focusPage.keyboard.press('Tab');
-  if(!(await nav.evaluate(element=>element===document.activeElement)))throw new Error('Keyboard navigation never reached Get started');
+  if(!(await nav.evaluate(element=>element===document.activeElement)))throw new Error('Keyboard navigation never reached Install Optimax');
   await focusPage.evaluate(()=>scrollTo(0,0));await focusPage.screenshot({path:join(directory,'focus-nav.png'),fullPage:false});count++;await focusContext.close();
   const searchContext=await browser.newContext({viewport:{width:1440,height:1000},colorScheme:'light',reducedMotion:'reduce'});
   await searchContext.addInitScript(()=>localStorage.setItem('optimax-theme','light'));

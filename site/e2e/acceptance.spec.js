@@ -54,8 +54,33 @@ test('both install platform tabs copy the actual selected commands using the cli
  }
 });
 
+test('only the selected install command group is exposed with its platform name',async({page})=>{
+ await page.goto('./#install');
+ const codex=page.getByRole('group',{name:'Codex',exact:true}),claude=page.getByRole('group',{name:'Claude',exact:true});
+ await expect(codex).toBeVisible();await expect(claude).toHaveCount(0);
+ await page.getByRole('button',{name:'Claude',exact:true}).click();
+ await expect(codex).toHaveCount(0);await expect(claude).toBeVisible();
+ await page.getByRole('button',{name:'Codex',exact:true}).click();
+ await expect(codex).toBeVisible();await expect(claude).toHaveCount(0);
+ expect(await page.locator('[id]').evaluateAll(nodes=>nodes.length-new Set(nodes.map(node=>node.id)).size)).toBe(0);
+});
+
+for(const mode of ['no JavaScript','blocked client'])test(`install commands retain named groups with ${mode}`,async({browser,baseURL})=>{
+ const context=await browser.newContext({baseURL,javaScriptEnabled:mode!=='no JavaScript'});
+ try{
+  const page=await context.newPage();
+  if(mode==='blocked client')await page.route('**/assets/client.js',route=>route.abort());
+  await page.goto('./#install');
+  for(const name of ['Codex','Claude']){
+   const group=page.getByRole('group',{name,exact:true});await expect(group).toBeVisible();
+   await expect(group.locator('[data-install-label]')).toBeVisible();await expect(group.locator('[data-install-panel]')).toBeVisible();
+  }
+ }finally{await context.close();}
+});
+
 test('search supports typing, clear, escape and keyboard navigation to a real fragment',async({page})=>{
  const loaded=page.waitForResponse(response=>response.url().endsWith('/search-index.json'));await page.goto('help/');await loaded;
+ await expect(page.locator('#help-search')).toBeEnabled();await expect(page.locator('#search-clear')).toBeEnabled();await expect(page.locator('#search-status')).toBeEmpty();
  const input=page.locator('#help-search');await input.fill('install');
  await expect(page.locator('#search-results a').first()).toBeVisible();
  await page.locator('#search-clear').click();await expect(input).toHaveValue('');await expect(input).toBeFocused();
@@ -73,7 +98,19 @@ test('search supports typing, clear, escape and keyboard navigation to a real fr
 test('unavailable search index presents a useful browse fallback',async({page})=>{
  await page.route('**/search-index.json',route=>route.fulfill({status:503,body:'Unavailable'}));await page.goto('help/');
  await expect(page.locator('#search-status')).toHaveText('Search is unavailable. Browse the articles below.');
+ await expect(page.locator('#help-search')).toBeDisabled();await expect(page.locator('#search-clear')).toBeEnabled();
  await expect(page.locator('a[href$="/help/install-optimax/"]')).toBeVisible();
+});
+
+for(const mode of ['no JavaScript','blocked client'])test(`Help browse fallback works with ${mode}`,async({browser,baseURL})=>{
+ const context=await browser.newContext({baseURL,javaScriptEnabled:mode!=='no JavaScript'});
+ try{
+  const page=await context.newPage();if(mode==='blocked client')await page.route('**/assets/client.js',route=>route.abort());
+  await page.goto('help/');
+  await expect(page.locator('#help-search')).toBeDisabled();await expect(page.locator('#search-clear')).toBeDisabled();
+  await expect(page.locator('#search-status')).toHaveText('Search is unavailable. Browse the articles below.');
+  const link=page.locator('.help-library a').first();await expect(link).toBeVisible();const href=await link.getAttribute('href');await link.click();await expect(page).toHaveURL(new URL(href,page.url()).href);
+ }finally{await context.close();}
 });
 
 

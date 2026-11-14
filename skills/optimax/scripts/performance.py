@@ -20,6 +20,7 @@ Status never adopts. Explicit on returns unapplied orchestrator suggestions.
 import argparse
 from contextlib import contextmanager, ExitStack, nullcontext
 import csv
+import ctypes
 from datetime import datetime, timezone
 import errno
 try:
@@ -34,9 +35,29 @@ import os
 from pathlib import Path
 import re
 import stat
+import subprocess
 import sys
 import tempfile
 import uuid
+
+# Match a ceiling supported by both older C-long and newer Py_ssize_t codecs.
+_CSV_FIELD_LIMIT = min(sys.maxsize, (1 << (ctypes.sizeof(ctypes.c_long) * 8 - 1)) - 1)
+_CSV_READER_CODE = """
+import csv
+import io
+import json
+import sys
+csv.field_size_limit(int(sys.argv[1]))
+try:
+    stream = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8", newline="")
+    reader = csv.DictReader(stream, strict=True)
+    header = reader.fieldnames or []
+    rows = list(reader)
+except (csv.Error, UnicodeError):
+    print("invalid ledger CSV", file=sys.stderr)
+    raise SystemExit(1)
+print(json.dumps([header, rows], ensure_ascii=True, separators=(",", ":")))
+"""
 
 try:
     from .ladder import (_FLOORS, _LADDERS, _TRACK_FIELDS, _validate_fields, ADVICE_FLOORS, LEGACY_POLICY_VERSION,
@@ -53,7 +74,7 @@ SCHEMA_VERSION = "2"
 PROJECTIONS = ("platform", "role", "tier", "run_id", "epoch")
 FIELDS = ("schema_version", "sequence", "timestamp", "event_type", "user_id", *PROJECTIONS, "data")
 LEGACY_FIELDS = tuple(field for field in FIELDS if field != "tier")
-EVENT_TYPES = {"metadata", "session", "transition", "launch", "assessment", "legacy_import", "policy_adoption", "advisor_context"}
+EVENT_TYPES = {"metadata", "session", "transition", "launch", "assessment", "legacy_import", "policy_adoption", "advisor_context", "relocation"}
 
 
 def _string(value, label):
@@ -95,9 +116,70 @@ def _validate_assessment_request(request):
 def _json(value):
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
+def _read_ledger_csv(stream):
+    try:
+        reader = csv.DictReader(stream, strict=True)
+        return tuple(reader.fieldnames or ()), list(reader)
+    except csv.Error:
+        # Discard the failed parse and reuse the guarded descriptor, never its path.
+        stream.seek(0)
+    with subprocess.Popen(
+            [sys.executable, "-I", "-c", _CSV_READER_CODE, str(_CSV_FIELD_LIMIT)],
+            stdin=stream, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            shell=False, close_fds=True) as process:
+        try:
+            output, _ = process.communicate()
+        except BaseException:
+            process.kill()
+            process.wait()
+            raise
+        if process.returncode:
+            raise ValueError("isolated ledger CSV reader failed")
+    try:
+        payload = json.loads(output.decode("utf-8"))
+    except (UnicodeError, ValueError, AttributeError):
+        raise ValueError("invalid isolated ledger CSV response") from None
+    if (not isinstance(payload, list) or len(payload) != 2
+            or not isinstance(payload[0], list)
+            or any(not isinstance(field, str) for field in payload[0])
+            or not isinstance(payload[1], list)
+            or any(not isinstance(row, dict)
+                   or any(not isinstance(field, str) or (value is not None and not isinstance(value, str))
+                          for field, value in row.items())
+                   for row in payload[1])):
+        raise ValueError("invalid isolated ledger CSV response")
+    return tuple(payload[0]), payload[1]
+
+def _write_ledger_csv(stream, rows):
+    # The parser counts decoded characters, excluding CSV quoting and encoding.
+    field_limit = _CSV_FIELD_LIMIT
+    for field in FIELDS:
+        if len(field) > field_limit:
+            raise ValueError(f"CSV header field {field} exceeds parser field limit {field_limit}")
+    writer = csv.DictWriter(stream, fieldnames=FIELDS)
+    writer.writeheader()
+    for row in rows:
+        serialized = dict(row, data=_json(row["data"]))
+        for field in FIELDS:
+            value = serialized[field]
+            if len("" if value is None else str(value)) > field_limit:
+                raise ValueError(f"CSV event field {field} exceeds parser field limit {field_limit}")
+        writer.writerow(serialized)
+
 def _legacy_payload(rows):
     if not isinstance(rows, list) or any(not isinstance(row, dict) for row in rows):
         raise ValueError("legacy rows must be a list of objects")
+    pending, seen = [rows], set()
+    while pending:
+        value = pending.pop()
+        if isinstance(value, (dict, list, tuple)) and id(value) not in seen:
+            seen.add(id(value))
+            if isinstance(value, dict):
+                if any(not isinstance(key, str) for key in value):
+                    raise ValueError("legacy JSON object keys must be strings")
+                pending.extend(value.values())
+            else:
+                pending.extend(value)
     payload = _json(rows)
     return payload, hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
@@ -135,8 +217,10 @@ class _Access:
         self.root_fd = root_fd
         self.guards = guards
         self.directory_present = False
+        self.ledger_present = False
         self.directory_fd = None
         self.directory_identity = None
+        self.namespace_confirmed = False
 
 
 class Engine:
@@ -303,10 +387,10 @@ class Engine:
         if not stat.S_ISDIR(current.st_mode) or not os.path.samestat(current, os.fstat(descriptor)):
             raise ValueError("ledger directory changed during mutation")
 
-    def _load(self, root_fd=None):
+    def _load(self, root_fd=None, expected_root=None):
         if not isinstance(root_fd, _Access):
             with self._transaction(root_fd) as access:
-                return self._load(access)
+                return self._load(access, expected_root)
         access = root_fd
         self._check_access(access)
         if not access.directory_present:
@@ -324,13 +408,12 @@ class Engine:
             with os.fdopen(descriptor, "r", newline="", encoding="utf-8") as stream:
                 if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
                     raise ValueError("ledger must be a regular file")
-                reader = csv.DictReader(stream, strict=True)
-                header = tuple(reader.fieldnames or ())
+                access.ledger_present = True
+                header, rows = _read_ledger_csv(stream)
                 if header not in (FIELDS, LEGACY_FIELDS):
                     raise ValueError("unsupported or corrupt ledger header")
                 version = SCHEMA_VERSION if header == FIELDS else "1"
                 projections = tuple(field for field in PROJECTIONS if field in header)
-                rows = list(reader)
         if not rows:
             raise ValueError("ledger metadata is missing")
         for index, row in enumerate(rows, 1):
@@ -355,11 +438,25 @@ class Engine:
                 raise ValueError("corrupt ledger timestamp, projections or event data") from None
         metadata_policy = rows[0]["data"].get("policy_version")
         policy(metadata_policy)
-        expected = {"root": str(self.root), "user_id": self.user, "policy_version": metadata_policy}
-        if rows[0]["event_type"] != "metadata" or rows[0]["data"] != expected:
+        metadata = rows[0]["data"]
+        bound = metadata.get("root")
+        if (rows[0]["event_type"] != "metadata" or not isinstance(bound, str)
+                or not os.path.isabs(bound) or os.path.normpath(bound) != bound
+                or metadata != {"root": bound, "user_id": self.user, "policy_version": metadata_policy}):
             raise ValueError("ledger project, user or policy binding mismatch")
-        if any(row["event_type"] == "metadata" for row in rows[1:]):
-            raise ValueError("duplicate ledger metadata")
+        for row in rows[1:]:
+            if row["event_type"] == "metadata":
+                raise ValueError("duplicate ledger metadata")
+            if row["event_type"] == "relocation":
+                data = row["data"]
+                target = data.get("to_root")
+                if (set(data) != {"from_root", "to_root"} or data["from_root"] != bound
+                        or not isinstance(target, str) or not os.path.isabs(target)
+                        or os.path.normpath(target) != target or target == bound):
+                    raise ValueError("invalid ledger relocation")
+                bound = target
+        if bound != (str(self.root) if expected_root is None else expected_root):
+            raise ValueError("ledger project, user or policy binding mismatch")
         return rows
 
     def _append(self, rows, event_type, data):
@@ -394,6 +491,10 @@ class Engine:
             else:
                 raise ValueError("ledger appeared before initial directory binding")
         self._check_access(access)
+        if not access.ledger_present and access.root_fd is not None:
+            # Sync the ledger directory's parent before first publication, also
+            # when retrying after an earlier attempt left an empty directory.
+            os.fsync(access.root_fd)
         with nullcontext(access.directory_fd) as directory_fd:
             if directory_fd is None:
                 descriptor, temporary = tempfile.mkstemp(prefix=".pending-", dir=self.directory)
@@ -403,19 +504,29 @@ class Engine:
                                      0o600, dir_fd=directory_fd)
             try:
                 with os.fdopen(descriptor, "w", newline="", encoding="utf-8") as stream:
-                    writer = csv.DictWriter(stream, fieldnames=FIELDS)
-                    writer.writeheader()
-                    writer.writerows(dict(row, data=_json(row["data"])) for row in rows)
+                    _write_ledger_csv(stream, rows)
                     stream.flush()
                     os.fsync(stream.fileno())
-                if directory_fd is None:
-                    self._check_access(access)
+                self._check_access(access)
+                if not access.ledger_present:
+                    # Publish a complete first ledger without replacing any entry
+                    # that appeared after the missing read, including a symlink.
+                    if directory_fd is not None:
+                        os.link(temporary, self.path.name, src_dir_fd=directory_fd,
+                                dst_dir_fd=directory_fd, follow_symlinks=False)
+                    elif sys.platform == "win32":
+                        # Windows rename fails if the destination already exists.
+                        os.rename(temporary, self.path)
+                    else:
+                        raise OSError("atomic no-replace ledger publication unavailable")
+                elif directory_fd is None:
                     os.replace(temporary, self.path)
                 else:
-                    self._check_access(access)
                     os.replace(temporary, self.path.name,
                                src_dir_fd=directory_fd, dst_dir_fd=directory_fd)
+                if directory_fd is not None:
                     os.fsync(directory_fd)
+                    access.namespace_confirmed = True
             finally:
                 try:
                     if directory_fd is None:
@@ -424,6 +535,15 @@ class Engine:
                         os.unlink(temporary, dir_fd=directory_fd)
                 except FileNotFoundError:
                     pass
+        self._check_access(access)
+
+    def _confirm_mutation_namespace(self, access):
+        """Confirm a no-op retry's namespace before acknowledging success."""
+        if not access.namespace_confirmed and access.directory_fd is not None:
+            self._check_access(access)
+            os.fsync(access.directory_fd)
+            access.namespace_confirmed = True
+        self._check_access(access)
 
     def _state(self, rows):
         active = rows[0]["data"]["policy_version"] if rows else POLICY_VERSION
@@ -679,6 +799,20 @@ class Engine:
                     policy_version=state["policy_version"], tracks=tracks,
                     execution_contract=execution_contract(state["sessions"].get(session, {}).get("enabled", False)))
 
+    def relocate(self, from_root):
+        """Record an explicitly verified project move without rewriting history."""
+        if (not isinstance(from_root, str) or not os.path.isabs(from_root)
+                or os.path.normpath(from_root) != from_root or from_root == str(self.root)):
+            raise ValueError("from_root must be a different absolute normalized path")
+        with self._locked() as root_fd:
+            rows = self._load(root_fd, from_root)
+            if not rows:
+                raise ValueError("ledger metadata is missing")
+            self._state(rows)
+            self._append(rows, "relocation", {"from_root": from_root, "to_root": str(self.root)})
+            self._commit(rows, root_fd)
+        return {"from_root": from_root, "to_root": str(self.root)}
+
     def status(self, session):
         _string(session, "session")
         with self._locked() as root_fd:
@@ -710,6 +844,7 @@ class Engine:
             if suggestions is not None:
                 result["orchestrator_suggestion"] = suggestions
                 result["instruction_audit"] = instruction_audit
+            self._confirm_mutation_namespace(root_fd)
             return result
 
     def _transition_payload(self, platform, role, tier, step, models, available, reason, previous,
@@ -752,6 +887,7 @@ class Engine:
             self._initialize(rows)
             if changed:
                 self._commit(rows, root_fd)
+            self._confirm_mutation_namespace(root_fd)
             return dict(changed=changed, policy_version=POLICY_VERSION)
 
     def prepare(self, session, platform, role, tier=None, models=None, available_steps=None,
@@ -860,7 +996,7 @@ class Engine:
             exclusions.append("session_disabled_or_changed")
         return exclusions
 
-    def assess(self, run_id, score, effective_model_id, effective_effort, execution_id, verified=True):
+    def assess(self, run_id, score, effective_model_id, effective_effort, execution_id, verified):
         """Record the trusted host's review and actual execution receipt.
 
         verified=True attests independent review provenance, which this engine
@@ -879,6 +1015,7 @@ class Engine:
             if previous:
                 if previous["request"] != request:
                     raise ValueError("run is already assessed with a different outcome")
+                self._confirm_mutation_namespace(root_fd)
                 return previous["result"]
             run = state["runs"][run_id]
             exclusions = self._exclusions(run, request, state)
@@ -913,6 +1050,7 @@ class Engine:
                 self._initialize(events)
                 self._append(events, "legacy_import", dict(digest=digest, rows=json.loads(payload)))
                 self._commit(events, root_fd)
+            self._confirm_mutation_namespace(root_fd)
             return dict(imported_count=0 if duplicate else len(rows), duplicate=duplicate, eligible=False)
 
 
@@ -930,7 +1068,7 @@ def main(argv=None):
     parser.add_argument("--complexity", choices=("low", "medium", "high", "super_high"))
     parser.add_argument("--native-context", help="JSON object describing current native mode and settings")
     parser.add_argument("--instruction-context", help="JSON object describing host instruction context")
-    parser.add_argument("command", choices=("status", "on", "off", "prepare", "assess", "import-history", "adopt-policy"))
+    parser.add_argument("command", choices=("status", "on", "off", "prepare", "assess", "import-history", "adopt-policy", "relocate"))
     parser.add_argument("request", nargs="?")
     try:
         arguments = parser.parse_args(argv)
@@ -963,13 +1101,15 @@ def main(argv=None):
             request = json.loads(Path(arguments.request).read_text(encoding="utf-8"))
             if not isinstance(request, dict):
                 raise ValueError("request must be an object")
-            if command == "prepare":
+            if command == "relocate":
+                result = engine.relocate(**request)
+            elif command == "prepare":
                 result = engine.prepare(session=arguments.session, **request)
             elif command == "assess":
                 result = engine.assess(**request)
             else:
                 result = engine.import_history(**request)
-    except (OSError, UnicodeError, ValueError, TypeError, csv.Error) as error:
+    except (OSError, UnicodeError, ValueError, TypeError, NotImplementedError, csv.Error) as error:
         print("error: " + " ".join(str(error).splitlines()), file=sys.stderr)
         return 1
     print(_json(result))

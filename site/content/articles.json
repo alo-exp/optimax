@@ -81,7 +81,7 @@
           "heading": "Verify before relying on it",
           "paragraphs": [
             "After installation, start a session and invoke $optimax on in Codex or /optimax:optimax on in Claude; use the corresponding status command to check the reported mode. Discovery and behavior depend on the release and host capabilities.",
-            "On 7 November 2026, Optimax v0.1.0 passed live installation, discovery, session controls and fresh-session status checks on Codex CLI 0.166.0-alpha.6; see the acceptance record for its scope and limits, including native Ultra and compaction. Claude has static validation only, with a one-off live acceptance run scheduled for 10 November 2026 at 14:00 Australia/Sydney; if an invocation is unavailable, check the marketplace, plugin name, host version and discovery state, and remember that installation does not guarantee access to every model."
+            "On 7 November 2026, Optimax v0.1.0 passed live installation, discovery, session controls and fresh-session status checks on Codex CLI 0.166.0-alpha.6; see the acceptance record for its scope and limits, including native Ultra and compaction. Claude has static validation only; live Claude acceptance remains unverified. An earlier record reported a one-off automation scheduled for 10 November 2026, but its saved schedule has not been reverified and does not establish acceptance. If an invocation is unavailable, check the marketplace, plugin name, host version and discovery state, and remember that installation does not guarantee access to every model."
           ],
           "links": [
             {
@@ -321,7 +321,7 @@
           "heading": "Check effective settings",
           "paragraphs": [
             "A model family name or requested alias is not proof of the model and effort actually used. Check the host's supported combinations and launch receipt or other reliable evidence of effective settings. Resolve available versions within the prescribed family rather than silently substituting a different family.",
-            "If a rung is unsupported, Optimax can skip upward to an available rung as a capability fallback. That is not a performance promotion. Changes in exact version or capability fallback start a fresh performance epoch."
+            "For adaptive selection, Optimax can skip unsupported rungs upward to an available rung as a capability fallback. That is not a performance promotion. Changes in exact version or capability fallback start a fresh performance epoch. An unsupported user-directed fixed review rung blocks that rung without upward substitution."
           ]
         },
         {

@@ -153,6 +153,7 @@ code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size
 .install-intro > .metadata + p { margin-top: 28px; }
 .install-intro .text-link { margin-top: 25px; }
 .terminal { min-width: 0; background: var(--command-bg); color: var(--command-ink); border: 1px solid var(--line); border-radius: 12px; padding: 30px; --focus: #81AAFF; }
+.terminal a { color: var(--command-accent); }
 .terminal-head { display: flex; align-items: center; justify-content: space-between; color: var(--command-muted); font-size: 12px; font-weight: 700; letter-spacing: .1em; }
 .command-junction { width: 9px; height: 9px; border: 1px solid var(--command-accent); border-radius: 50%; }
 .tabs { display: flex; margin-top: 24px; gap: 4px; border-bottom: 1px solid #395470; }

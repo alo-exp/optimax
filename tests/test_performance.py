@@ -26,7 +26,7 @@ def parallel_prepare(arguments):
 def parallel_assess(arguments):
     root, run = arguments
     return Engine(root, "actual-user").assess(
-        run["run_id"], 4, run["model_id"], run["effort"], "exec-" + run["run_id"])
+        run["run_id"], 4, run["model_id"], run["effort"], "exec-" + run["run_id"], verified=True)
 
 
 def write_policy_one_fixture(engine, session):
@@ -111,6 +111,573 @@ def write_policy_two_fixture(engine, session):
 
 
 class PerformanceTests(unittest.TestCase):
+
+    def test_legacy_import_rejects_nonstring_keys_at_every_depth_without_mutation(self):
+        invalid = {
+            "numeric_order": [{2: "a", 10: "b"}],
+            "single_numeric": [{2: "a"}],
+            "nested": [{"nested": {2: "a", 10: "b"}}],
+            "array_nested": [{"nested": [{2: "a"}]}],
+            "tuple_nested": [{"nested": ({2: "a"},)}],
+            "collision": [{2: "a", "2": "b"}],
+            "none_collision": [{None: "a", "null": "b"}],
+            "boolean": [{True: "a"}],
+            "float": [{2.5: "a"}],
+            "nonfinite_key": [{float("inf"): "a"}],
+        }
+        for existing in (False, True):
+            for case, rows in invalid.items():
+                with self.subTest(existing=existing, case=case), tempfile.TemporaryDirectory() as root:
+                    engine = Engine(root, "actual-user")
+                    if existing:
+                        engine.set_enabled(self.session, True)
+                    before = engine.path.read_bytes() if existing else None
+                    with self.assertRaisesRegex(ValueError, "keys must be strings"):
+                        engine.import_history(rows)
+                    self.assertEqual(engine.path.read_bytes() if engine.path.exists() else None, before)
+                    self.assertEqual(engine.status(self.session)["enabled"], existing)
+                    if engine.directory.exists():
+                        self.assertEqual(list(engine.directory.iterdir()), [engine.path])
+
+    def test_legacy_import_preserves_nonfinite_rejection_and_compatible_string_key_history(self):
+        import hashlib
+        nonfinite = [{"value": float("nan")}, {"nested": [float("inf")]},
+                     {"nested": {"value": -float("inf")}}]
+        self.enable()
+        before = self.engine.path.read_bytes()
+        for row in nonfinite:
+            with self.subTest(row=row), self.assertRaises(ValueError):
+                self.engine.import_history([row])
+            self.assertEqual(self.engine.path.read_bytes(), before)
+        cyclic = {"cycle": None}
+        cyclic["cycle"] = cyclic
+        with self.assertRaisesRegex(ValueError, "Circular reference"):
+            self.engine.import_history([cyclic])
+        self.assertEqual(self.engine.path.read_bytes(), before)
+        # This is the persisted JSON of an older, valid single-numeric-key API import.
+        old_payload = json.dumps([{2: "a"}], sort_keys=True, separators=(",", ":"), allow_nan=False)
+        imported = json.loads(old_payload)
+        self.engine.import_history(imported)
+        event = self.events()[-1]
+        self.assertEqual(event["data"]["digest"], hashlib.sha256(old_payload.encode("utf-8")).hexdigest())
+        published = self.engine.path.read_bytes()
+        restarted = Engine(self.root, "actual-user")
+        self.assertTrue(restarted.status(self.session)["enabled"])
+        self.assertTrue(restarted.import_history(imported)["duplicate"])
+        self.assertEqual(restarted.path.read_bytes(), published)
+
+    def test_cli_legacy_import_string_keys_remain_lossless_and_idempotent(self):
+        rows = [{"2": "a", "10": "b", "nested": {"2": "c", "10": "d"}}]
+        request = self.root / "legacy-request.json"
+        request.write_text(json.dumps({"rows": rows}), encoding="utf-8")
+        command = [sys.executable, str(SCRIPT), "--root", str(self.root), "--user",
+                   "actual-user", "--session", self.session, "import-history", str(request)]
+        result = subprocess.run(command, text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["imported_count"], 1)
+        before = self.engine.path.read_bytes()
+        self.assertEqual(self.engine._load()[-1]["data"]["rows"], rows)
+        reordered = [{"nested": {"10": "d", "2": "c"}, "10": "b", "2": "a"}]
+        self.assertTrue(self.engine.import_history(reordered)["duplicate"])
+        self.assertEqual(self.engine.path.read_bytes(), before)
+
+    def test_isolated_csv_reader_failures_preserve_history_and_close_descriptors(self):
+        program = r"""
+import csv
+import json
+import os
+import subprocess
+import tempfile
+from unittest.mock import patch
+import performance
+with tempfile.TemporaryDirectory() as root:
+    engine = performance.Engine(root, "actual-user")
+    engine.import_history([{"notes": "x" * 140000}])
+    valid = engine.path.read_bytes()
+    csv.field_size_limit(512)
+    cases = {
+        "startup": OSError("child unavailable"),
+        "exit": subprocess.CompletedProcess([], 1, b"", b"child rejected CSV"),
+        "json": subprocess.CompletedProcess([], 0, b"not JSON", b""),
+        "utf8_output": subprocess.CompletedProcess([], 0, b"\xff", b""),
+        "shape": subprocess.CompletedProcess([], 0, b'{"unexpected":true}', b""),
+        "row_shape": subprocess.CompletedProcess([], 0, b'[["data"],[{"data":{"unexpected":true}}]]', b""),
+    }
+    report = {}
+    opened = os.open
+    for name, outcome in cases.items():
+        descriptors = []
+        def capture_open(path, *args, **kwargs):
+            descriptor = opened(path, *args, **kwargs)
+            if str(path) == engine.path.name or str(path) == str(engine.path):
+                descriptors.append(descriptor)
+            return descriptor
+        def fail(*args, **kwargs):
+            assert kwargs["shell"] is False
+            assert kwargs["close_fds"] is True
+            assert kwargs["stdin"].fileno() in descriptors
+            if isinstance(outcome, BaseException):
+                raise outcome
+            from unittest.mock import MagicMock
+            process = MagicMock()
+            process.__enter__.return_value = process
+            process.communicate.return_value = (outcome.stdout, outcome.stderr)
+            process.returncode = outcome.returncode
+            return process
+        error = None
+        with patch("subprocess.Popen", side_effect=fail) as run, patch("performance.os.open", side_effect=capture_open):
+            try:
+                engine.status("session-a")
+            except Exception as caught:
+                error = type(caught).__name__
+        closed = True
+        for descriptor in descriptors:
+            try:
+                os.fstat(descriptor)
+                closed = False
+            except OSError:
+                pass
+        report[name] = {"error": error, "calls": run.call_count, "closed": closed,
+                        "unchanged": engine.path.read_bytes() == valid}
+    for name, bad in {"utf8_input": b"\xff", "malformed_csv": b'"unterminated'}.items():
+        engine.path.write_bytes(valid.split(b"\r\n", 1)[0] + b"\r\n" + bad)
+        before = engine.path.read_bytes()
+        try:
+            engine.status("session-a")
+            error = None
+        except Exception as caught:
+            error = type(caught).__name__
+        report[name] = {"error": error, "unchanged": engine.path.read_bytes() == before}
+    print(json.dumps(report))
+"""
+        result = subprocess.run([sys.executable, "-c", program], cwd=str(SCRIPT.parent),
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        for case in ("startup", "exit", "json", "utf8_output", "shape", "row_shape"):
+            with self.subTest(case=case):
+                self.assertEqual(report[case]["error"], "OSError" if case == "startup" else "ValueError")
+                self.assertEqual(report[case]["calls"], 1)
+                self.assertTrue(report[case]["closed"])
+                self.assertTrue(report[case]["unchanged"])
+        self.assertEqual(report["utf8_input"]["error"], "UnicodeDecodeError")
+        self.assertEqual(report["malformed_csv"]["error"], "ValueError")
+        self.assertTrue(report["utf8_input"]["unchanged"])
+        self.assertTrue(report["malformed_csv"]["unchanged"])
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX interrupt and ledger rename")
+    def test_isolated_csv_reader_anchors_stdin_and_reaps_cancelled_child(self):
+        program = r"""
+import csv
+import json
+import os
+import signal
+import subprocess
+import tempfile
+import threading
+from unittest.mock import patch
+import performance
+with tempfile.TemporaryDirectory() as root:
+    engine = performance.Engine(root, "actual-user")
+    engine.import_history([{"notes": "x" * 140000}])
+    valid = engine.path.read_bytes()
+    csv.field_size_limit(512)
+    real_popen = subprocess.Popen
+    captured = []
+    retained = engine.path.with_name("retained.csv")
+    def move_after_spawn(*args, **kwargs):
+        process = real_popen(*args, **kwargs)
+        captured.append(process)
+        engine.path.rename(retained)
+        engine.path.write_bytes(b"replacement untouched")
+        return process
+    with patch("subprocess.Popen", side_effect=move_after_spawn):
+        anchored = engine.status("session-a")
+    assert retained.read_bytes() == valid
+    assert engine.path.read_bytes() == b"replacement untouched"
+    assert captured[0].poll() == 0
+    engine.path.unlink()
+    retained.rename(engine.path)
+    captured = []
+    timers = []
+    def interrupt_after_spawn(*args, **kwargs):
+        process = real_popen(*args, **kwargs)
+        captured.append(process)
+        timer = threading.Timer(0.05, lambda: os.kill(os.getpid(), signal.SIGINT))
+        timers.append(timer)
+        timer.start()
+        return process
+    cancelled = False
+    with patch("performance._CSV_READER_CODE", "import time; time.sleep(60)", create=True), patch(
+            "subprocess.Popen", side_effect=interrupt_after_spawn):
+        try:
+            engine.status("session-a")
+        except KeyboardInterrupt:
+            cancelled = True
+    for timer in timers:
+        timer.join()
+    print(json.dumps({"anchored": not anchored["enabled"], "cancelled": cancelled,
+                      "reaped": bool(captured) and captured[0].poll() is not None,
+                      "unchanged": engine.path.read_bytes() == valid,
+                      "pending": len(list(engine.directory.glob(".pending-*"))),
+                      "limit": csv.field_size_limit()}))
+"""
+        result = subprocess.run([sys.executable, "-c", program], cwd=str(SCRIPT.parent),
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertTrue(report["anchored"])
+        self.assertTrue(report["cancelled"])
+        self.assertTrue(report["reaped"])
+        self.assertTrue(report["unchanged"])
+        self.assertEqual(report["pending"], 0)
+        self.assertEqual(report["limit"], 512)
+
+    def test_import_preserves_unrelated_csv_reader_limit(self):
+        program = """
+import csv
+import json
+csv.field_size_limit(512)
+import performance
+print(json.dumps({"limit": csv.field_size_limit()}))
+"""
+        result = subprocess.run([sys.executable, "-c", program], cwd=str(SCRIPT.parent),
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["limit"], 512)
+
+    def test_large_history_read_preserves_concurrent_unrelated_reader_policy(self):
+        program = """
+import csv
+import io
+import json
+import tempfile
+import threading
+import time
+import performance
+with tempfile.TemporaryDirectory() as root:
+    engine = performance.Engine(root, "actual-user")
+    imported = [{"notes": "x" * 140000}]
+    engine.import_history(imported)
+    before = engine.path.read_bytes()
+    csv.field_size_limit(512)
+    ready, stop = threading.Event(), threading.Event()
+    counts = {"rejected": 0, "accepted": 0}
+    def unrelated_reader():
+        while not stop.is_set():
+            try:
+                next(csv.reader(io.StringIO("x" * 513)))
+                counts["accepted"] += 1
+            except csv.Error:
+                counts["rejected"] += 1
+            ready.set()
+            time.sleep(0.001)
+    thread = threading.Thread(target=unrelated_reader)
+    thread.start()
+    error = None
+    try:
+        assert ready.wait(5), "unrelated reader did not start"
+        engine.status("session-a")
+        assert engine._load()[-1]["data"]["rows"] == imported
+        assert engine.import_history(imported)["duplicate"]
+    except Exception as caught:
+        error = type(caught).__name__ + ": " + str(caught)
+    finally:
+        stop.set()
+        thread.join()
+    print(json.dumps({"error": error, "limit": csv.field_size_limit(), "counts": counts,
+                      "unchanged": engine.path.read_bytes() == before}))
+"""
+        result = subprocess.run([sys.executable, "-c", program], cwd=str(SCRIPT.parent),
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertIsNone(report["error"])
+        self.assertEqual(report["limit"], 512)
+        self.assertGreater(report["counts"]["rejected"], 0)
+        self.assertEqual(report["counts"]["accepted"], 0)
+        self.assertTrue(report["unchanged"])
+
+    def test_commit_rejects_fields_beyond_private_codec_character_limit_without_publication(self):
+        program = r"""
+import copy
+import csv
+import io
+import json
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
+import performance
+limit = 512
+csv.field_size_limit(limit)  # Isolated subprocess; never lower the test runner's shared setting.
+
+def imported_at_size(size):
+    rows = [{"notes": 'λ,"quoted"\n'}]
+    def serialized():
+        _, digest = performance._legacy_payload(rows)
+        return performance._json({"rows": rows, "digest": digest})
+    rows[0]["notes"] += "a" * (size - len(serialized()))
+    assert len(serialized()) == size
+    return rows, serialized()
+
+with tempfile.TemporaryDirectory() as root:
+    engine = performance.Engine(root, "actual-user")
+    engine.set_enabled("session-a", True)
+    boundary, data = imported_at_size(limit)
+    wire = io.StringIO(newline="")
+    csv.writer(wire).writerow([data])
+    assert len(wire.getvalue().rstrip("\r\n")) > limit, "fixture must exercise CSV quote expansion"
+    with patch("performance._CSV_FIELD_LIMIT", limit):
+        engine.import_history(boundary)
+        assert engine._load()[-1]["data"]["rows"] == boundary
+        before = engine.path.read_bytes()
+        assert engine.import_history(boundary)["duplicate"]
+        assert engine.path.read_bytes() == before
+        oversized, _ = imported_at_size(limit + 1)
+        error = None
+        try:
+            engine.import_history(oversized)
+        except ValueError as caught:
+            error = str(caught)
+        report = {"oversized_error": error, "oversized_unchanged": engine.path.read_bytes() == before}
+        engine.path.write_bytes(before)  # Restore only this disposable fixture if the regression is present.
+        valid = engine._load()
+        unicode_rows = copy.deepcopy(valid)
+        unicode_rows[-1]["run_id"] = "λ" * limit
+        with engine._locked() as access:
+            engine._load(access)
+            engine._commit(unicode_rows, access)
+        with engine.path.open(newline="", encoding="utf-8") as stream:
+            decoded = list(csv.DictReader(stream))
+        report["unicode_character_boundary"] = decoded[-1]["run_id"] == "λ" * limit
+        engine.path.write_bytes(before)  # This low-level CSV fixture intentionally bypasses projection semantics.
+        fields = {}
+        for field in performance.FIELDS:
+            rows = copy.deepcopy(valid)
+            if field == "data":
+                rows[-1][field]["extra"] = "x" * (limit + 1)
+            else:
+                rows[-1][field] = "λ" * (limit + 1)
+            error = None
+            try:
+                with engine._locked() as access:
+                    engine._load(access)
+                    engine._commit(rows, access)
+            except ValueError as caught:
+                error = str(caught)
+            fields[field] = {"error": error, "unchanged": engine.path.read_bytes() == before,
+                             "pending": len(list(engine.directory.glob(".pending-*")))}
+            engine.path.write_bytes(before)
+        report["fields"] = fields
+        report["boundary_readable"] = engine._load()[-1]["data"]["rows"] == boundary
+print(json.dumps(report))
+"""
+        result = subprocess.run([sys.executable, "-c", program], cwd=str(SCRIPT.parent),
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertIsNotNone(report["oversized_error"], "oversized import was acknowledged")
+        self.assertIn("field", report["oversized_error"])
+        self.assertIn("512", report["oversized_error"])
+        self.assertTrue(report["oversized_unchanged"])
+        self.assertTrue(report["boundary_readable"])
+        self.assertTrue(report["unicode_character_boundary"])
+        for field, outcome in report["fields"].items():
+            with self.subTest(field=field):
+                self.assertIsNotNone(outcome["error"], "oversized event field was published")
+                self.assertIn(field, outcome["error"])
+                self.assertTrue(outcome["unchanged"])
+                self.assertEqual(outcome["pending"], 0)
+
+    def test_large_legacy_import_remains_readable_lossless_and_idempotent_after_restart(self):
+        import performance
+        notes = ('λ,"quoted"\\n' * 14000) + "tail"
+        imported = [{"notes": notes, "nested": {"items": [None, True, 4]}}]
+        self.assertGreater(len(performance._json(imported)), 128 * 1024)
+        result = self.engine.import_history(imported)
+        self.assertEqual(result["imported_count"], 1)
+        self.assertFalse(result["eligible"])
+        published = self.engine.path.read_bytes()
+        restarted = Engine(self.root, "actual-user")
+        with patch("performance.csv.field_size_limit", side_effect=AssertionError("reads must not reconfigure global CSV limits")):
+            self.assertFalse(restarted.status(self.session)["enabled"])
+            loaded = restarted._load()
+            self.assertEqual(loaded[-1]["data"]["rows"], imported)
+            self.assertTrue(restarted.import_history(imported)["duplicate"])
+        self.assertEqual(restarted.path.read_bytes(), published)
+        status = subprocess.run([sys.executable, str(SCRIPT), "--root", str(self.root),
+                                 "--user", "actual-user", "--session", self.session, "status"],
+                                text=True, capture_output=True)
+        self.assertEqual(status.returncode, 0, status.stderr)
+        self.assertFalse(json.loads(status.stdout)["enabled"])
+        self.assertEqual(restarted.path.read_bytes(), published)
+
+    def test_private_csv_codec_ceiling_preserves_parent_policy_on_c_long_platform(self):
+        program = """
+import csv
+import json
+import subprocess
+import sys
+from unittest.mock import patch
+csv.field_size_limit(512)
+with patch("csv.field_size_limit", side_effect=AssertionError("parent parser policy touched")), patch(
+        "ctypes.sizeof", return_value=4):
+    import performance
+assert performance._CSV_FIELD_LIMIT == (1 << 31) - 1
+payload = "data\\n" + "x" * 140000 + "\\n"
+result = subprocess.run([sys.executable, "-I", "-c", performance._CSV_READER_CODE,
+                         str(performance._CSV_FIELD_LIMIT)], input=payload.encode("utf-8"),
+                        capture_output=True)
+assert result.returncode == 0, result.stderr
+assert json.loads(result.stdout)[1][0]["data"] == "x" * 140000
+print(json.dumps({"limit": csv.field_size_limit(), "ceiling": performance._CSV_FIELD_LIMIT}))
+"""
+        result = subprocess.run([sys.executable, "-c", program], cwd=str(SCRIPT.parent),
+                                text=True, capture_output=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        state = json.loads(result.stdout)
+        self.assertEqual(state["limit"], 512)
+        self.assertEqual(state["ceiling"], (1 << 31) - 1)
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX directory movement while pinned")
+    def test_postpublication_identity_check_rejects_moves_inside_link_and_replace(self):
+        import os
+        for first_publication in (True, False):
+            for move_root in (True, False):
+                with self.subTest(first_publication=first_publication, move_root=move_root), tempfile.TemporaryDirectory() as base:
+                    root = Path(base) / "project"
+                    root.mkdir()
+                    engine = Engine(root, "actual-user")
+                    if not first_publication:
+                        engine.set_enabled(self.session, True)
+                    before = engine.path.read_bytes() if engine.path.exists() else b""
+                    retained = Path(base) / "retained"
+                    sentinel = b"replacement ledger must remain untouched"
+                    primitive = os.link if first_publication else os.replace
+                    moved = False
+
+                    def publish(*args, **kwargs):
+                        nonlocal moved
+                        if move_root:
+                            root.rename(retained)
+                            engine.directory.mkdir(parents=True)
+                        else:
+                            engine.directory.rename(retained)
+                            engine.directory.mkdir()
+                        engine.path.write_bytes(sentinel)
+                        moved = True
+                        return primitive(*args, **kwargs)
+
+                    error = None
+                    with patch("performance.os.link" if first_publication else "performance.os.replace",
+                               side_effect=publish):
+                        try:
+                            if first_publication:
+                                engine.set_enabled(self.session, True)
+                            else:
+                                engine.prepare(self.session, "codex", "executor", "low", MODELS, list(range(7)))
+                        except (ValueError, OSError) as caught:
+                            error = caught
+                    self.assertTrue(moved)
+                    retained_directory = retained / "model-perf" if move_root else retained
+                    retained_ledger = retained_directory / engine.path.name
+                    published = retained_ledger.read_bytes()
+                    self.assertTrue(published.startswith(before))
+                    self.assertNotEqual(published, before)
+                    with retained_ledger.open(newline="", encoding="utf-8") as stream:
+                        rows = list(csv.DictReader(stream))
+                    self.assertEqual(rows[-1]["event_type"], "session" if first_publication else "launch")
+                    self.assertTrue(all(None not in row and None not in row.values() for row in rows))
+                    self.assertEqual(engine.path.read_bytes(), sentinel)
+                    self.assertEqual(list(engine.directory.iterdir()), [engine.path])
+                    self.assertEqual(list(retained_directory.iterdir()), [retained_ledger])
+                    self.assertIsInstance(error, ValueError, "postpublication movement falsely acknowledged success")
+                    self.assertRegex(str(error), "project root|ledger directory")
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX directory movement while pinned")
+    def test_postpublication_identity_check_rejects_relocation_directory_move(self):
+        import os
+        old = self.root.resolve() / "old-project"
+        old.mkdir()
+        engine = Engine(old, "actual-user")
+        engine.set_enabled(self.session, True)
+        before = engine.path.read_bytes()
+        new = self.root.resolve() / "new-project"
+        old.rename(new)
+        moved = Engine(new, "actual-user")
+        retained = self.root / "retained-model-perf"
+        sentinel = b"replacement relocation ledger"
+        replace = os.replace
+
+        def publish(*args, **kwargs):
+            moved.directory.rename(retained)
+            moved.directory.mkdir()
+            moved.path.write_bytes(sentinel)
+            return replace(*args, **kwargs)
+
+        error = None
+        with patch("performance.os.replace", side_effect=publish):
+            try:
+                moved.relocate(str(old))
+            except (ValueError, OSError) as caught:
+                error = caught
+        retained_ledger = retained / moved.path.name
+        self.assertTrue(retained_ledger.read_bytes().startswith(before))
+        with retained_ledger.open(newline="", encoding="utf-8") as stream:
+            rows = list(csv.DictReader(stream))
+        self.assertEqual(rows[-1]["event_type"], "relocation")
+        self.assertEqual(json.loads(rows[-1]["data"]), {"from_root": str(old), "to_root": str(new)})
+        self.assertEqual(moved.path.read_bytes(), sentinel)
+        self.assertEqual(list(moved.directory.iterdir()), [moved.path])
+        self.assertEqual(list(retained.iterdir()), [retained_ledger])
+        self.assertIsInstance(error, ValueError, "relocation falsely acknowledged changed directory")
+        self.assertRegex(str(error), "ledger directory")
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX directory movement while pinned")
+    def test_postpublication_identity_check_confirms_noop_and_already_synced_mutations(self):
+        import os
+        for already_confirmed in (False, True):
+            with self.subTest(already_confirmed=already_confirmed), tempfile.TemporaryDirectory() as base:
+                engine = Engine(base, "actual-user")
+                engine.set_enabled(self.session, True)
+                retained = Path(base) / "retained-model-perf"
+                sentinel = b"replacement after sync"
+                fsync, status = os.fsync, engine._status
+
+                def move():
+                    engine.directory.rename(retained)
+                    engine.directory.mkdir()
+                    engine.path.write_bytes(sentinel)
+
+                def sync_then_move(descriptor):
+                    result = fsync(descriptor)
+                    if os.path.samestat(os.fstat(descriptor), engine.directory.stat()):
+                        move()
+                    return result
+
+                def result_then_move(*args, **kwargs):
+                    result = status(*args, **kwargs)
+                    move()
+                    return result
+
+                error = None
+                target = patch.object(engine, "_status", side_effect=result_then_move) if already_confirmed else patch(
+                    "performance.os.fsync", side_effect=sync_then_move)
+                with target:
+                    try:
+                        engine.set_enabled(self.session, not already_confirmed)
+                    except (ValueError, OSError) as caught:
+                        error = caught
+                retained_ledger = retained / engine.path.name
+                with retained_ledger.open(newline="", encoding="utf-8") as stream:
+                    rows = list(csv.DictReader(stream))
+                self.assertEqual(json.loads(rows[-1]["data"])["enabled"], not already_confirmed)
+                self.assertEqual(engine.path.read_bytes(), sentinel)
+                self.assertEqual(list(engine.directory.iterdir()), [engine.path])
+                self.assertEqual(list(retained.iterdir()), [retained_ledger])
+                self.assertIsInstance(error, ValueError, "mutation success missed a final identity change")
+                self.assertRegex(str(error), "ledger directory")
+
     def test_v4_adoption_preserves_unchanged_windows_and_retires_only_claude_advisor(self):
         write_policy_two_fixture(self.engine, self.session)
         rows = self.events()
@@ -211,6 +778,170 @@ class PerformanceTests(unittest.TestCase):
     def events(self):
         with self.engine.path.open(newline="", encoding="utf-8") as stream:
             return [dict(row, data=json.loads(row["data"])) for row in csv.DictReader(stream)]
+
+    def test_explicit_relocation_preserves_history_and_rejects_wrong_origin(self):
+        old = self.root.resolve() / 'old-project'
+        old.mkdir()
+        original = Engine(old, 'actual-user')
+        original.set_enabled('existing-session', True)
+        with original.path.open(newline='', encoding='utf-8') as stream:
+            before = list(csv.DictReader(stream))
+        new = self.root.resolve() / 'new-project'
+        old.rename(new)
+        moved = Engine(new, 'actual-user')
+        with self.assertRaisesRegex(ValueError, 'binding mismatch'):
+            moved.status('existing-session')
+        self.assertTrue(hasattr(moved, 'relocate'), 'explicit relocation is unavailable')
+        with self.assertRaises(ValueError):
+            moved.relocate(str(self.root / 'wrong-project'))
+        with moved.path.open(newline='', encoding='utf-8') as stream:
+            self.assertEqual(list(csv.DictReader(stream)), before)
+        moved.relocate(str(old))
+        self.assertTrue(Engine(new, 'actual-user').status('existing-session')['enabled'])
+        with moved.path.open(newline='', encoding='utf-8') as stream:
+            after = list(csv.DictReader(stream))
+        self.assertEqual(after[:-1], before)
+        self.assertEqual(after[-1]['event_type'], 'relocation')
+        self.assertEqual(json.loads(after[-1]['data']), {'from_root': str(old), 'to_root': str(new)})
+
+        newest = self.root.resolve() / 'newest-project'
+        new.rename(newest)
+        twice_moved = Engine(newest, 'actual-user')
+        twice_moved.relocate(str(new))
+        self.assertTrue(twice_moved.status('existing-session')['enabled'])
+        with twice_moved.path.open(newline='', encoding='utf-8') as stream:
+            rows = list(csv.DictReader(stream))
+        rows[-1]['data'] = json.dumps({'from_root': str(old), 'to_root': str(newest)})
+        with twice_moved.path.open('w', newline='', encoding='utf-8') as stream:
+            writer = csv.DictWriter(stream, fieldnames=rows[0].keys())
+            writer.writeheader()
+            writer.writerows(rows)
+        with self.assertRaisesRegex(ValueError, 'invalid ledger relocation'):
+            twice_moved.status('existing-session')
+
+    def test_relocation_preserves_assessments_epoch_and_window_across_restart(self):
+        old = self.root.resolve() / 'history-old'
+        old.mkdir()
+        self.engine = Engine(old, 'actual-user')
+        self.enable()
+        runs = [self.prepare() for _ in range(5)]
+        outcomes = [self.assess(run) for run in runs[:4]]
+        before_track = self.engine.status(self.session)['tracks'][0]
+        self.assertEqual(before_track['eligible_count'], 4)
+        self.assertEqual(before_track['epoch'], runs[0]['epoch'])
+        new = self.root / 'history-new'
+        old.rename(new)
+        self.engine = Engine(new, 'actual-user')
+        self.engine.relocate(str(old))
+
+        self.engine = Engine(new, 'actual-user')
+        self.assertEqual(self.engine.status(self.session)['tracks'][0], before_track)
+        before_retry = self.engine.path.read_bytes()
+        self.assertEqual(self.assess(runs[0]), outcomes[0])
+        self.assertEqual(self.engine.path.read_bytes(), before_retry)
+        result = self.assess(runs[4])
+        self.assertEqual(result['transition']['step'], 1)
+        track = Engine(new, 'actual-user').status(self.session)['tracks'][0]
+        self.assertEqual(track['step'], 1)
+        self.assertNotEqual(track['epoch'], before_track['epoch'])
+        self.assertEqual(self.prepare()['epoch'], track['epoch'])
+
+    def test_failed_relocation_replace_preserves_history_and_cleans_temporary(self):
+        old = self.root.resolve() / 'atomic-old'
+        old.mkdir()
+        self.engine = Engine(old, 'actual-user')
+        self.enable()
+        self.assess(self.prepare())
+        new = self.root / 'atomic-new'
+        old.rename(new)
+        self.engine = Engine(new, 'actual-user')
+        before = self.engine.path.read_bytes()
+        with patch('performance.os.replace', side_effect=PermissionError('write denied')):
+            with self.assertRaises(PermissionError):
+                self.engine.relocate(str(old))
+        self.assertEqual(self.engine.path.read_bytes(), before)
+        self.assertEqual([path.name for path in self.engine.directory.iterdir()],
+                         ['actual-user-model-perf.csv'])
+        self.engine.relocate(str(old))
+        self.assertEqual(Engine(new, 'actual-user').status(self.session)['tracks'][0]['eligible_count'], 1)
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX directory fsync")
+    def test_relocation_postpublication_sync_error_recovery_preserves_binding_and_history(self):
+        import os
+        old = self.root.resolve() / "relocation-sync-old"
+        old.mkdir()
+        original = Engine(old, "actual-user")
+        original.set_enabled(self.session, True)
+        before = original.path.read_bytes()
+        original_policy = original.status(self.session)["policy_version"]
+        new = self.root.resolve() / "relocation-sync-new"
+        old.rename(new)
+        moved = Engine(new, "actual-user")
+        fsync = os.fsync
+        child_syncs = []
+
+        def fail_child_sync(descriptor):
+            if os.path.samestat(os.fstat(descriptor), moved.directory.stat()):
+                child_syncs.append(descriptor)
+                raise OSError("relocation namespace unconfirmed")
+            return fsync(descriptor)
+
+        with patch("performance.os.fsync", side_effect=fail_child_sync):
+            with self.assertRaisesRegex(OSError, "relocation namespace unconfirmed"):
+                moved.relocate(str(old))
+        visible = moved.path.read_bytes()
+        self.assertTrue(visible.startswith(before), "relocation rewrote historical bytes")
+        with moved.path.open(newline="", encoding="utf-8") as stream:
+            rows = list(csv.DictReader(stream))
+        relocations = [row for row in rows if row["event_type"] == "relocation"]
+        self.assertEqual(len(relocations), 1)
+        self.assertEqual(json.loads(relocations[0]["data"]),
+                         {"from_root": str(old), "to_root": str(new)})
+        self.assertEqual(list(moved.directory.iterdir()), [moved.path])
+        with patch("performance.os.fsync", side_effect=fail_child_sync):
+            status = Engine(new, "actual-user").status(self.session)
+            self.assertTrue(status["enabled"])
+            self.assertEqual(status["policy_version"], original_policy)
+            self.assertEqual(len(child_syncs), 1, "status must not confirm durability")
+            with self.assertRaisesRegex(ValueError, "binding mismatch"):
+                moved.relocate(str(old))
+            self.assertEqual(len(child_syncs), 1, "wrong-origin retry must fail before mutation")
+            self.assertEqual(moved.path.read_bytes(), visible)
+            with self.assertRaisesRegex(OSError, "relocation namespace unconfirmed"):
+                moved.adopt_policy()
+        self.assertEqual(len(child_syncs), 2)
+        self.assertEqual(moved.path.read_bytes(), visible)
+        recovered_syncs = []
+
+        def recover_sync(descriptor):
+            self.assertTrue(os.path.samestat(os.fstat(descriptor), moved.directory.stat()))
+            self.assertEqual(moved.path.read_bytes(), visible)
+            recovered_syncs.append(descriptor)
+            return fsync(descriptor)
+
+        with patch("performance.os.fsync", side_effect=recover_sync), patch(
+                "performance.os.replace") as replace, patch("performance.os.link") as link:
+            result = moved.adopt_policy()
+        self.assertEqual(result, {"changed": False, "policy_version": original_policy})
+        self.assertEqual(len(recovered_syncs), 1)
+        replace.assert_not_called()
+        link.assert_not_called()
+        self.assertEqual(moved.path.read_bytes(), visible)
+
+    def test_relocation_cli_uses_explicit_request(self):
+        old = self.root.resolve() / 'cli-old'
+        old.mkdir()
+        Engine(old, 'actual-user').set_enabled('session-a', True)
+        new = self.root.resolve() / 'cli-new'
+        old.rename(new)
+        request = self.root / 'request.json'
+        request.write_text(json.dumps({'from_root': str(old)}), encoding='utf-8')
+        result = subprocess.run([sys.executable, str(SCRIPT), '--root', str(new),
+                                 '--user', 'actual-user', '--session', 'session-a',
+                                 'relocate', str(request)], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)['to_root'], str(new))
+        self.assertTrue(Engine(new, 'actual-user').status('session-a')['enabled'])
 
     def test_default_off_read_only_and_explicit_session_enable(self):
         self.assertFalse(self.engine.status(self.session)["enabled"])
@@ -601,7 +1332,7 @@ class PerformanceTests(unittest.TestCase):
         fresh = Engine(self.root, "actual-user")
         for run, score, result in ((first_runs[-1], 4, promotion), (second_runs[-1], 5, demotion)):
             self.assertEqual(fresh.assess(run["run_id"], score, run["model_id"], run["effort"],
-                                          "exec-" + run["run_id"]), result)
+                                          "exec-" + run["run_id"], verified=True), result)
         self.assertEqual(fresh.status(self.session)["tracks"][0]["step"], 0)
 
     def test_no_transition_can_precede_separate_prepare_rollover(self):
@@ -613,7 +1344,7 @@ class PerformanceTests(unittest.TestCase):
         fresh = Engine(self.root, "actual-user")
         self.assertEqual(fresh.status(self.session)["tracks"][0]["model_id"], "terra-v2")
         self.assertEqual(fresh.assess(run["run_id"], 5, run["model_id"], run["effort"],
-                                      "exec-" + run["run_id"]), result)
+                                      "exec-" + run["run_id"], verified=True), result)
 
     def test_old_epoch_late_results_never_move_current_or_replay_evidence(self):
         self.enable()
@@ -682,6 +1413,45 @@ class PerformanceTests(unittest.TestCase):
             self.assertFalse(self.assess(self.prepare(), effective_effort="high")["eligible"])
         track = self.engine.status(self.session)["tracks"][0]
         self.assertEqual((track["step"], track["eligible_count"]), (0, 0))
+
+    def test_assess_requires_explicit_verified_attestation_before_mutation(self):
+        self.enable()
+        run = self.prepare()
+        request = dict(run_id=run["run_id"], score=4, effective_model_id=run["model_id"],
+                       effective_effort=run["effort"], execution_id="reviewed-execution")
+        before = self.engine.path.read_bytes()
+        with self.assertRaisesRegex(TypeError, "verified"):
+            self.engine.assess(**request)
+        self.assertEqual(self.engine.path.read_bytes(), before)
+        self.assertEqual(self.engine.status(self.session)["tracks"][0]["eligible_count"], 0)
+        result = self.engine.assess(**request, verified=True)
+        self.assertTrue(result["eligible"])
+        self.assertEqual(self.engine.status(self.session)["tracks"][0]["eligible_count"], 1)
+        self.assertEqual(self.engine.assess(**request, verified=True), result)
+
+    def test_cli_assess_missing_verified_preserves_ledger_and_allows_corrected_retry(self):
+        self.enable()
+        run = self.prepare()
+        request = dict(run_id=run["run_id"], score=4, effective_model_id=run["model_id"],
+                       effective_effort=run["effort"], execution_id="reviewed-cli-execution")
+        request_path = self.root / "assessment.json"
+        request_path.write_text(json.dumps(request), encoding="utf-8")
+        command = [sys.executable, str(SCRIPT), "--root", str(self.root), "--user",
+                   "actual-user", "--session", self.session, "assess", str(request_path)]
+        before = self.engine.path.read_bytes()
+        rejected = subprocess.run(command, text=True, capture_output=True)
+        self.assertEqual(rejected.returncode, 1)
+        self.assertEqual(rejected.stdout, "")
+        self.assertIn("verified", rejected.stderr)
+        self.assertNotIn("Traceback", rejected.stderr)
+        self.assertEqual(self.engine.path.read_bytes(), before)
+        self.assertEqual(self.engine.status(self.session)["tracks"][0]["eligible_count"], 0)
+        request["verified"] = True
+        request_path.write_text(json.dumps(request), encoding="utf-8")
+        accepted = subprocess.run(command, text=True, capture_output=True)
+        self.assertEqual(accepted.returncode, 0, accepted.stderr)
+        self.assertTrue(json.loads(accepted.stdout)["eligible"])
+        self.assertEqual(self.engine.status(self.session)["tracks"][0]["eligible_count"], 1)
 
     def test_cached_execution_and_identical_assessment_replay_do_not_count_twice(self):
         self.enable()
@@ -766,6 +1536,229 @@ class PerformanceTests(unittest.TestCase):
                          'transaction overwrote a ledger that appeared before directory binding')
         self.assertEqual(list(self.engine.directory.iterdir()), [self.engine.path])
         self.assertIsNotNone(error, 'unexpected initial ledger must reject mutation')
+
+    def test_first_publication_preserves_competing_regular_file_and_symlink(self):
+        import os
+        for competing_symlink in (False, True):
+            with self.subTest(symlink=competing_symlink), tempfile.TemporaryDirectory() as root:
+                engine = Engine(root, "actual-user")
+                engine.directory.mkdir()
+                target = Path(root) / "foreign.csv"
+                sentinel = b"foreign ledger must survive first publication"
+                target.write_bytes(sentinel)
+                fsync = os.fsync
+                appeared = False
+
+                def appear_after_pending_sync(descriptor):
+                    nonlocal appeared
+                    result = fsync(descriptor)
+                    if not appeared and __import__('stat').S_ISREG(os.fstat(descriptor).st_mode):
+                        self.assertFalse(engine.path.exists())
+                        self.assertEqual(len(list(engine.directory.glob(".pending-*"))), 1)
+                        if competing_symlink:
+                            engine.path.symlink_to(target)
+                        else:
+                            engine.path.write_bytes(sentinel)
+                        appeared = True
+                    return result
+
+                error = None
+                with patch("performance.os.fsync", side_effect=appear_after_pending_sync):
+                    try:
+                        engine.set_enabled(self.session, True)
+                    except (ValueError, OSError) as caught:
+                        error = caught
+                self.assertTrue(appeared, "competition immediately before publication was not exercised")
+                self.assertEqual(engine.path.is_symlink(), competing_symlink)
+                self.assertEqual(engine.path.read_bytes(), sentinel)
+                self.assertEqual(target.read_bytes(), sentinel)
+                self.assertEqual(list(engine.directory.iterdir()), [engine.path],
+                                 "first-publication failure leaked a pending file")
+                self.assertIsNotNone(error, "competing ledger must reject initial publication")
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX hard-link publication")
+    def test_first_publication_link_failure_leaves_no_partial_ledger_or_pending_file(self):
+        self.engine.directory.mkdir()
+        for failure in (OSError("hard links unavailable"), NotImplementedError("dir_fd unavailable")):
+            with self.subTest(failure=type(failure).__name__):
+                with patch("performance.os.link", side_effect=failure) as link:
+                    with patch("performance.os.replace") as replace:
+                        with self.assertRaises(type(failure)):
+                            self.enable()
+                link.assert_called_once()
+                replace.assert_not_called()
+                self.assertFalse(self.engine.path.exists())
+                self.assertEqual(list(self.engine.directory.iterdir()), [])
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX directory fsync")
+    def test_first_publication_syncs_root_before_staging_then_file_and_child(self):
+        import os
+        import stat
+        for existing_directory in (False, True):
+            with self.subTest(existing_directory=existing_directory), tempfile.TemporaryDirectory() as root:
+                engine = Engine(root, "actual-user")
+                if existing_directory:
+                    engine.directory.mkdir()
+                events = []
+                fsync, opened, link = os.fsync, os.open, os.link
+
+                def sync(descriptor):
+                    info = os.fstat(descriptor)
+                    if os.path.samestat(info, engine.root.stat()):
+                        events.append("root")
+                    elif stat.S_ISREG(info.st_mode):
+                        events.append("file")
+                    else:
+                        events.append("child")
+                    return fsync(descriptor)
+
+                def open_file(path, *args, **kwargs):
+                    if Path(path).name.startswith(".pending-"):
+                        events.append("stage")
+                    return opened(path, *args, **kwargs)
+
+                def publish(*args, **kwargs):
+                    events.append("publish")
+                    return link(*args, **kwargs)
+
+                with patch("performance.os.fsync", side_effect=sync), patch(
+                        "performance.os.open", side_effect=open_file), patch(
+                        "performance.os.link", side_effect=publish):
+                    engine.set_enabled(self.session, True)
+                self.assertEqual(events, ["root", "stage", "file", "publish", "child"])
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX directory fsync")
+    def test_first_publication_root_sync_failure_has_no_partial_write_and_can_retry(self):
+        import os
+        fsync = os.fsync
+        root_syncs = []
+
+        def fail_root_sync(descriptor):
+            if os.path.samestat(os.fstat(descriptor), self.root.stat()):
+                root_syncs.append(descriptor)
+                raise OSError("root sync failed")
+            return fsync(descriptor)
+
+        for attempt in range(2):
+            with self.subTest(attempt=attempt), patch(
+                    "performance.os.fsync", side_effect=fail_root_sync):
+                with self.assertRaisesRegex(OSError, "root sync failed"):
+                    self.enable()
+            self.assertFalse(self.engine.path.exists())
+            self.assertEqual(list(self.engine.directory.iterdir()), [])
+        self.assertEqual(len(root_syncs), 2, "retry must sync an already existing empty directory's parent")
+        self.enable()
+        self.assertTrue(self.engine.status(self.session)["enabled"])
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX directory fsync")
+    def test_first_publication_child_sync_failure_leaves_complete_replayable_ledger(self):
+        import os
+        fsync = os.fsync
+
+        def fail_child_sync(descriptor):
+            if os.path.samestat(os.fstat(descriptor), self.engine.directory.stat()):
+                self.assertTrue(self.engine.path.exists())
+                raise OSError("child sync failed")
+            return fsync(descriptor)
+
+        with patch("performance.os.fsync", side_effect=fail_child_sync):
+            with self.assertRaisesRegex(OSError, "child sync failed"):
+                self.enable()
+        self.assertEqual(list(self.engine.directory.iterdir()), [self.engine.path])
+        self.assertTrue(Engine(self.root, "actual-user").status(self.session)["enabled"])
+        before = self.engine.path.read_bytes()
+        self.enable()
+        self.assertEqual(self.engine.path.read_bytes(), before)
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX directory fsync")
+    def test_noop_mutation_retry_confirms_namespace_without_rewriting_visible_history(self):
+        import os
+        for operation in ("set_enabled", "assess", "assessment_transition", "adopt_policy", "import_history"):
+            with self.subTest(operation=operation), tempfile.TemporaryDirectory() as root:
+                engine = Engine(root, "actual-user")
+                if operation.startswith("assess"):
+                    engine.set_enabled(self.session, True)
+                    count = 5 if operation == "assessment_transition" else 1
+                    runs = [engine.prepare(self.session, "codex", "executor", "low",
+                                           MODELS, list(range(7))) for _ in range(count)]
+                    def assess(run):
+                        return engine.assess(run["run_id"], 4, run["model_id"], run["effort"],
+                                             "exec-" + run["run_id"], verified=True)
+                    for run in runs[:-1]:
+                        assess(run)
+                    mutate = lambda: assess(runs[-1])
+                elif operation == "set_enabled":
+                    mutate = lambda: engine.set_enabled(self.session, True)
+                elif operation == "adopt_policy":
+                    mutate = engine.adopt_policy
+                else:
+                    mutate = lambda: engine.import_history([{"score": "4", "model_slug": "old"}])
+                fsync = os.fsync
+                child_syncs = []
+
+                def fail_child_sync(descriptor):
+                    if os.path.samestat(os.fstat(descriptor), engine.directory.stat()):
+                        child_syncs.append(descriptor)
+                        raise OSError("namespace durability unconfirmed")
+                    return fsync(descriptor)
+
+                with patch("performance.os.fsync", side_effect=fail_child_sync):
+                    with self.assertRaisesRegex(OSError, "namespace durability unconfirmed"):
+                        mutate()
+                visible = engine.path.read_bytes()
+                self.assertEqual(list(engine.directory.iterdir()), [engine.path])
+                with patch("performance.os.fsync", side_effect=fail_child_sync):
+                    engine.status(self.session)
+                self.assertEqual(len(child_syncs), 1, "status must remain read-only")
+                with patch("performance.os.fsync", side_effect=fail_child_sync):
+                    with self.assertRaisesRegex(OSError, "namespace durability unconfirmed"):
+                        mutate()
+                self.assertEqual(len(child_syncs), 2)
+                self.assertEqual(engine.path.read_bytes(), visible)
+                recovered_syncs = []
+
+                def recover_sync(descriptor):
+                    self.assertTrue(os.path.samestat(os.fstat(descriptor), engine.directory.stat()))
+                    self.assertEqual(engine.path.read_bytes(), visible)
+                    recovered_syncs.append(descriptor)
+                    return fsync(descriptor)
+
+                with patch("performance.os.fsync", side_effect=recover_sync), patch(
+                        "performance.os.replace") as replace, patch("performance.os.link") as link:
+                    result = mutate()
+                self.assertEqual(len(recovered_syncs), 1)
+                replace.assert_not_called()
+                link.assert_not_called()
+                self.assertEqual(engine.path.read_bytes(), visible)
+                if operation == "assessment_transition":
+                    self.assertEqual(result["transition"]["step"], 1)
+                elif operation == "assess":
+                    self.assertTrue(result["eligible"])
+                elif operation == "import_history":
+                    self.assertTrue(result["duplicate"])
+                elif operation == "adopt_policy":
+                    self.assertFalse(result["changed"])
+                else:
+                    self.assertTrue(result["enabled"])
+
+    @unittest.skipUnless(__import__("os").name == "posix", "requires POSIX hard-link publication")
+    def test_cli_first_publication_unsupported_link_reports_compact_error_and_can_retry(self):
+        import io
+        import performance
+        command = ["--root", str(self.root), "--user", "actual-user",
+                   "--session", self.session, "on"]
+        output, errors = io.StringIO(), io.StringIO()
+        with patch("performance.os.link", side_effect=NotImplementedError("link unsupported")), patch(
+                "sys.stdout", output), patch("sys.stderr", errors):
+            result = performance.main(command)
+        self.assertEqual(result, 1)
+        self.assertEqual(output.getvalue(), "")
+        self.assertEqual(errors.getvalue(), "error: link unsupported\n")
+        self.assertFalse(self.engine.path.exists())
+        self.assertEqual(list(self.engine.directory.iterdir()), [])
+        with patch("sys.stdout", io.StringIO()), patch("sys.stderr", io.StringIO()):
+            self.assertEqual(performance.main(command), 0)
+        self.assertTrue(self.engine.status(self.session)["enabled"])
 
     def test_ledger_directory_appearing_after_absent_load_is_not_overwritten(self):
         self.assertFalse(self.engine.status(self.session)['enabled'])

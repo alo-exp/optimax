@@ -76,7 +76,7 @@ test('homepage explains useful parallel work, inspectable proof, objections and 
   const proof=document.querySelector('#proof');assert.ok(proof.querySelectorAll('a[href^="https://github.com/alo-exp/optimax/"]').length>=3);
   assert.match(proof.textContent,/Codex/);assert.match(proof.textContent,/Claude/);assert.match(proof.textContent,/static|limited/);
   const questions=document.querySelector('#questions').textContent;
-  for(const expected of [/chosen session model/i,/cheapest/i,/capacity/i,/shared resources/i,/hidden worker/i,/off/i])assert.match(questions,expected);
+  for(const expected of [/chosen session model/i,/cheapest/i,/capacity/i,/shared resources/i,/opaque native workers remain only partly optimizable/i,/controls for requesting a model and effort permit delegation/i,/without verified effective settings[^.]*cannot support model-specific learning/i,/off/i])assert.match(questions,expected);
   assert.match(document.querySelector('#install').textContent,/MIT/);assert.match(document.querySelector('#install').textContent,/usage charges/i);
   assert.deepEqual([...document.querySelectorAll('[data-install-panel]')].map(e=>e.textContent),[
    'codex plugin marketplace add alo-labs/agent-plugins\ncodex plugin add optimax@alo-labs-codex',

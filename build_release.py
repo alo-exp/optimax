@@ -9,7 +9,7 @@ import stat
 import tempfile
 import zipfile
 
-from skills.optimax.scripts.install_local import READ_CHUNK_BYTES, _manifest, _validate_skill_frontmatter
+from release_validation import READ_CHUNK_BYTES, _validate_skill_frontmatter, validate_entries
 
 ROOT = Path(__file__).resolve().parent
 RUNTIME = ROOT / 'skills' / 'optimax'
@@ -17,7 +17,7 @@ FILES = (
     'SKILL.md', 'agents/openai.yaml',
     'references/calculator.md', 'references/native-modes.md',
     'references/platforms.md', 'references/policy.md', 'references/parallel-execution.md',
-    'scripts/install_local.py', 'scripts/ladder.py', 'scripts/performance.py',
+    'scripts/ladder.py', 'scripts/performance.py',
     'scripts/session_policy.py', 'scripts/native_dispatch.py', 'scripts/work_breakdown.py',
     'scripts/instruction_audit.py',
 )
@@ -60,7 +60,10 @@ def build(output):
         raise ValueError(f'symlink in output path: {output}')
     # Parent aliases are caller path semantics; never follow an output leaf link.
     output = output.parent.resolve() / output.name
-    destinations = [output / name for name in ('optimax-skill.zip', 'optimax-plugin.zip')]
+    legacy = output / 'optimax-skill.zip'
+    if os.path.lexists(legacy):
+        raise ValueError(f'obsolete release asset {legacy}; remove it before building')
+    destinations = [output / name for name in ('optimax-plugin.zip',)]
     for destination in destinations:
         if destination.is_symlink() or (destination.exists() and not stat.S_ISREG(destination.stat().st_mode)):
             raise ValueError(f'output destination is not a regular file: {destination}')
@@ -74,12 +77,13 @@ def build(output):
     for data in manifests.values():
         if json.loads(data)['name'] != 'optimax':
             raise ValueError('invalid manifest name')
+    validate_entries({'LICENSE': license_data, **manifests, **review_ladder,
+                      **{'skills/optimax/' + name: data for name, data in runtime.items()}})
     output.mkdir(parents=True, exist_ok=True)
     staging = Path(tempfile.mkdtemp(prefix='.optimax-release-', dir=output))
     retain_recovery = False
     try:
         archives = {
-            'optimax-skill.zip': {'optimax/LICENSE': license_data, **{'optimax/' + name: data for name, data in runtime.items()}},
             'optimax-plugin.zip': {'LICENSE': license_data, **manifests, **review_ladder, **{'skills/optimax/' + name: data for name, data in runtime.items()}},
         }
         for archive, entries in archives.items():
@@ -92,8 +96,6 @@ def build(output):
                     z.writestr(info, data, compresslevel=9)
         for archive, entries in archives.items():
             validate_staged_archive(staging / archive, entries)
-        with zipfile.ZipFile(staging / 'optimax-skill.zip') as candidate:
-            _manifest(candidate)
         backups = {}
         for destination in destinations:
             if destination.exists():
@@ -117,7 +119,7 @@ def build(output):
                 attempts.append((destination, identity(staged)))
                 os.replace(staged, destination)
         except BaseException as promotion_error:
-            # Individual renames are atomic; the pair is not crash-atomic.
+            # Promotion is atomic; recover if a wrapper raises after the rename.
             rollback_errors = []
             for destination, staged_identity in reversed(attempts):
                 try:

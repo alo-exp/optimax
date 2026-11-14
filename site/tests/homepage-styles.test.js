@@ -16,6 +16,18 @@ for(const theme of ['dark','light'])test('homepage '+theme+' reading, links and 
  for(const [fg,bg,min] of [['--ink','--bg',4.5],['--muted','--bg',4.5],['--accent','--bg',4.5],['--on-accent','--accent',4.5],['--command-ink','--command-bg',4.5],['--command-muted','--command-bg',4.5],['--focus','--bg',3]])assert.ok(contrast(tokens[fg],tokens[bg])>=min,fg+' on '+bg+' must meet '+min+':1');
 });
 
+for(const theme of ['dark','light'])test('terminal note links use a readable terminal color in '+theme+' mode',()=>{
+ const link=document.querySelector('.terminal .terminal-note a');
+ assert.ok(link,'the terminal note contains a link');
+ const terminalRule=css.match(/\.terminal\s*\{([^}]+)\}/)?.[1]||'';
+ assert.match(terminalRule,/background:\s*var\(--command-bg\)/);
+ const linkRule=css.match(/\.terminal\s+a\s*\{([^}]+)\}/)?.[1]||'';
+ const colorToken=linkRule.match(/(?:^|;)\s*color:\s*var\((--[\w-]+)\)/)?.[1];
+ assert.ok(colorToken,'terminal links need a scoped color overriding the page-wide link color');
+ const tokens=theme==='light'?{...palette(':root'),...palette(':root[data-theme="light"]')}:palette(':root');
+ assert.ok(contrast(tokens[colorToken],tokens['--command-bg'])>=4.5,'terminal link color must meet 4.5:1 against its background');
+});
+
 test('homepage supports narrow reading and keyboard use with local Sora',()=>{
  for(const weight of [400,700])assert.ok(css.includes("{{BASE}}assets/fonts/sora-latin-"+weight+"-normal.woff2"));
  assert.match(css,/font-family:\s*["']Sora["']/);

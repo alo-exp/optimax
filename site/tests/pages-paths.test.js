@@ -59,6 +59,7 @@ for(const url of [undefined,'https://optimax.alolabs.dev/','https://alo-exp.gith
    assert.ok(robots.split('\n').includes('Allow: '+base));
    assert.match(robots,new RegExp('Sitemap: '+deployed.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'sitemap\\.xml'));
    const sitemap=await readFile(join(output,'sitemap.xml'),'utf8');
+   assert.match(sitemap,/^<\?xml[^>]*\?><urlset xmlns="http:\/\/www\.sitemaps\.org\/schemas\/sitemap\/0\.9">/,'sitemap must use the protocol namespace defined by the sitemap schema');
    const locations=[...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map(m=>m[1]);
    assert.deepEqual(locations,[deployed,deployed+'help/',...source.articles.map(a=>deployed+'help/'+a.slug+'/')]);
    const errorDoc=parseHTML(await readFile(join(output,'404.html'),'utf8')).document;

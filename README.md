@@ -23,19 +23,9 @@ In Claude Code, use:
 
 The Claude commands have been checked against documentation; live Claude acceptance is deferred. The v0.1.0 Codex plugin passed native installation, installed-skill discovery and session control checks on CLI 0.166.0-alpha.6; see the [historical native acceptance record](docs/CODEX-ACCEPTANCE.md) and the [current verification report](docs/VERIFICATION.md) for candidate coverage and separate historical v0.1.1 evidence.
 
-For a standalone Codex skill, build `optimax-skill.zip` from this matching v0.2.0 candidate checkout with `python3 build_release.py --output dist`, then run from the checkout root. Published v0.2.0 downloads are pending:
-
-```sh
-python3 skills/optimax/scripts/install_local.py --archive /path/to/optimax-skill.zip
-```
-
-The destination defaults to `~/.codex/skills/optimax` and must not exist; use `--dest` to choose another existing-parent destination. The installer checks the archive before creating the destination and does not replace an existing directory.
-
 ## Run a review ladder
 
-Use [Review Ladder](skills/review-ladder/SKILL.md) for staged independent review, repair, and verification of a bounded scope. Once the host discovers the bundled skill, invoke `$review-ladder` in Codex or `/optimax:review-ladder` in Claude Code and supply the review scope. Short aliases depend on the host; use the discovered command name. Review Ladder follows its explicit, user-authorized model and effort sequence through the contracted rungs independently of whether Optimax's adaptive policy is on or off, subject to the host's model, effort, and delegation capabilities. Invoking it does not enable the adaptive policy or change the selected Orchestrator.
-
-The standalone `optimax-skill.zip` and its installer remain Optimax-only; they do not install Review Ladder. Use the plugin package for both skills.
+Use [Review Ladder](skills/review-ladder/SKILL.md) for staged independent review, repair, and verification of a bounded scope. Once the host discovers the bundled skill, invoke `$review-ladder` in Codex or `/optimax:review-ladder` in Claude Code and supply the review scope. Short aliases depend on the host; use the discovered command name. Review Ladder follows its explicit, user-authorized model and effort sequence through the contracted rungs independently of whether Optimax's adaptive policy is on or off, subject to the host's model, effort, and delegation capabilities. Invoking it does not enable the adaptive policy or change the selected Orchestrator. The adaptive controller cannot represent every fixed review rung and has no fixed-rung override. A review with policy enabled and a valid matching pre-dispatch adaptive reservation follows ordinary adaptive eligibility rules. An unmatched fixed review, or one run when the policy is off, uses supported host dispatch and an ordinary durable review report with actual assignment IDs, requested settings, candidate/scope/pass and outcomes; these report-only reviews are excluded from adaptive learning even with a later receipt, and existing adaptive history is preserved. Unsupported fixed rungs block without substitution. Missing effective receipts remain explicit unknowns. Controller `launch` rows are reservations, and host confirmation, failure and cancellation are reported separately; see [the limited recording path](skills/optimax/references/calculator.md#fixed-review-and-dispatch-limits).
 
 ## Control a session
 
@@ -51,9 +41,9 @@ Version 0.1.1 adds Windows-compatible controller locking and filesystem handling
 
 Optimax provides instructions and a deterministic controller; it cannot guarantee model availability, force a host to follow instructions, verify hidden native workers, or change the user's orchestrator. Native orchestration is only partially optimizable when worker model, effort, or attribution is opaque. Independent review remains the orchestrator's responsibility. See the [skill](skills/optimax/SKILL.md) and its references for policy, safety, and recovery.
 
-Run `python3 -m unittest discover -s tests` for the local suite. Build allowlisted, deterministic skill and plugin archives with `python3 build_release.py --output dist`. The archives exclude project ledgers, caches, tests, and session reports. Live host discovery, control behavior, and published catalog resolution are separate acceptance gates.
+Run `python3 -m unittest discover -s tests` for the local suite. Build the allowlisted, deterministic plugin archive with `python3 build_release.py --output dist`. If that directory contains the older `optimax-skill.zip`, the builder rejects it; choose a fresh output directory instead. Use a trusted output directory under exclusive control during the build: a concurrent uncooperative replacement may be overwritten, and a normal rebuild intentionally replaces the archive. The archive excludes project ledgers, caches, tests, and session reports. Live host discovery, control behavior, and published catalog resolution are separate acceptance gates.
 
-The [verification report](docs/VERIFICATION.md) records checked revisions, artifact digests, the scope of native Codex and website qualification, and remaining coverage. Claude execution is deferred until Tuesday 10 November 2026 at 14:00 Australia/Sydney; a one-occurrence automation is saved to run the [acceptance runbook](docs/CLAUDE-ACCEPTANCE.md). It has not executed yet.
+The [verification report](docs/VERIFICATION.md) records checked revisions, artifact digests, the scope of native Codex and website qualification, and remaining coverage. Live Claude acceptance remains unverified; see the [acceptance runbook](docs/CLAUDE-ACCEPTANCE.md) for the authorized execution window and historical scheduling note.
 
 The website source is in [site/](site/) and its design system is documented in [site/DESIGN-SYSTEM.md](site/DESIGN-SYSTEM.md). From `site/`, run `npm ci`, `npm test`, and `npm run build` to install the locked dependencies, test, and build the site.
 

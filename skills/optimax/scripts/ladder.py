@@ -14,8 +14,10 @@ Request schema:
 
 Executor tracks require a complexity tier; advisor tracks require tier=null and
 have one ladder per platform with no complexity tiers. Business-document tier is
-executor-only. Indices are zero-based. Current step
-must be at or above its tier floor. Both track.step and assessment.step describe
+executor-only. Indices are zero-based. Executor steps must meet the tier floor.
+For v3/v4 Advisors, supply the actual recorded step even below a newly raised
+consultation floor; the lowest supported rung at or above the floor is selected
+with context_floor_raised and reset_required. Both track.step and assessment.step describe
 the independently established effective model/effort rung, rather than only a
 requested rung. The caller supplies verified exact model IDs; this helper does
 not verify provider identity or resolve aliases. Logical families below contain
@@ -39,7 +41,8 @@ eligible_count (all matching verified records, before newest-five selection),
 excluded_count (all other records), window_run_ids (chronological newest up to
 five), average (null until five eligible records), reset_required.
 Reasons: insufficient_evidence, low_performance, perfect_performance,
-performance_stable, floor_reached, ceiling_reached, capability_fallback.
+performance_stable, floor_reached, ceiling_reached, capability_fallback,
+context_floor_raised.
 Movement sets reset_required=true. The caller creates and persists the fresh
 epoch; this helper never creates an epoch or writes files. Invalid inputs raise
 ValueError. CLI failures exit nonzero with one compact stderr error line.
